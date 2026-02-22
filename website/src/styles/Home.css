@@ -1,0 +1,330 @@
+/* Typography Hub - Ensuring import for luxury feel */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;800&display=swap');
+
+.home-page {
+    --zara-white: #ffffff;
+    --zara-black: #000000;
+    --zara-grey: #f8f8f8;
+    background-color: var(--zara-white);
+    color: var(--zara-black);
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* Full Width within the Parent */
+.zara-container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Typography Hub */
+.home-page h1,
+.home-page h2,
+.home-page h3 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 400;
+    margin: 0;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.home-page p {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    letter-spacing: 0.05em;
+    color: var(--zara-black);
+    font-weight: 500;
+}
+
+/* Sectional Layout */
+.zara-section {
+    min-height: 90vh;
+    margin: 8rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    /* Removing gap for edge-to-edge feel */
+    overflow: hidden;
+}
+
+.zara-section:first-child {
+    margin-top: 0;
+}
+
+.zara-section:nth-child(even) {
+    flex-direction: row-reverse;
+}
+
+.zara-content-block {
+    flex: 1;
+    padding: 0 5%;
+}
+
+.zara-visual-block {
+    flex: 1.2;
+    height: 90vh;
+    background-color: #f9f9f9;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.visual-block-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.1));
+    pointer-events: none;
+}
+
+.zara-visual-block:hover {
+    transform: scale(1.05);
+}
+
+/* Hero Section */
+.hero-minimal-v2 {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
+    overflow: hidden;
+}
+
+.hero-content {
+    z-index: 2;
+}
+
+.hero-minimal-v2 h1 {
+    font-size: clamp(3rem, 10vw, 6rem);
+    margin-bottom: 1.5rem;
+    letter-spacing: -2px;
+}
+
+.hero-minimal-v2 p {
+    font-size: 1.2rem;
+    max-width: 600px;
+    margin-bottom: 3rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--zara-black);
+    font-weight: 700;
+}
+
+/* Zara Button Stylings */
+.btn-zara-solid {
+    display: inline-block;
+    padding: 1.2rem 3.5rem;
+    background: var(--zara-black);
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    border: 1px solid var(--zara-black);
+}
+
+.btn-zara-solid:hover {
+    background: transparent;
+    color: var(--zara-black);
+}
+
+.btn-zara-link {
+    display: inline-block;
+    margin-top: 1.5rem;
+    color: var(--zara-black);
+    text-decoration: none;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    position: relative;
+}
+
+.btn-zara-link::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: -4px;
+    left: 0;
+    background-color: var(--zara-black);
+    transform: scaleX(1);
+    transition: transform 0.3s ease;
+}
+
+.btn-zara-link:hover::after {
+    transform: scaleX(0.5);
+}
+
+/* Features List Labels */
+.section-label {
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin-bottom: 2rem;
+    color: var(--zara-black);
+}
+
+@media (max-width: 1024px) {
+
+    .zara-section,
+    .zara-section:nth-child(even) {
+        flex-direction: column-reverse;
+        gap: 0;
+        padding: 0;
+        margin: 0;
+        min-height: auto;
+    }
+
+    .zara-content-block {
+        padding: 2rem 5%;
+        /* Highly reduced side padding for edge-to-edge feel */
+    }
+
+    .hero-minimal-v2 h1 {
+        font-size: clamp(2.2rem, 8vw, 3.5rem);
+        /* Scalable font size */
+        letter-spacing: -1px;
+        /* Slightly looser letters on mobile */
+        word-break: break-word;
+    }
+
+    .zara-content-block h2 {
+        font-size: 2.2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-minimal-v2 p,
+    .zara-content-block p {
+        font-size: 1rem;
+        letter-spacing: 1px;
+        margin-bottom: 2rem;
+    }
+
+    .hero-badges {
+        flex-direction: column;
+        /* Stack badges on mobile to prevent cropping */
+        gap: 1.2rem !important;
+        margin-bottom: 2.5rem !important;
+        align-items: flex-start;
+    }
+
+    .section-label {
+        letter-spacing: 2px;
+        /* Reduced for mobile */
+        font-size: 0.7rem;
+    }
+
+    .btn-zara-solid {
+        padding: 1.2rem 2rem;
+        width: 100%;
+        text-align: center;
+    }
+
+    .zara-visual-block {
+        width: 100%;
+        height: 80vh;
+        flex: none;
+    }
+}
+
+/* Floating Product Carousel V3 (White Theme, Bottom-Right 100px) */
+.floating-product-bar-v3 {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 25%;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.95);
+    /* White theme */
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    box-shadow: -10px -10px 30px rgba(0, 0, 0, 0.02);
+}
+
+.carousel-wrapper-v3 {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    padding: 0 20px;
+    cursor: grab;
+}
+
+.carousel-track-v3 {
+    display: flex;
+    gap: 10px;
+    height: 100%;
+    align-items: center;
+    will-change: transform;
+}
+
+.carousel-item-v3 {
+    flex: 0 0 80px;
+    height: 80px;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 1;
+    filter: grayscale(0%);
+    border-radius: 4px;
+}
+
+.carousel-item-v3 img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.carousel-item-v3.active {
+    opacity: 1;
+    filter: grayscale(0%);
+    transform: scale(1.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    border: 2px solid #000;
+}
+
+.item-indicator-v3 {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #000;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.carousel-item-v3.active .item-indicator-v3 {
+    transform: scaleX(1);
+}
+
+@media (max-width: 1024px) {
+    .floating-product-bar-v3 {
+        width: 100%;
+        height: 120px;
+    }
+
+    .carousel-item-v3 {
+        flex: 0 0 100px;
+        height: 100px;
+    }
+}

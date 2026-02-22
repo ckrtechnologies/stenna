@@ -1,0 +1,733 @@
+/* Catalog and Home Multi-column Layout */
+
+.desktop-layout-container {
+    display: flex;
+    gap: 2.5rem;
+    padding: 0 1.5% 0 0 !important;
+    margin-left: 0rem !important;
+    /* Align with header by counteracting main padding */
+    width: calc(100% + 1rem) !important;
+    height: calc(100vh - var(--navbar-height));
+    align-items: flex-start;
+    overflow: hidden;
+    margin-top: 0 !important;
+}
+
+.col-main-content {
+    height: 100%;
+    overflow-y: auto;
+    /* padding-right: 1.5rem; */
+    padding-top: 0 !important;
+    flex: 1;
+    width: 100%;
+}
+
+/* Hide scrollbar for clean look but keep functionality */
+.col-main-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.col-main-content::-webkit-scrollbar-thumb {
+    background: transparent;
+}
+
+.col-main-content:hover::-webkit-scrollbar-thumb {
+    background: #eee;
+}
+
+@media (max-width: 1024px) {
+    .desktop-layout-container {
+        grid-template-columns: 1fr;
+        display: block;
+        padding: 0 1rem !important;
+        /* symmetrical sidebar-like breathing room */
+        margin: 0 !important;
+    }
+
+    .desktop-layout-container.is-detail-view {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    .col-main-content {
+        padding: 0 !important;
+        /* rely on parent padding */
+        margin: 0 !important;
+    }
+}
+
+/* Home Column Layout (2 columns) */
+.home-layout-container {
+    display: grid;
+    grid-template-columns: 1fr minmax(200px, max-content);
+    /* gap: 4 rem; */
+    /* padding: 2rem 1rem 8rem 1rem; */
+    min-height: calc(100vh - var(--navbar-height));
+    align-items: flex-start;
+}
+
+@media (max-width: 1024px) {
+    .home-layout-container {
+        grid-template-columns: 1fr;
+        display: block;
+        padding: 1rem 5%;
+    }
+}
+
+/* Column 1: Filter Trigger */
+.col-filter-trigger {
+    padding-top: 0 !important;
+    position: sticky;
+    top: 0;
+    flex: 0 0 auto;
+    width: 140px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Removed is-detail-view override to keep width consistent with catalog (140px) */
+
+.filter-word-btn {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 0;
+    transition: opacity 0.2s;
+}
+
+.filter-word-btn:hover {
+    opacity: 0.6;
+}
+
+/* Column 3: Tools Panel */
+.col-tools-panel {
+    padding-top: 0 !important;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    width: 140px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Removed is-detail-view override to keep width consistent with catalog (140px) */
+
+@media (max-width: 1024px) {
+    .col-tools-panel {
+        display: none !important;
+    }
+}
+
+.tool-section h3 {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.tool-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: #000;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    transition: opacity 0.2s;
+}
+
+.tool-link:hover {
+    opacity: 0.6;
+}
+
+.user-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-name-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Zara Sidebar List Styles */
+.zara-sidebar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.zara-sidebar-item {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.75rem;
+    /* letter-spacing: 0.05em; */
+    text-transform: uppercase;
+    color: #000;
+    display: flex;
+    gap: 0.75rem;
+    transition: opacity 0.2s;
+    font-weight: 400;
+}
+
+.zara-sidebar-item:hover {
+    opacity: 0.6;
+}
+
+.zara-sidebar-item.active {
+    font-weight: 800;
+}
+
+.zara-item-num {
+    opacity: 0.4;
+    font-weight: 400 !important;
+}
+
+/* Bottom Controls for Column 1 */
+.zara-bottom-controls {
+    margin-top: auto;
+    padding-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.zara-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 50px;
+    padding-bottom: 8rem;
+}
+
+.zara-product-card:first-child {
+    grid-column: span 2;
+    margin-bottom: 0rem;
+}
+
+.zara-product-card:first-child .image-container {
+    aspect-ratio: auto;
+    height: 100vh;
+    /* Match the tall immersive Zara height */
+}
+
+
+/* Pagination within Drawer */
+.pagination-container-drawer {
+    margin-top: auto;
+    padding: 2rem;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.page-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ddd;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+}
+
+.page-dot.active {
+    background: #000;
+}
+
+/* --- Wallpaper Detail Layout (60/40 Ratio) --- */
+
+.detail-layout-container {
+    display: grid;
+    grid-template-columns: 7fr 3fr;
+    grid-template-areas:
+        "hero info"
+        "residue residue";
+    gap: 50px;
+    padding: 0;
+    min-height: calc(100vh - var(--navbar-height));
+    align-items: stretch;
+}
+
+.detail-hero-section {
+    grid-area: hero;
+    padding: 0;
+}
+
+.detail-hero-image {
+    width: 100%;
+    height: 100vh;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.detail-residue-section {
+    grid-area: residue;
+    padding: 0;
+}
+
+.detail-image-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    padding-top: 0;
+}
+
+.detail-grid-image {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.detail-info-section {
+    grid-area: info;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 4rem 0 !important;
+    /* Edge-to-edge as per user request */
+    background: #fff;
+    scrollbar-width: none;
+}
+
+.detail-info-section::-webkit-scrollbar {
+    display: none;
+}
+
+.zara-detail-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.zara-price {
+    font-size: 0.9rem;
+    font-weight: 400;
+    margin-bottom: 0.25rem;
+}
+
+.zara-vat-info {
+    font-size: 0.6rem;
+    color: #999;
+    letter-spacing: 0.05em;
+    margin-bottom: 2rem;
+}
+
+.zara-detail-desc {
+    font-size: 0.75rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 400px;
+}
+
+.zara-detail-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.meta-label {
+    font-size: 0.6rem;
+    color: #999;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.meta-value {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.zara-detail-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 4rem;
+}
+
+.btn-zara-primary {
+    background: #000;
+    color: #fff;
+    border: 1px solid #000;
+    padding: 1.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-zara-primary:hover {
+    background: #333;
+}
+
+.btn-zara-outline {
+    background: #fff;
+    color: #000;
+    border: 1px solid #000;
+    padding: 1.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+/* Related Products Grid */
+.related-wallpapers-section {
+    padding: 8rem 0 12rem 0;
+    border-top: 1px solid #f0f0f0;
+}
+
+.related-title {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+    margin-bottom: 4rem;
+    text-transform: uppercase;
+}
+
+.related-zara-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 3rem;
+}
+
+@media (max-width: 1400px) {
+    .related-zara-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2.5rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .related-zara-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+}
+
+.related-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.related-img-container {
+    width: 100%;
+    aspect-ratio: 2/3;
+    /* Enforce 3:2 Height:Width ratio */
+    overflow: hidden;
+    background: #f7f7f7;
+}
+
+.related-img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.related-item:hover .related-img-container img {
+    transform: scale(1.05);
+}
+
+.related-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.related-name {
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    opacity: 0.8;
+}
+
+.related-price {
+    font-size: 0.65rem;
+    color: #666;
+}
+
+/* Floating Product Bar Refinements */
+.floating-product-bar-v3 {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 35%;
+    background: transparent;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    z-index: 1000;
+}
+
+.carousel-wrapper-v3 {
+    width: 100%;
+    overflow: hidden;
+}
+
+.carousel-track-v3 {
+    display: flex;
+    gap: 4px;
+    /* Tight gap for slat effect */
+    align-items: flex-end;
+}
+
+.carousel-item-v3 {
+    width: 12px;
+    /* Very narrow slats */
+    height: 60px;
+    /* Base height */
+    flex-shrink: 0;
+    cursor: pointer;
+    opacity: 1;
+    /* Fully opaque state */
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.carousel-item-v3.active {
+    height: 90px;
+    /* Active slat is much taller */
+    opacity: 1;
+}
+
+.carousel-item-v3 img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 1px solid;
+}
+
+.carousel-item-v3.active img {
+    border: 1px solid #000;
+}
+
+@media (max-width: 1024px) {
+    .detail-layout-container {
+        grid-template-columns: 1fr;
+        grid-template-areas: none;
+        padding: 0 !important;
+        padding-top: 0 !important;
+        display: block;
+        margin: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    .detail-hero-section,
+    .detail-info-section,
+    .detail-residue-section {
+        grid-area: auto;
+        position: static;
+        width: 100%;
+        height: auto;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .detail-hero-image {
+        height: 65vh;
+        object-fit: cover;
+        width: 100%;
+    }
+
+    .detail-grid-image {
+        aspect-ratio: auto;
+        height: 60vh;
+        object-fit: cover;
+        width: 100%;
+    }
+
+    .detail-image-grid {
+        grid-template-columns: 1fr !important;
+        gap: 2rem;
+        padding: 0 1rem !important;
+        /* Balanced side margins */
+    }
+
+    .detail-info-section {
+        padding: 1.5rem 1rem !important;
+        /* Keep text padding but remove top/bottom extra */
+    }
+
+    .floating-product-bar-v3 {
+        bottom: 0;
+        right: 0;
+        left: 0;
+        width: 100%;
+        max-width: none;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(5px);
+        padding: 0.25rem;
+    }
+}
+
+/* Video Support Styles */
+.detail-hero-video-container {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.detail-hero-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.detail-grid-video {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    background: #000;
+}
+
+/* Story-Driven Information Styles */
+.story-tagline {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+    color: #333;
+}
+
+.story-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.story-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 1rem;
+    color: #000;
+}
+
+.story-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.story-list li {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 0.6rem;
+    color: #333;
+}
+
+.mood-tags-display {
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    color: #333;
+    font-weight: 500;
+}
+
+.ideal-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.ideal-list li {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #333;
+}
+
+.ideal-list li::before {
+    content: "✓";
+    font-weight: bold;
+    color: #000;
+}
+
+.whatsapp-decision-box {
+    margin-top: 2.5rem;
+    padding: 1.5rem;
+    background: #f8f8f8;
+    border-radius: 4px;
+    border: 1px solid #eeeeee;
+}
+
+.whatsapp-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #000;
+}
+
+.whatsapp-text {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    font-style: italic;
+    color: #111;
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 1024px) {
+    .ideal-list {
+        grid-template-columns: 1fr;
+    }
+
+    .whatsapp-decision-box {
+        padding: 1.25rem;
+    }
+}
+
+.mb-4 {
+    margin-bottom: 2rem;
+}

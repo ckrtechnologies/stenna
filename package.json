@@ -1,0 +1,24 @@
+{
+    "name": "mallikera-p3-root",
+    "version": "1.0.0",
+    "description": "Root management for p3 modules",
+    "private": true,
+    "workspaces": [
+        "admin",
+        "backend",
+        "website",
+        "mobile"
+    ],
+    "scripts": {
+        "install:all": "npm install",
+        "dev:backend": "npm run dev -w backend",
+        "dev:admin": "npm run dev -w admin",
+        "dev:website": "npm run dev -w website",
+        "dev:mobile": "npm run start -w mobile",
+        "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w admin\" \"npm run dev -w website\"",
+        "start": "concurrently \"npm run start -w backend\" \"npm run dev -w admin\" \"npm run dev -w website\""
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
