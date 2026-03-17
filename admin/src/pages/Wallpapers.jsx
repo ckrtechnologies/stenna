@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import api from '../utils/api';
 import WallpaperModal from '../components/WallpaperModal';
+import BulkUploadModal from '../components/BulkUploadModal';
 import Loader from '../components/Loader';
 
 const Wallpapers = () => {
@@ -22,6 +23,7 @@ const Wallpapers = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [currentWallpaper, setCurrentWallpaper] = useState(null);
 
     // Filter state
@@ -128,20 +130,58 @@ const Wallpapers = () => {
     const downloadCSV = () => {
         if (filteredWallpapers.length === 0) return;
 
-        // Header
-        const headers = ['Name', 'Design Code', 'Price', 'Status', 'Material', 'Brand', 'Categories', 'Groups'];
+        // Header matching BulkUploadModal template
+        const headers = [
+            'Name', 'Design Code', 'Slug', 'Description', 'Price', 
+            'Roll Width (cm)', 'Roll Height (m)', 'Stock Quantity', 
+            'Material', 'Finish', 'Washability', 'Durability', 
+            'Brand', 'Country', 'Tagline', 'Vibe', 'Choose If', 
+            'Avoid If', 'Ideal For', 'Is Active', 'Swatch Image',
+            'Hand Image', 'Medium Short', 'Far Short', 'Warm Family', 'Modal with Book', 'Rustic',
+            'Sponge Wash Video', 
+            'Category Names', 'Group Names'
+        ];
 
         // Rows
-        const rows = filteredWallpapers.map(w => [
-            `"${w.name}"`,
-            `"${w.design_code || ''}"`,
-            w.price || 0,
-            w.is_active ? 'Active' : 'Hidden',
-            `"${w.material || ''}"`,
-            `"${w.brand || ''}"`,
-            `"${w.categories?.map(c => c.name).join(', ') || ''}"`,
-            `"${w.groups?.map(g => g.name).join(', ') || ''}"`
-        ]);
+        const rows = filteredWallpapers.map(w => {
+            const imgs = w.images || [];
+            const vids = w.videos || [];
+            
+            return [
+                `"${w.name}"`,
+                `"${w.design_code || ''}"`,
+                `"${w.slug || ''}"`,
+                `"${(w.description || '').replace(/"/g, '""')}"`,
+                w.price || 0,
+                w.roll_width || '',
+                w.roll_height || '',
+                w.quantity || 0,
+                `"${w.material || ''}"`,
+                `"${w.finish || ''}"`,
+                `"${w.washability || ''}"`,
+                `"${w.durability || ''}"`,
+                `"${w.brand || ''}"`,
+                `"${w.country || ''}"`,
+                `"${(w.tagline || '').replace(/"/g, '""')}"`,
+                `"${(w.vibe || '').replace(/"/g, '""')}"`,
+                `"${(w.choose_if || '').replace(/"/g, '""')}"`,
+                `"${(w.avoid_if || '').replace(/"/g, '""')}"`,
+                `"${(w.ideal_for || '').replace(/"/g, '""')}"`,
+                w.is_active ? 'TRUE' : 'FALSE',
+                `"${w.swatch || ''}"`,
+                // Specific Images
+                `"${imgs[0]?.image_url || ''}"`,
+                `"${imgs[1]?.image_url || ''}"`,
+                `"${imgs[2]?.image_url || ''}"`,
+                `"${imgs[3]?.image_url || ''}"`,
+                `"${imgs[4]?.image_url || ''}"`,
+                `"${imgs[5]?.image_url || ''}"`,
+                // Specific Video
+                `"${vids[0]?.video_url || ''}"`,
+                `"${w.categories?.map(c => c.name).join(', ') || ''}"`,
+                `"${w.groups?.map(g => g.name).join(', ') || ''}"`
+            ];
+        });
 
         const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -228,6 +268,10 @@ const Wallpapers = () => {
                     >
                         <Filter size={18} />
                         <span>Filter</span>
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => setIsBulkModalOpen(true)}>
+                        <Upload size={18} />
+                        <span>Bulk Upload</span>
                     </button>
                     <button className="btn btn-secondary" onClick={downloadCSV}>
                         <Download size={18} />
@@ -419,6 +463,12 @@ const Wallpapers = () => {
                 wallpaper={currentWallpaper}
                 categories={categories}
                 groups={groups}
+            />
+
+            <BulkUploadModal
+                isOpen={isBulkModalOpen}
+                onClose={() => setIsBulkModalOpen(false)}
+                onRefresh={fetchWallpapers}
             />
 
             <style jsx>{`

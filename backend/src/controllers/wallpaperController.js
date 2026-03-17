@@ -320,3 +320,97 @@ export const bulkUpdateQuantity = async (req, res) => {
     }
 };
 
+export const bulkCreateWallpapers = async (req, res) => {
+    try {
+        const { wallpapers } = req.body;
+        if (!wallpapers || !Array.isArray(wallpapers)) {
+            return res.status(400).json({ message: 'Invalid wallpapers data' });
+        }
+
+        // 1. Fetch all groups and categories for name resolution
+        const { data: allGroups } = await supabase.from('category_groups').select('id, name');
+        const { data: allCategories } = await supabase.from('categories').select('id, name');
+
+        const groupMap = Object.fromEntries(allGroups.map(g => [g.name.toLowerCase(), g.id]));
+        const categoryMap = Object.fromEntries(allCategories.map(c => [c.name.toLowerCase(), c.id]));
+
+        const results = {
+            success: 0,
+            failed: 0,
+            errors: []
+        };
+
+        for (const data of wallpapers) {
+            try {
+                const { images, videos, category_names, group_names, ...wallpaperData } = data;
+
+                // 2. Resolve Group IDs
+                const group_ids = (group_names || []).map(name => groupMap[name.toLowerCase().trim()]).filter(Boolean);
+                
+                // 3. Resolve Category IDs
+                const category_ids = (category_names || []).map(name => categoryMap[name.toLowerCase().trim()]).filter(Boolean);
+
+                // 4. Create wallpaper
+                const { data: wallpaper, error: wError } = await supabase
+                    .from('wallpapers')
+                    .insert(wallpaperData)
+                    .select()
+                    .single();
+
+                if (wError) throw wError;
+
+                // 5. Handle Images
+                if (images && images.length > 0) {
+                    const imageInserts = images.map((url, index) => ({
+                        wallpaper_id: wallpaper.id,
+                        image_url: url,
+                        position: index + 1
+                    }));
+                    await supabase.from('wallpaper_images').insert(imageInserts);
+                }
+
+                // 6. Handle Videos
+                if (videos && videos.length > 0) {
+                    const videoInserts = videos.map((url, index) => ({
+                        wallpaper_id: wallpaper.id,
+                        video_url: url,
+                        position: index + 1
+                    }));
+                    await supabase.from('wallpaper_videos').insert(videoInserts);
+                }
+
+                // 7. Handle Categories
+                if (category_ids.length > 0) {
+                    const catInserts = category_ids.map(id => ({
+                        wallpaper_id: wallpaper.id,
+                        category_id: id
+                    }));
+                    await supabase.from('wallpaper_categories').insert(catInserts);
+                }
+
+                // 8. Handle Groups
+                if (group_ids.length > 0) {
+                    const grpInserts = group_ids.map(id => ({
+                        wallpaper_id: wallpaper.id,
+                        group_id: id
+                    }));
+                    await supabase.from('wallpaper_groups').insert(grpInserts);
+                }
+
+                results.success++;
+            } catch (err) {
+                results.failed++;
+                results.errors.push({ design_code: data.design_code, error: err.message });
+            }
+        }
+
+        res.status(200).json({
+            message: 'Bulk upload completed',
+            summary: results
+        });
+    } catch (error) {
+        console.error('Bulk Create Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+

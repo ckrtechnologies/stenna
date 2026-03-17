@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, Loader2, Image as ImageIcon, Trash2, Plus } from 'lucide-react';
+import { X, Upload, Loader2, Image as ImageIcon, Trash2, Plus, Download, RefreshCw } from 'lucide-react';
 import api from '../utils/api';
 
 const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups = [] }) => {
@@ -24,11 +24,11 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
         category_ids: [], // Array of UUIDs
         group_ids: [], // Array of UUIDs
         tagline: '',
-        story: '',
-        customer_fit: [], // Array of strings
-        mood_tags: [], // Array of strings
-        ideal_for: [], // Array of strings
-        whatsapp_line: ''
+        vibe: '',
+        choose_if: '',
+        avoid_if: '',
+        ideal_for: '',
+        swatch: ''
     };
 
     const [formData, setFormData] = useState(initialState);
@@ -83,92 +83,97 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
         }));
     };
 
-    const handleImageUpload = async (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
+    const handleSpecificImageUpload = async (e, index) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
         setUploading(true);
         try {
-            const uploadPromises = files.map(file => {
-                const data = new FormData();
-                data.append('image', file);
-                return api.post('/upload/wallpaper', data);
+            const data = new FormData();
+            data.append('image', file);
+            const res = await api.post('/upload/wallpaper', data);
+            
+            setFormData(prev => {
+                const newImages = [...prev.images];
+                newImages[index] = { url: res.data.url, public_id: res.data.public_id };
+                return { ...prev, images: newImages };
             });
-
-            const results = await Promise.all(uploadPromises);
-            const newImages = results.map(res => ({
-                url: res.data.url,
-                public_id: res.data.public_id
-            }));
-
-            setFormData(prev => ({
-                ...prev,
-                images: [...prev.images, ...newImages]
-            }));
         } catch (error) {
-            alert('Failed to upload one or more images');
+            alert('Failed to upload image');
         } finally {
             setUploading(false);
         }
     };
 
-    const handleVideoUpload = async (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
+    const handleSwatchUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
         setUploading(true);
         try {
-            const uploadPromises = files.map(file => {
-                const data = new FormData();
-                data.append('image', file); // API uses 'image' key but Cloudinary auto-detects
-                return api.post('/upload/wallpaper', data);
-            });
-
-            const results = await Promise.all(uploadPromises);
-            const newVideos = results.map(res => ({
-                url: res.data.url,
-                public_id: res.data.public_id
-            }));
-
+            const data = new FormData();
+            data.append('image', file);
+            const res = await api.post('/upload/wallpaper', data);
+            
             setFormData(prev => ({
                 ...prev,
-                videos: [...prev.videos, ...newVideos]
+                swatch: res.data.url
             }));
         } catch (error) {
-            alert('Failed to upload one or more videos');
+            alert('Failed to upload swatch');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleSpecificVideoUpload = async (e, index) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const data = new FormData();
+            data.append('image', file);
+            const res = await api.post('/upload/wallpaper', data);
+            
+            setFormData(prev => {
+                const newVideos = [...prev.videos];
+                newVideos[index] = { url: res.data.url, public_id: res.data.public_id };
+                return { ...prev, videos: newVideos };
+            });
+        } catch (error) {
+            alert('Failed to upload video');
         } finally {
             setUploading(false);
         }
     };
 
     const removeImage = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index)
-        }));
+        setFormData(prev => {
+            const newImages = [...prev.images];
+            newImages[index] = null;
+            return { ...prev, images: newImages };
+        });
     };
 
     const removeVideo = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            videos: prev.videos.filter((_, i) => i !== index)
-        }));
+        setFormData(prev => {
+            const newVideos = [...prev.videos];
+            newVideos[index] = null;
+            return { ...prev, videos: newVideos };
+        });
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         onSave({
             ...formData,
-            images: formData.images.map(img => img.url), // Send only URLs to the backend
-            videos: formData.videos.map(vid => vid.url), // Send only URLs to the backend
+            images: formData.images.filter(img => img && img.url).map(img => img.url),
+            videos: formData.videos.filter(vid => vid && vid.url).map(vid => vid.url),
             price: formData.price ? parseFloat(formData.price) : null,
             quantity: formData.quantity ? parseInt(formData.quantity) : 0,
             roll_width: formData.roll_width ? parseFloat(formData.roll_width) : null,
-            roll_height: formData.roll_height ? parseFloat(formData.roll_height) : null,
-            // Ensure lists are sent as arrays
-            customer_fit: Array.isArray(formData.customer_fit) ? formData.customer_fit : [],
-            mood_tags: Array.isArray(formData.mood_tags) ? formData.mood_tags : [],
-            ideal_for: Array.isArray(formData.ideal_for) ? formData.ideal_for : []
+            roll_height: formData.roll_height ? parseFloat(formData.roll_height) : null
         });
     };
 
@@ -245,42 +250,127 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
 
                         {/* Right Column: Images & Categories */}
                         <div className="form-section">
-                            <h3 className="section-title">Gallery</h3>
-                            <div className="gallery-manager">
-                                <div className="gallery-grid">
-                                    {formData.images.map((img, idx) => (
-                                        <div key={idx} className="gallery-item">
-                                            <img src={img.url} alt={`Gallery ${idx}`} />
-                                            <button type="button" className="remove-img" onClick={() => removeImage(idx)}>
-                                                <Trash2 size={14} />
-                                            </button>
-                                            {idx === 0 && <span className="main-tag">Main</span>}
-                                        </div>
-                                    ))}
-                                    <label className="add-image-card">
-                                        {uploading ? <Loader2 className="animate-spin" /> : <Plus size={24} />}
-                                        <span>{uploading ? 'Uploading...' : 'Add Image'}</span>
-                                        <input type="file" multiple onChange={handleImageUpload} hidden accept="image/*" disabled={uploading} />
-                                    </label>
+                            <h3 className="section-title">Color Swatch</h3>
+                            <div className="gallery-manager mb-6">
+                                <div className="gallery-slot-item" style={{ maxWidth: '120px' }}>
+                                    <div className="slot-card">
+                                        {formData.swatch ? (
+                                            <>
+                                                <img src={formData.swatch} alt="Swatch" />
+                                                <div className="slot-actions">
+                                                    <a href={formData.swatch} target="_blank" rel="noopener noreferrer" className="action-btn" title="Download">
+                                                        <Download size={14} />
+                                                    </a>
+                                                    <label className="action-btn" title="Replace">
+                                                        <RefreshCw size={14} />
+                                                        <input type="file" onChange={handleSwatchUpload} hidden accept="image/*" disabled={uploading} />
+                                                    </label>
+                                                    <button type="button" className="action-btn delete" onClick={() => setFormData(prev => ({ ...prev, swatch: '' }))}>
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <label className="add-slot-card">
+                                                {uploading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={20} />}
+                                                <input 
+                                                    type="file" 
+                                                    onChange={handleSwatchUpload} 
+                                                    hidden 
+                                                    accept="image/*" 
+                                                    disabled={uploading} 
+                                                />
+                                            </label>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
-                            <h3 className="section-title mt-4">Videos</h3>
+                            <h3 className="section-title">Product Gallery (6 Images)</h3>
                             <div className="gallery-manager">
-                                <div className="gallery-grid">
-                                    {formData.videos.map((vid, idx) => (
-                                        <div key={idx} className="gallery-item">
-                                            <video src={vid.url} className="w-full h-full object-cover" />
-                                            <button type="button" className="remove-img" onClick={() => removeVideo(idx)}>
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                    <label className="add-image-card">
-                                        {uploading ? <Loader2 className="animate-spin" /> : <Plus size={24} />}
-                                        <span>{uploading ? 'Uploading...' : 'Add Video'}</span>
-                                        <input type="file" multiple onChange={handleVideoUpload} hidden accept="video/*" disabled={uploading} />
-                                    </label>
+                                <div className="gallery-slots-grid">
+                                    {[
+                                        'Hand Image',
+                                        'Medium Short',
+                                        'Far Short',
+                                        'Warm Family',
+                                        'Modal with Book',
+                                        'Rustic'
+                                    ].map((label, idx) => {
+                                        const img = formData.images[idx];
+                                        return (
+                                            <div key={idx} className="gallery-slot-item">
+                                                <label className="slot-label">{idx + 1}. {label}</label>
+                                                <div className="slot-card">
+                                                    {img ? (
+                                                        <>
+                                                            <img src={img.url} alt={label} />
+                                                            <div className="slot-actions">
+                                                                <a href={img.url} target="_blank" rel="noopener noreferrer" className="action-btn" title="Download">
+                                                                    <Download size={14} />
+                                                                </a>
+                                                                <label className="action-btn" title="Replace">
+                                                                    <RefreshCw size={14} />
+                                                                    <input type="file" onChange={(e) => handleSpecificImageUpload(e, idx)} hidden accept="image/*" disabled={uploading} />
+                                                                </label>
+                                                                <button type="button" className="action-btn delete" onClick={() => removeImage(idx)}>
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <label className="add-slot-card">
+                                                            {uploading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={20} />}
+                                                            <input 
+                                                                type="file" 
+                                                                onChange={(e) => handleSpecificImageUpload(e, idx)} 
+                                                                hidden 
+                                                                accept="image/*" 
+                                                                disabled={uploading} 
+                                                            />
+                                                        </label>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <h3 className="section-title mt-4">Product Video</h3>
+                            <div className="gallery-manager">
+                                <div className="gallery-slot-item">
+                                    <label className="slot-label">1. Sponge Wash Video</label>
+                                    <div className="slot-card video-slot">
+                                        {formData.videos[0] ? (
+                                            <>
+                                                <video src={formData.videos[0].url} className="w-full h-full object-cover" />
+                                                <div className="slot-actions">
+                                                    <a href={formData.videos[0].url} target="_blank" rel="noopener noreferrer" className="action-btn" title="Download">
+                                                        <Download size={14} />
+                                                    </a>
+                                                    <label className="action-btn" title="Replace">
+                                                        <RefreshCw size={14} />
+                                                        <input type="file" onChange={(e) => handleSpecificVideoUpload(e, 0)} hidden accept="video/*" disabled={uploading} />
+                                                    </label>
+                                                    <button type="button" className="action-btn delete" onClick={() => removeVideo(0)}>
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <label className="add-slot-card">
+                                                {uploading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={20} />}
+                                                <input 
+                                                    type="file" 
+                                                    onChange={(e) => handleSpecificVideoUpload(e, 0)} 
+                                                    hidden 
+                                                    accept="video/*" 
+                                                    disabled={uploading} 
+                                                />
+                                            </label>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -328,47 +418,27 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
                     </div>
 
                     <div className="form-section full-width mt-4">
-                        <h3 className="section-title">Story-Driven Information (Premium)</h3>
+                        <h3 className="section-title">Storytelling & Fit Information</h3>
                         <div className="form-grid">
                             <div className="field full">
                                 <label>Tagline (e.g. For homes that want warmth...)</label>
                                 <input name="tagline" value={formData.tagline} onChange={handleChange} placeholder="The punchy one-liner header" />
                             </div>
                             <div className="field full">
-                                <label>The Story (Narrative description)</label>
-                                <textarea name="story" value={formData.story} onChange={handleChange} rows="4" placeholder="Describe the inspiration, soul and feel of this wallpaper..." />
+                                <label>Vibe (Mood & feel of this wallpaper)</label>
+                                <textarea name="vibe" value={formData.vibe} onChange={handleChange} rows="3" placeholder="Describe the vibe, mood and feel of this wallpaper..." />
                             </div>
                             <div className="field full">
-                                <label>Why Customers Love It (Indian Home Fit) - One per line</label>
-                                <textarea
-                                    name="customer_fit"
-                                    value={Array.isArray(formData.customer_fit) ? formData.customer_fit.join('\n') : ''}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, customer_fit: e.target.value.split('\n').filter(Boolean) }))}
-                                    rows="3"
-                                    placeholder="Works beautifully with wooden furniture&#10;Enhances warm yellow lighting..."
-                                />
+                                <label>Choose this design if…</label>
+                                <textarea name="choose_if" value={formData.choose_if} onChange={handleChange} rows="3" placeholder="You want a warm, cosy living room with earthy tones..." />
                             </div>
                             <div className="field half">
-                                <label>Mood Tags (Comma separated)</label>
-                                <input
-                                    name="mood_tags"
-                                    value={Array.isArray(formData.mood_tags) ? formData.mood_tags.join(', ') : ''}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, mood_tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
-                                    placeholder="Warm, Earthy, Timeless..."
-                                />
+                                <label>Avoid if…</label>
+                                <input name="avoid_if" value={formData.avoid_if} onChange={handleChange} placeholder="Your room has very low ceilings..." />
                             </div>
                             <div className="field half">
-                                <label>Ideal For (Comma separated)</label>
-                                <input
-                                    name="ideal_for"
-                                    value={Array.isArray(formData.ideal_for) ? formData.ideal_for.join(', ') : ''}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, ideal_for: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
-                                    placeholder="Master Bedroom, Living Room..."
-                                />
-                            </div>
-                            <div className="field full">
-                                <label>10-Second Decision Line (WhatsApp Punchline)</label>
-                                <textarea name="whatsapp_line" value={formData.whatsapp_line} onChange={handleChange} rows="2" placeholder="This design is for people who want..." />
+                                <label>Ideal For</label>
+                                <input name="ideal_for" value={formData.ideal_for} onChange={handleChange} placeholder="Master Bedroom, Living Room..." />
                             </div>
                         </div>
                     </div>
@@ -391,8 +461,32 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
                 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem; }
                 .gallery-item { aspect-ratio: 1; border-radius: 0.75rem; overflow: hidden; position: relative; border: 1px solid var(--border-color); background: var(--bg-dark); }
                 .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-                .remove-img { position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(239, 68, 68, 0.9); border: none; color: white; padding: 0.4rem; border-radius: 0.5rem; cursor: pointer; opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; }
-                .gallery-item:hover .remove-img { opacity: 1; }
+                .slot-actions { 
+                    position: absolute; 
+                    top: 0.5rem; 
+                    right: 0.5rem; 
+                    display: flex; 
+                    gap: 0.25rem; 
+                    opacity: 0; 
+                    transition: opacity 0.2s; 
+                    z-index: 10;
+                }
+                .slot-card:hover .slot-actions { opacity: 1; }
+                .action-btn { 
+                    background: rgba(0, 0, 0, 0.7); 
+                    border: none; 
+                    color: white; 
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 0.4rem; 
+                    cursor: pointer; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    transition: all 0.2s;
+                }
+                .action-btn:hover { background: var(--primary); transform: scale(1.05); }
+                .action-btn.delete:hover { background: #ef4444; }
                 .main-tag { position: absolute; bottom: 0; left: 0; right: 0; background: var(--primary); color: white; font-size: 0.65rem; font-weight: 700; text-align: center; padding: 0.25rem; text-transform: uppercase; }
                 
                 .add-image-card { aspect-ratio: 1; border: 2px dashed var(--border-color); border-radius: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
@@ -455,6 +549,56 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
                     .field.half {
                         grid-column: span 1;
                     }
+                }
+
+                .gallery-slots-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 1.5rem;
+                }
+                .gallery-slot-item {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+                .slot-label {
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: var(--text-dim);
+                    white-space: nowrap;
+                }
+                .slot-card {
+                    aspect-ratio: 1;
+                    border: 1px solid var(--border-color);
+                    border-radius: 0.75rem;
+                    overflow: hidden;
+                    position: relative;
+                    background: var(--bg-dark);
+                }
+                .slot-card img, .slot-card video {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+                .add-slot-card {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 2px dashed var(--border-color);
+                    border-radius: 0.75rem;
+                    cursor: pointer;
+                    color: var(--text-muted);
+                    transition: all 0.2s;
+                }
+                .add-slot-card:hover {
+                    border-color: var(--primary);
+                    color: var(--primary);
+                    background: rgba(59, 130, 246, 0.05);
+                }
+                .video-slot {
+                    max-width: 200px;
                 }
             `}</style>
 
