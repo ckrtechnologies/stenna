@@ -55,27 +55,61 @@ const WallpaperList = ({ wallpapers, isAlternating = false }) => {
                 onClose={() => setSelectedWallpaper(null)}
                 wallpaper={selectedWallpaper}
             />
-            {wallpapers.map((wallpaper, index) => (
-                <div
-                    key={wallpaper.id}
-                    className="card zara-product-card fade-in-up"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                    <Link to={`/wallpaper/${wallpaper.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <div className="image-container zara-image-aspect">
-                            <img
-                                src={wallpaper.images?.[0]?.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
-                                alt={wallpaper.name}
-                                loading="lazy"
-                            />
-                        </div>
-                        <div className="card-content zara-product-info" style={{ padding: '0.5rem 0' }}>
-                            <h4 style={{ fontSize: '0.65rem', fontWeight: '400', letterSpacing: '0.05em' }}>{wallpaper.name}</h4>
-                            <p className="slug" style={{ fontSize: '0.6rem', color: '#999', marginTop: '2px' }}>{wallpaper.slug}</p>
-                        </div>
-                    </Link>
-                </div>
-            ))}
+            {(() => {
+                const processed = [];
+                let i = 0;
+                while (i < wallpapers.length) {
+                    const current = wallpapers[i];
+                    // Base pattern: Item at index 0, 5, 8 etc. wants to be full
+                    const wantsFull = i % 6 === 0;
+
+                    if (wantsFull || i === wallpapers.length - 1) {
+                        // If it wants to be full OR it's the absolute last item, it takes full width
+                        processed.push({ ...current, isFull: true, index: i });
+                        i++;
+                    } else {
+                        // It wants to be half. Check if there's a next item that can pair with it.
+                        // If the next item also "wants" to be full, then THIS item must be full to avoid a gap.
+                        const nextWantsFull = (i + 1) % 6 === 0;
+                        if (nextWantsFull) {
+                            processed.push({ ...current, isFull: true, index: i });
+                            i++;
+                        } else {
+                            // Pair them
+                            processed.push({ ...current, isFull: false, index: i });
+                            if (i + 1 < wallpapers.length) {
+                                processed.push({ ...wallpapers[i + 1], isFull: false, index: i + 1 });
+                                i += 2;
+                            } else {
+                                // Should not happen with logic above, but for safety:
+                                i++;
+                            }
+                        }
+                    }
+                }
+
+                return processed.map((wallpaper) => (
+                    <div
+                        key={wallpaper.id}
+                        className={`card zara-product-card fade-in-up ${wallpaper.isFull ? 'editorial-span-2' : ''}`}
+                        style={{ animationDelay: `${wallpaper.index * 0.1}s` }}
+                    >
+                        <Link to={`/wallpaper/${wallpaper.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <div className="image-container zara-image-aspect">
+                                <img
+                                    src={wallpaper.images?.[0]?.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
+                                    alt={wallpaper.name}
+                                    loading="lazy"
+                                />
+                            </div>
+                            <div className="card-content zara-product-info" style={{ padding: '0.5rem 0' }}>
+                                <h4 style={{ fontSize: '0.65rem', fontWeight: '400', letterSpacing: '0.05em' }}>{wallpaper.name}</h4>
+                                <p className="slug" style={{ fontSize: '0.6rem', color: '#999', marginTop: '2px' }}>{wallpaper.slug}</p>
+                            </div>
+                        </Link>
+                    </div>
+                ));
+            })()}
         </div>
     );
 

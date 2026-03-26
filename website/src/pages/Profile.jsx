@@ -9,6 +9,25 @@ const Profile = () => {
 
     return (
         <div className="profile-page" style={{ maxWidth: '800px', margin: '4rem auto' }}>
+            {/* Global Menu Trigger */}
+            <div 
+                className="menu-trigger-global" 
+                onClick={() => window.dispatchEvent(new CustomEvent('open-mega-menu'))}
+                style={{ 
+                    position: 'fixed', 
+                    top: '30px', 
+                    left: '30px', 
+                    zIndex: 1000, 
+                    cursor: 'pointer',
+                    padding: '10px'
+                }}
+            >
+                <div className="zara-hamburger">
+                    <div className="bar"></div>
+                    <div className="bar"></div>
+                </div>
+            </div>
+
             <header className="page-header" style={{ textAlign: 'center', marginBottom: '3rem' }}>
                 <h1 style={{ fontSize: '2.5rem' }}>Account Management</h1>
                 <p>Manage your Stenna profile, settings and security preferences.</p>

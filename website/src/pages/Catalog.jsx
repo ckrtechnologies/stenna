@@ -7,7 +7,10 @@ import { fetchGroups, fetchCategories, fetchWallpapers } from '../services/api';
 import GroupList from '../components/GroupList';
 import CategoryList from '../components/CategoryList';
 import WallpaperList from '../components/WallpaperList';
+import SidebarLeft from '../components/SidebarLeft';
+import SidebarRight from '../components/SidebarRight';
 import { useAuth } from '../context/AuthContext';
+import Footer from '../components/Footer';
 
 const Catalog = () => {
     const { user } = useAuth();
@@ -59,12 +62,21 @@ const Catalog = () => {
     useEffect(() => {
         const groupParam = searchParams.get('group');
         const catParam = searchParams.get('category');
+        const searchParam = searchParams.get('search');
 
         if (groupParam) setSelectedGroupIds([groupParam]);
         else setSelectedGroupIds([]);
 
         if (catParam) setSelectedCategoryIds([catParam]);
         else setSelectedCategoryIds([]);
+
+        if (searchParam || searchParams.get('search-open')) {
+            setSearchQuery(searchParam || '');
+            setDebouncedSearch(searchParam || '');
+            if (searchParams.get('search-open')) {
+                setIsSearchOpen(true);
+            }
+        }
     }, [searchParams]);
 
     // Handle search debounce
@@ -175,87 +187,37 @@ const Catalog = () => {
             </div>
 
             <div className="desktop-layout-container" style={{ paddingTop: '0' }}>
-                {/* COLUMN 1: FILTER TRIGGER */}
-                <div className="col-filter-trigger desktop-only" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    <div className="zara-breadcrumb" style={{ fontSize: '0.6rem', marginBottom: '2rem' }}>
-                        <Link to="/">HOME</Link> / <span>CATALOG</span>
-                    </div>
-
-                    <div style={{ marginBottom: '2rem' }}>
-                        <GroupList groups={groups} selectedGroupIds={selectedGroupIds} onToggleGroup={handleToggleGroup} />
-                    </div>
-
-                    <div style={{ marginBottom: '2rem' }}>
-                        <CategoryList categories={categories} selectedCategoryIds={selectedCategoryIds} onToggleCategory={handleToggleCategory} />
-                    </div>
-
-                    <div className="zara-bottom-controls">
-                        <button className="filter-word-btn" onClick={() => setIsFilterOpen(true)} style={{ textAlign: 'left' }}>
-                            FILTERS
-                        </button>
-
-                        <div style={{ opacity: 0.4, fontSize: '0.6rem', letterSpacing: '0.05em', marginTop: '1rem' }}>
-                            {loading ? "REFRESHING..." : `${wallpapers.length} ARTWORKS FOUND`}
-                        </div>
-                    </div>
-                </div>
+                <SidebarLeft
+                    breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'CATALOG' }]}
+                    groups={groups}
+                    selectedGroupIds={selectedGroupIds}
+                    onToggleGroup={handleToggleGroup}
+                    categories={categories}
+                    selectedCategoryIds={selectedCategoryIds}
+                    onToggleCategory={handleToggleCategory}
+                    onOpenFilters={() => setIsFilterOpen(true)}
+                    count={wallpapers.length}
+                    loading={loading}
+                    showFilters={true}
+                />
 
                 {/* COLUMN 2: SCROLLABLE GRID */}
                 <div className="col-main-content">
                     {loading && wallpapers.length === 0 ? (
                         <div className="loading" style={{ padding: '10rem 0' }}>LOADING...</div>
                     ) : (
-                        <WallpaperList wallpapers={wallpapers} isAlternating={false} />
+                        <>
+                            <WallpaperList wallpapers={wallpapers} isAlternating={false} />
+                            <Footer style={{ marginTop: '2rem' }} />
+                        </>
                     )}
                 </div>
 
-                {/* COLUMN 3: TOOLS PANEL */}
-                <div className="col-tools-panel">
-                    {/* Search Section */}
-                    <div className="tool-section">
-                        {/* <h3>SEARCH</h3> */}
-                        <div style={{ position: 'relative', borderBottom: '1px solid #000' }}>
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.5rem 0',
-                                    border: 'none',
-                                    backgroundColor: 'transparent',
-                                    fontSize: '0.7rem',
-                                    letterSpacing: '0.1em',
-                                    outline: 'none',
-                                    textTransform: 'uppercase'
-                                }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Links Section */}
-                    <div className="tool-section">
-                        <h3>DISCOVERY</h3>
-                        <Link to="/try-it-on" className="tool-link">
-                            <Layout size={16} /> TRY IT ON YOUR WALL
-                        </Link>
-                        <Link to="/ai-recommendations" className="tool-link">
-                            <Sparkles size={16} /> AI RECOMMENDATIONS
-                        </Link>
-                    </div>
-
-                    {/* User Section */}
-                    <div className="tool-section">
-                        <h3>ACCOUNT</h3>
-                        <div className="user-display">
-                            <User size={16} />
-                            <span className="user-name-label">
-                                {user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : "GUEST"}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <SidebarRight
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    user={user}
+                />
             </div>
         </div>
     );

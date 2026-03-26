@@ -1,0 +1,195 @@
+/* --- MOBILE SPECIFIC UX ENHANCEMENTS --- */
+@media (max-width: 768px) {
+  /* Force Edge-to-Edge Content */
+  .container, 
+  .main-content, 
+  .home-page, 
+  .catalog-page, 
+  .detail-page,
+  .hero-content-GB,
+  .desktop-layout-container,
+  .detail-layout-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Hide Redundant Components on Mobile */
+  .footer,
+  .zara-detail-actions {
+    display: none !important;
+  }
+
+  /* Reset body padding for mobile header */
+  body {
+    padding-top: 60px !important; /* Space for the top header */
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Mobile Top Header - Zara Inspired */
+  .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+    z-index: 2500;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-header-inner {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.2rem;
+  }
+
+  .mobile-header-left, .mobile-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex: 1;
+  }
+
+  .mobile-header-right {
+    justify-content: flex-end;
+  }
+
+  .mobile-header-menu-btn, .mobile-header-icon-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+  }
+
+  .mobile-header-logo {
+    flex: 0 0 auto;
+  }
+
+  .mobile-header-logo img {
+    height: 38px; /* Slightly larger for presence */
+    width: auto;
+    display: block;
+  }
+
+  /* Bottom Navigation - Luxury Floating Look */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 2000;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -5px 25px rgba(0,0,0,0.04);
+  }
+
+  .mobile-bottom-nav .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #999;
+    text-decoration: none;
+    font-size: 0.55rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex: 1;
+    height: 100%;
+  }
+
+  .mobile-bottom-nav .nav-item.active {
+    color: #000;
+    font-weight: 700;
+  }
+
+  /* Sticky Product Actions - Zara Inspired */
+  .mobile-sticky-actions {
+    position: fixed;
+    bottom: 70px; /* Sits exactly above bottom nav */
+    left: 0;
+    width: 100%;
+    padding: 1.2rem 1rem;
+    background: linear-gradient(to top, rgba(255,255,255,1) 80%, rgba(255,255,255,0));
+    display: flex;
+    gap: 0.8rem;
+    z-index: 1000;
+  }
+
+  .mobile-action-btn {
+    flex: 1;
+    height: 50px;
+    border-radius: 2px;
+    font-weight: 600;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.1s;
+  }
+
+  .mobile-action-btn:active {
+    transform: scale(0.97);
+  }
+
+  .mobile-action-btn.primary {
+    background: #000;
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  }
+
+  .mobile-action-btn.secondary {
+    background: #fff;
+    color: #000;
+    border: 1px solid #000;
+  }
+
+  /* Structural Adjustments to avoid overlapping content */
+  .col-main-content {
+    padding-bottom: 150px !important;
+  }
+
+  /* Gallery Modal Adjustments */
+  .gallery-sidebar {
+    bottom: 85px !important; /* Above bottom nav */
+  }
+}
+
+/* Ensure these are GONE on desktop/tablet */
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}

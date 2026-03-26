@@ -1,0 +1,144 @@
+.static-page {
+    padding: 8rem 10% 8rem 10%;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.8;
+}
+
+.static-page-header {
+    text-align: center;
+    margin-bottom: 6rem;
+}
+
+.static-page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.static-breadcrumb {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #999;
+}
+
+.static-breadcrumb a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.static-breadcrumb a:hover {
+    color: #000;
+}
+
+.static-content-section {
+    margin-bottom: 5rem;
+}
+
+.static-content-section h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.static-content-section h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: #000;
+}
+
+.static-text {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+.static-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4rem;
+    margin-top: 3rem;
+}
+
+.contact-box {
+    padding: 2.5rem;
+    background: #fcfcfc;
+    border: 1px solid #f0f0f0;
+}
+
+.contact-box h3 {
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    color: #888;
+}
+
+.contact-box p {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+/* FAQ Accordion */
+.faq-list {
+    margin-top: 2rem;
+}
+
+.faq-item {
+    border-bottom: 1px solid #eee;
+    padding: 1.5rem 0;
+}
+
+.faq-question {
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem 0;
+}
+
+.faq-question h4 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+    color: #000;
+    transition: opacity 0.2s;
+}
+
+.faq-question:hover h4 {
+    opacity: 0.6;
+}
+
+.faq-answer {
+    padding: 1rem 0;
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.7;
+}
+
+@media (max-width: 1024px) {
+    .static-page {
+        padding: 6rem 5% 6rem 5%;
+    }
+    .static-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+}

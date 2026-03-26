@@ -5,13 +5,16 @@ import { fetchWallpaperBySlug, fetchWallpapers, fetchGroups, fetchCategories } f
 import RelatedProductCarousel from '../components/RelatedProductCarousel';
 import VisualizerModal from '../components/VisualizerModal';
 import EnquiryModal from '../components/EnquiryModal';
+import SidebarLeft from '../components/SidebarLeft';
+import SidebarRight from '../components/SidebarRight';
 import FloatingProductBar from '../components/FloatingProductBar';
 import GroupList from '../components/GroupList';
 import CategoryList from '../components/CategoryList';
+import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
-import { 
-    Sparkles, Layout, Search, User, CheckCircle, XCircle, 
-    Home, Heart, Star, Smile, Coffee, Feather, Zap, 
+import {
+    Sparkles, Layout, Search, User, CheckCircle, XCircle,
+    Home, Heart, Star, Smile, Coffee, Feather, Zap,
     Camera, Book, Brush, Sun
 } from 'lucide-react';
 import '../styles/App.css';
@@ -58,12 +61,41 @@ const WallpaperDetail = () => {
     const [activeTab, setActiveTab] = useState('about');
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [activeImage, setActiveImage] = useState(0);
+    const [isZoomed, setIsZoomed] = useState(false);
+    const [timeLapseProduct, setTimeLapseProduct] = useState(null);
+    const [isTimeLapsing, setIsTimeLapsing] = useState(false);
+    const [isScrollingManual, setIsScrollingManual] = useState(false);
+    const [dynamicPadding, setDynamicPadding] = useState(80); // Starts at 5rem (80px)
+
+    // Scroll-linked thumbnail tracking
+    useEffect(() => {
+        if (!isGalleryOpen || isZoomed) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (isScrollingManual) return;
+                
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const index = parseInt(entry.target.id.split('-')[2]);
+                        if (!isNaN(index)) {
+                            setActiveImage(index);
+                        }
+                    }
+                });
+            },
+            { threshold: 0.6 }
+        );
+
+        const items = document.querySelectorAll('.gallery-stack-item');
+        items.forEach((item) => observer.observe(item));
+
+        return () => observer.disconnect();
+    }, [isGalleryOpen, isZoomed, isScrollingManual]);
+
     const [productList, setProductList] = useState([]);
     const [listLoading, setListLoading] = useState(false);
     const [touchStart, setTouchStart] = useState(null);
-    const [timeLapseProduct, setTimeLapseProduct] = useState(null);
-    const [isTimeLapsing, setIsTimeLapsing] = useState(false);
-    const [isZoomed, setIsZoomed] = useState(false);
     const prevSlugRef = useRef(slug);
     const mainContentRef = useRef(null);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -72,9 +104,32 @@ const WallpaperDetail = () => {
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        const handleOpenVisualizer = () => setIsVisualizerOpen(true);
+
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        window.addEventListener('open-visualizer', handleOpenVisualizer);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('open-visualizer', handleOpenVisualizer);
+        };
     }, []);
+
+    useEffect(() => {
+        const mainDiv = mainContentRef.current;
+        if (!mainDiv) return;
+
+        const handleScroll = () => {
+            const stuck = mainDiv.scrollTop;
+            const newPadding = Math.max(0, 80 - stuck);
+            if (newPadding !== dynamicPadding) {
+                setDynamicPadding(newPadding);
+            }
+        };
+
+        mainDiv.addEventListener('scroll', handleScroll);
+        return () => mainDiv.removeEventListener('scroll', handleScroll);
+    }, [dynamicPadding]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -144,18 +199,22 @@ const WallpaperDetail = () => {
                     setActiveImage(0);
                 }
 
-                // If collection jump, fetch new list
+                // If collection jump or new product, fetch related wallpapers
                 const gId = data.groups?.[0]?.id;
                 const cId = data.categories?.[0]?.id;
 
-                if ((gId || cId) && productList.length === 0) {
+                // Always fetch related products if we have a group or category, 
+                // but we can optimize by checking if the IDs match what we already have
+                if (gId || cId) {
                     setListLoading(true);
                     const listData = await fetchWallpapers({
                         groupIds: gId ? [gId] : [],
                         categoryIds: cId ? [cId] : [],
                         activeOnly: 'true'
                     });
-                    setProductList(listData.slice(0, 50));
+                    // Filter out the current wallpaper from the related products
+                    const filteredList = listData.filter(p => p.slug !== slug);
+                    setProductList(filteredList.slice(0, 50));
                     setListLoading(false);
                 }
 
@@ -298,20 +357,16 @@ const WallpaperDetail = () => {
             </div>
 
             <div className="desktop-layout-container is-detail-view" style={{ paddingTop: '0', marginTop: '0' }}>
-                {/* COLUMN 1: FILTER TRIGGER (CATALOG NAV) */}
-                <div className="col-filter-trigger desktop-only" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    <div className="zara-breadcrumb" style={{ fontSize: '0.6rem', marginBottom: '0.5rem' }}>
-                        <Link to="/">HOME</Link> / <Link to="/catalog">CATALOG</Link> / <span>{wallpaper?.name}</span>
-                    </div>
-
-                    <div style={{ marginBottom: '2rem' }}>
-                        <GroupList groups={groups} selectedGroupIds={selectedGroupIds} onToggleGroup={handleToggleGroup} />
-                    </div>
-
-                    <div style={{ marginBottom: '2rem' }}>
-                        <CategoryList categories={categories} selectedCategoryIds={selectedCategoryIds} onToggleCategory={handleToggleCategory} />
-                    </div>
-                </div>
+                <SidebarLeft
+                    breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'CATALOG', path: '/catalog' }, { label: wallpaper?.name }]}
+                    groups={groups}
+                    selectedGroupIds={selectedGroupIds}
+                    onToggleGroup={handleToggleGroup}
+                    categories={allCategories}
+                    selectedCategoryIds={selectedCategoryIds}
+                    onToggleCategory={handleToggleCategory}
+                    showFilters={true}
+                />
 
                 {/* COLUMN 2: MAIN DETAIL CONTENT */}
                 <div ref={mainContentRef} className="col-main-content" style={{ paddingTop: 0, marginTop: 0 }}>
@@ -319,7 +374,11 @@ const WallpaperDetail = () => {
                         className="detail-page"
                         onTouchStart={handleTouchStart}
                         onTouchEnd={handleTouchEnd}
-                        style={{ touchAction: 'pan-y', paddingTop: 0, marginTop: 0 }}
+                        style={{ 
+                            touchAction: 'pan-y', 
+                            paddingTop: `${dynamicPadding}px`,
+                            transition: 'padding-top 0.05s linear' /* Smooth out scroll events */
+                        }}
                     >
                         <VisualizerModal
                             isOpen={isVisualizerOpen}
@@ -343,29 +402,54 @@ const WallpaperDetail = () => {
                                 >
                                     <button className="gallery-close" onClick={() => setIsGalleryOpen(false)}>&times;</button>
                                     <div className="gallery-layout">
-                                        <div className="gallery-main" style={{ overflow: 'hidden' }}>
-                                            <motion.img
-                                                key={activeImage}
-                                                src={wallpaper.images?.[activeImage]?.image_url}
-                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                animate={{
-                                                    opacity: 1,
-                                                    scale: isZoomed ? (isMobile ? 3 : 2.5) : 1,
-                                                    cursor: isZoomed ? 'grab' : 'zoom-in',
-                                                    x: isZoomed ? undefined : 0,
-                                                    y: isZoomed ? undefined : 0
-                                                }}
-                                                drag={isZoomed}
-                                                dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }}
-                                                onClick={() => !isZoomed && setIsZoomed(true)}
-                                                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                                style={{
-                                                    objectFit: 'contain',
-                                                    maxHeight: '90vh',
-                                                    width: '100%',
-                                                    height: '100%'
-                                                }}
-                                            />
+                                        <div className="gallery-sidebar">
+                                            {wallpaper.images?.map((img, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className={`gallery-thumb ${activeImage === idx ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setIsScrollingManual(true);
+                                                        setActiveImage(idx);
+                                                        document.getElementById(`gallery-img-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
+                                                        // Reset manual flag after scroll animation finishes
+                                                        setTimeout(() => setIsScrollingManual(false), 800);
+                                                    }}
+                                                >
+                                                    <img src={img.image_url} alt="Gallery Thumb" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div 
+                                            className="gallery-main" 
+                                            style={{ 
+                                                overflow: isZoomed ? 'hidden' : 'auto',
+                                                cursor: isZoomed ? 'grab' : 'zoom-in'
+                                            }}
+                                        >
+                                            {wallpaper.images?.map((img, idx) => (
+                                                <div key={idx} id={`gallery-img-${idx}`} className="gallery-stack-item">
+                                                    <motion.img
+                                                        src={img.image_url}
+                                                        initial={{ opacity: 1, scale: 1 }}
+                                                        whileInView={{ opacity: 1, scale: 1 }}
+                                                        viewport={{ once: true }}
+                                                        animate={{
+                                                            scale: isZoomed ? (isMobile ? 3 : 2.5) : 1,
+                                                            x: isZoomed ? undefined : 0,
+                                                            y: isZoomed ? undefined : 0
+                                                        }}
+                                                        drag={isZoomed}
+                                                        dragListener={isZoomed}
+                                                        dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
+                                                        dragElastic={0.1}
+                                                        onTap={() => setIsZoomed(!isZoomed)}
+                                                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                                        className="gallery-main-img"
+                                                        style={{ touchAction: isZoomed ? 'none' : 'pan-y' }}
+                                                    />
+                                                </div>
+                                            ))}
+                                            
                                             {isZoomed && (
                                                 <button
                                                     className="zoom-close-btn"
@@ -377,34 +461,6 @@ const WallpaperDetail = () => {
                                                     &times;
                                                 </button>
                                             )}
-                                            <div className="zoom-indicator">
-                                                {isZoomed ? 'DRAG TO MOVE' : 'TAP TO ZOOM'}
-                                            </div>
-                                        </div>
-                                        <div className="gallery-sidebar">
-
-
-                                            {wallpaper.images?.map((img, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className={`gallery-thumb ${activeImage === idx ? 'active' : ''}`}
-                                                    onClick={async () => {
-                                                        if (idx === activeImage) return;
-                                                        // Internal Time-Lapse for Image Selection
-                                                        setIsTimeLapsing(true);
-                                                        const direction = idx > activeImage ? 1 : -1;
-                                                        for (let i = activeImage + direction; direction > 0 ? i < idx : i > idx; i += direction) {
-                                                            setTimeLapseProduct({ ...wallpaper, images: [wallpaper.images[i]] });
-                                                            await new Promise(r => setTimeout(r, 20));
-                                                        }
-                                                        setIsTimeLapsing(false);
-                                                        setTimeLapseProduct(null);
-                                                        setActiveImage(idx);
-                                                    }}
-                                                >
-                                                    <img src={img.image_url} alt="Gallery Thumb" />
-                                                </div>
-                                            ))}
                                         </div>
                                     </div>
                                 </motion.div>
@@ -541,49 +597,62 @@ const WallpaperDetail = () => {
                                     {/* ── Fit Guide: Choose if + Avoid if + Ideal For ── */}
                                     <div className={isMobile ? (activeTab === 'fit' ? 'info-tab-panel active' : 'info-tab-panel') : ''}>
                                         {/* Choose this design if */}
-                                        {wallpaper.choose_if && (
-                                            <div className="story-section" style={isMobile && activeTab === 'fit' ? { borderTop: 'none', paddingTop: 0 } : {}}>
-                                                <h4 className="story-label">Choose this design if…</h4>
-                                                <ul className="story-list fit-well">
-                                                    {wallpaper.choose_if.split('|').filter(v => v.trim()).map((v, i) => (
-                                                        <li key={i}>
-                                                            <CheckCircle size={16} className="fit-icon success" />
-                                                            <span>{v.trim()}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
+                                        <div className="story-section" style={isMobile && activeTab === 'fit' ? { borderTop: 'none', paddingTop: 0 } : {}}>
+                                            <h4 className="story-label">Choose this design if…</h4>
+                                            <ul className="story-list">
+                                                {(wallpaper.choose_if ? wallpaper.choose_if.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
+                                                    "You seek a sophisticated, high-end atmosphere for your space",
+                                                    "You appreciate intricate textures and premium finishes",
+                                                    "You want a durable and long-lasting wall covering",
+                                                    "This design complements modern and contemporary furniture",
+                                                    "You seek a statement piece that transforms your entire room"
+                                                ]).filter(v => v && v.trim()).map((v, i) => (
+                                                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', marginBottom: '0.8rem' }}>
+                                                        <CheckCircle size={16} className="fit-icon success" style={{ marginTop: '0.2rem', flexShrink: 0 }} />
+                                                        <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: '1.4' }}>{v.trim()}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
 
                                         {/* Avoid if */}
-                                        {wallpaper.avoid_if && (
-                                            <div className="story-section">
-                                                <h4 className="story-label">Avoid if…</h4>
-                                                <ul className="story-list fit-bad">
-                                                    {wallpaper.avoid_if.split('|').filter(v => v.trim()).map((v, i) => (
-                                                        <li key={i}>
-                                                            <XCircle size={16} className="fit-icon error" />
-                                                            <span>{v.trim()}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
+                                        <div className="story-section">
+                                            <h4 className="story-label">Avoid if…</h4>
+                                            <ul className="story-list">
+                                                {(wallpaper.avoid_if ? wallpaper.avoid_if.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
+                                                    "The wall surface has significant unaddressed dampness",
+                                                    "You are looking for a completely smooth, non-textured surface",
+                                                    "You prefer extremely high-contrast or neon color patterns",
+                                                    "The room receives constant direct abrasive contact"
+                                                ]).filter(v => v && v.trim()).map((v, i) => (
+                                                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', marginBottom: '0.8rem' }}>
+                                                        <XCircle size={16} className="fit-icon error" style={{ marginTop: '0.2rem', flexShrink: 0 }} />
+                                                        <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: '1.4' }}>{v.trim()}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
 
                                         {/* Ideal For */}
-                                        {wallpaper.ideal_for && (
-                                            <div className="story-section">
-                                                <h4 className="story-label">Ideal For</h4>
-                                                <div className="story-chips">
-                                                    {wallpaper.ideal_for.split(/[•.,|]/).filter(v => v.trim()).map((v, i) => (
-                                                        <span key={i} className="story-chip ideal">
+                                        <div className="story-section">
+                                            <h4 className="story-label">Ideal For</h4>
+                                            <ul className="story-list">
+                                                {(wallpaper.ideal_for ? wallpaper.ideal_for.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
+                                                    "Bedroom",
+                                                    "Living Room",
+                                                    "Hallway",
+                                                    "Office Space",
+                                                    "Feature Wall"
+                                                ]).filter(v => v && v.trim()).map((v, i) => (
+                                                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', marginBottom: '0.8rem' }}>
+                                                        <span className="fit-icon success" style={{ display: 'flex', alignItems: 'center', marginTop: '0.2rem', flexShrink: 0 }}>
                                                             {getIconForItem(v)}
-                                                            {v.trim()}
                                                         </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
+                                                        <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: '1.4' }}>{v.trim()}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
 
                                         {/* Empty state for fit tab */}
                                         {isMobile && activeTab === 'fit' && !wallpaper.choose_if && !wallpaper.avoid_if && !wallpaper.ideal_for && (
@@ -612,17 +681,6 @@ const WallpaperDetail = () => {
                                 {/* Part 3: Residue Gallery Section */}
                                 <div className="detail-residue-section">
                                     <div className="detail-image-grid">
-                                        {wallpaper.videos?.map((vid, idx) => (
-                                            <video
-                                                key={`vid-${idx}`}
-                                                src={vid.video_url}
-                                                className="detail-grid-video"
-                                                muted
-                                                loop
-                                                playsInline
-                                                autoPlay
-                                            />
-                                        ))}
                                         {wallpaper.images?.slice(1).map((img, idx) => (
                                             <img
                                                 key={idx + 1}
@@ -635,20 +693,35 @@ const WallpaperDetail = () => {
                                                 }}
                                             />
                                         ))}
+                                        {wallpaper.videos?.map((vid, idx) => (
+                                            <video
+                                                key={`vid-${idx}`}
+                                                src={vid.video_url}
+                                                className="detail-grid-video"
+                                                muted
+                                                loop
+                                                playsInline
+                                                autoPlay
+                                            />
+                                        ))}
                                     </div>
                                 </div>
                             </motion.div>
                         </AnimatePresence>
 
                         {/* RELATED PRODUCTS SECTION */}
-                        {!loading && productList.length > 0 && (
+                        {!listLoading && productList.length > 0 && (
                             <section className="related-wallpapers-section">
-                                <h2 className="related-title">YOU MAY BE INTERESTED IN</h2>
+                                <h2 className="related-title">SIMILAR ARTWORKS YOU MAY LIKE</h2>
                                 <div className="related-zara-grid">
                                     {productList.slice(0, 12).map((item) => (
                                         <Link key={item.id} to={`/wallpaper/${item.slug}`} className="related-item">
                                             <div className="related-img-container">
-                                                <img src={item.images?.[0]?.image_url} alt={item.name} />
+                                                <img
+                                                    src={item.images?.[0]?.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
+                                                    alt={item.name}
+                                                    loading="lazy"
+                                                />
                                             </div>
                                             <div className="related-info">
                                                 <span className="related-name">{item.name}</span>
@@ -660,72 +733,49 @@ const WallpaperDetail = () => {
                             </section>
                         )}
 
-                        {/* <FloatingProductBar
-                            currentSlug={slug}
-                            groupId={firstGroupId}
-                            categoryId={firstCategoryId}
-                            products={productList}
-                            loading={listLoading}
-                        /> */}
+                        {listLoading && (
+                            <section className="related-wallpapers-section">
+                                <h2 className="related-title">DISCOVER MORE</h2>
+                                <div className="related-zara-grid">
+                                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                                        <div key={i} className="related-item skeleton-loader" style={{ height: '300px', background: '#f5f5f5' }}></div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        <Footer style={{ marginTop: '4rem', borderTop: '1px solid #f0f0f0' }} />
                     </div>
                 </div>
 
-                {/* COLUMN 3: TOOLS PANEL */}
-                <div className="col-tools-panel desktop-only">
-                    {/* Search Section */}
-                    <div className="tool-section">
-                        {/* <h3>SEARCH</h3> */}
-                        <div style={{ position: 'relative', borderBottom: '1px solid #000' }}>
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={handleMobileSearch}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.5rem 0',
-                                    border: 'none',
-                                    backgroundColor: 'transparent',
-                                    fontSize: '0.7rem',
-                                    letterSpacing: '0.1em',
-                                    outline: 'none',
-                                    textTransform: 'uppercase'
-                                }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Discovery Section */}
-                    <div className="tool-section">
-                        <h3>DISCOVERY</h3>
-                        <Link to="/try-it-on" className="tool-link">
-                            <Layout size={16} /> TRY IT ON YOUR WALL
-                        </Link>
-                        <Link to="/ai-recommendations" className="tool-link">
-                            <Sparkles size={16} /> AI RECOMMENDATIONS
-                        </Link>
-                    </div>
-
-                    {/* Actions Section */}
+                <SidebarRight 
+                    searchQuery={searchQuery} 
+                    onSearchChange={setSearchQuery} 
+                    user={user}
+                >
                     <div className="tool-section">
                         <h3>ACTIONS</h3>
-                        <button onClick={() => setIsEnquiryOpen(true)} className="tool-link" style={{ background: 'none', border: 'none', width: '100%', padding: 0 }}>
+                        <button onClick={() => setIsEnquiryOpen(true)} className="tool-link" style={{ background: 'none', border: 'none', width: '100%', padding: 0, textAlign: 'left' }}>
                             ENQUIRE NOW
                         </button>
                     </div>
+                </SidebarRight>
+            </div>
 
-                    {/* User Section */}
-                    <div className="tool-section">
-                        <h3>ACCOUNT</h3>
-                        <div className="user-display">
-                            <User size={16} />
-                            <span className="user-name-label">
-                                {user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : "GUEST"}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+            {/* Mobile Sticky Action Bar */}
+            <div className="mobile-sticky-actions mobile-only">
+                <button 
+                    className="mobile-action-btn primary"
+                    onClick={() => setIsVisualizerOpen(true)}
+                >
+                    <Camera size={18} /> TRY ON WALL
+                </button>
+                <button 
+                    className="mobile-action-btn secondary"
+                    onClick={() => setIsEnquiryOpen(true)}
+                >
+                    ENQUIRE
+                </button>
             </div>
         </div>
     );

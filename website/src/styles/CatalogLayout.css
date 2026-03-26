@@ -5,18 +5,21 @@
     gap: 2.5rem;
     padding: 0 1.5% 0 0 !important;
     margin-left: 0rem !important;
-    /* Align with header by counteracting main padding */
     width: calc(100% + 1rem) !important;
     height: calc(100vh - var(--navbar-height));
-    align-items: flex-start;
+    /* Fixed height to keep sidebars fixed */
+    align-items: stretch;
     overflow: hidden;
+    /* Prevent parent from scrolling */
     margin-top: 0 !important;
 }
 
 .col-main-content {
     height: 100%;
     overflow-y: auto;
-    /* padding-right: 1.5rem; */
+    /* Internal scroll for the feed */
+    scrollbar-width: none;
+    /* Hide scrollbar for Zap styling */
     padding-top: 0 !important;
     flex: 1;
     width: 100%;
@@ -40,8 +43,10 @@
         grid-template-columns: 1fr;
         display: block;
         padding: 0 1rem !important;
-        /* symmetrical sidebar-like breathing room */
         margin: 0 !important;
+        height: auto !important;
+        /* Allow natural scroll for mobile */
+        overflow: visible !important;
     }
 
     .desktop-layout-container.is-detail-view {
@@ -51,8 +56,10 @@
 
     .col-main-content {
         padding: 0 !important;
-        /* rely on parent padding */
         margin: 0 !important;
+        height: auto !important;
+        /* Remove internal scroll for mobile */
+        overflow: visible !important;
     }
 }
 
@@ -216,19 +223,29 @@
 .zara-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 50px;
+    gap: 50px 30px; /* Tighter horizontal gap, larger vertical for editorial feel */
     padding-bottom: 8rem;
 }
 
-.zara-product-card:first-child {
+.editorial-span-2 {
     grid-column: span 2;
-    margin-bottom: 0rem;
+    margin-bottom: 2rem;
 }
 
-.zara-product-card:first-child .image-container {
+.editorial-span-2 .image-container {
     aspect-ratio: auto;
-    height: 100vh;
-    /* Match the tall immersive Zara height */
+    height: 90vh; /* Immersive tall height for highlighted products */
+}
+
+/* Ensure mobile also supports the mixed 1/2 column feel where possible */
+@media (max-width: 768px) {
+    .zara-grid {
+        gap: 30px 15px;
+    }
+    
+    .editorial-span-2 .image-container {
+        height: 60vh;
+    }
 }
 
 
@@ -268,16 +285,22 @@
     padding: 0;
     min-height: calc(100vh - var(--navbar-height));
     align-items: stretch;
+    overflow: visible;
+    /* Allow window scroll for footer */
 }
 
 .detail-hero-section {
     grid-area: hero;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-bottom: 20px;
 }
 
 .detail-hero-image {
     width: 100%;
-    height: 100vh;
+    flex: 1;
     object-fit: cover;
     cursor: pointer;
 }
@@ -561,7 +584,7 @@
         width: 100%;
         height: auto;
         padding: 0 !important;
-        margin: 0 !important;
+        margin: 0 0 20px 0 !important;
     }
 
     .detail-hero-image {
@@ -789,6 +812,7 @@
         color: #555;
     }
 }
+
 .swatch-section {
     margin-top: 1.5rem;
 }
@@ -800,7 +824,7 @@
     overflow: hidden;
     border: 1px solid var(--border-color);
     background: var(--bg-dark);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .swatch-preview img {
@@ -875,4 +899,3 @@
 .fit-icon.error {
     color: #c62828;
 }
-

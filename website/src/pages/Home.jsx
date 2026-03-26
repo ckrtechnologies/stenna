@@ -1,17 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import {
-    ShieldCheck,
-    Globe,
-    Star,
-    Layers,
-    Sparkles,
-    Layout,
-    ChevronRight,
-    ArrowRight
-} from 'lucide-react';
 import { fetchGroups } from '../services/api';
 import FloatingProductBar from '../components/FloatingProductBar';
+import HeroCarousel from '../components/HeroCarousel';
+import Footer from '../components/Footer';
 import '../styles/Home.css';
 
 const Home = () => {
@@ -33,99 +25,179 @@ const Home = () => {
         loadGroups();
     }, []);
 
-    // Curated high-end fallback images for Zara aesthetic
+    // High-end generated images for collections
+    const collectionImages = {
+        'Plain & Textured': '/home/cat-plain.png',
+        'Nature & Stone': '/home/cat-nature.png',
+        'Classic': '/home/cat-classic.png',
+        'Modern & Geometrical': '/home/cat-modern.png',
+        'Room': '/home/cat-plain.png',
+        'Colour': '/home/cat-nature.png',
+        'Style': '/home/cat-classic.png',
+        'Textures': '/home/cat-modern.png'
+    };
+
     const fallbackImages = [
-        'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1600607687920-4e5252c35a93?auto=format&fit=crop&q=80'
+        '/home/cat-plain.png',
+        '/home/cat-nature.png',
+        '/home/cat-classic.png',
+        '/home/cat-modern.png'
     ];
 
     return (
         <div className="home-page">
             <div className="zara-container">
                 {/* 01. HERO SECTION */}
-                {/* <section className="hero-minimal-v2 zara-hero">
-                    <div className="hero-content">
-                        <span className="zara-label">STENNA COLLECTION</span>
-                        <h1 className="zara-hero-title">PURE <br /> MATERIALITY.</h1>
-                        <Link to="/catalog" className="btn-zara-outline">ENTER ARCHIVE</Link>
-                    </div>
-                </section> */}
+                <HeroCarousel />
 
-
-                {/* DYNAMIC GROUPS SECTIONS */}
-                {loading ? (
-                    <div style={{ padding: '10rem', textAlign: 'center', letterSpacing: '2px', textTransform: 'uppercase', color: '#000', fontWeight: '800' }}>
-                        Loading Collections...
+                {/* 02. INSTALLATION VIDEO SECTION */}
+                <section className="video-installation-section">
+                    <span className="section-label" style={{ justifyContent: 'center' }}>EXPERTISE</span>
+                    <h2 style={{ fontSize: '3rem', marginBottom: '1.5rem', fontWeight: 700 }}>Professional Wallpaper Installation</h2>
+                    <p style={{ maxWidth: '800px', margin: '0 auto', opacity: '0.6', lineHeight: 1.8 }}>
+                        Experience the precision of our master installers. We ensure every seam is invisible and every pattern is perfectly aligned, bringing your vision to life with artisanal care.
+                    </p>
+                    <div className="video-container">
+                        <video
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        >
+                            <source src="https://res.cloudinary.com/dqfjrhlrl/video/upload/v1774531281/vid_1_mxl4gs.mp4" type="video/mp4" />
+                            Your browser does not support the video tag.
+                        </video>
                     </div>
-                ) : (
-                    groups.map((group, index) => (
-                        <section key={group.id} className="zara-section">
-                            <div className="zara-content-block">
-                                <span className="section-label" style={{ color: '#000', fontWeight: '900' }}>
-                                    COLLECTION No. {index + 1} &mdash; {group.name}
-                                </span>
-                                <h2 style={{ fontWeight: '900' }}>
-                                    {group.name.split(' ').map((word, i) => (
-                                        <React.Fragment key={i}>
-                                            {word} {i === 0 && <br />}
-                                        </React.Fragment>
-                                    ))}
-                                </h2>
-                                <p style={{ color: '#000', fontWeight: '500' }}>
-                                    {group.description || "Discover the essence of architectural purity with our hand-curated collection of premium wall coverings."}
-                                </p>
-                                <div className="infographic-points" style={{ marginTop: '1.5rem', marginBottom: '2rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#000', fontWeight: '600' }}>
-                                        <ChevronRight size={14} /> <span>Hand-crafted textures</span>
+                </section>
+
+                {/* 03. ECO-FRIENDLY SPLIT SECTION */}
+                <section className="eco-friendly-split">
+                    <div className="eco-image-side">
+                        <img src="/home/eco-forest.png" alt="Eco-friendly Forest" />
+                    </div>
+                    <div className="eco-text-side">
+                        <span className="section-label">SUSTAINABILITY</span>
+                        <h2>Stenna Wallpaper Company Prides Itself With The Best Eco-Friendly Products In The World</h2>
+                        <p>
+                            By establishing a new factory, Stenna wallpaper adopted a water-based ink applying production process for PVC and Duplex wallpaper for the first time in India and is fulfilling advanced eco-friendly management.
+                        </p>
+                        <Link to="/catalog" className="eco-shop-link">Shop Now</Link>
+                    </div>
+                </section>
+
+                {/* 04. EVERYTHING YOU NEED */}
+                <section className="everything-section">
+                    <div className="everything-section-header">
+                        <span className="section-label" style={{ justifyContent: 'center' }}>OUR PROMISE</span>
+                        <h2>Providing Everything <span>You Need</span></h2>
+                        <p style={{ maxWidth: '700px', margin: '1.5rem auto', fontSize: '0.9rem', opacity: 0.6 }}>
+                            We leave no stone unturned when it comes to making your home look beautiful. We have got you covered with our best interior design consultants, wall repair experts and color enthusiasts.
+                        </p>
+                    </div>
+                    <div className="everything-grid-v2">
+                        <div className="everything-card-v2">
+                            <div className="card-image-wrapper">
+                                <img src="/home/adhesive.png" alt="Adhesive For Indian Walls" />
+                            </div>
+                            <h3>Adhesive For Indian Walls</h3>
+                            <p>We have manufactured a wallpaper adhesive especially for Indian walls. It gives immediate grab, gives enough working time, and is easy to wipe off.</p>
+                        </div>
+                        <div className="everything-card-v2">
+                            <div className="card-image-wrapper">
+                                <img src="/home/warranty.png" alt="3 Years Peel Off Warranty" />
+                            </div>
+                            <h3>3 Years Peel Off Warranty</h3>
+                            <p>We are happy to come and fix any issues that you are currently facing with respect to your wallpaper furnishings. We offer a 3-year guarantee on all installations.</p>
+                        </div>
+                        <div className="everything-card-v2">
+                            <div className="card-image-wrapper">
+                                <img src="/home/installation.png" alt="8 Hours Installation" />
+                            </div>
+                            <h3>8 Hours Installation</h3>
+                            <p>Book an appointment and clear all your doubts. Our wallpaper experts are available for a free of cost and in-depth consultation every day.</p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 05. TECHNIQUES SECTION */}
+                <section className="techniques-section-v2">
+                    <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
+                        <span className="section-label" style={{ justifyContent: 'center', color: '#fff' }}>INNOVATION</span>
+                        <h2>Techniques That Set Stenna Wallpapers Apart</h2>
+                    </div>
+                    <div className="techniques-grid-v2">
+                        <div className="technique-card-v2">
+                            <div className="tech-image-wrapper">
+                                <img src="/home/tech-factory.png" alt="World Class Manufacturing Facility" />
+                            </div>
+                            <h4>World Class Manufacturing Facility</h4>
+                            <p>Stenna wallpapers come with the assurance of accuracy from capture to export, consistently and flawlessly.</p>
+                        </div>
+                        <div className="technique-card-v2">
+                            <div className="tech-image-wrapper">
+                                <img src="/home/tech-color.png" alt="Colour & Calibration" />
+                            </div>
+                            <h4>Colour & Calibration</h4>
+                            <p>Color is one of our greatest allies. We understand the hues and how they fit with your design theory to achieve mesmerizing results.</p>
+                        </div>
+                        <div className="technique-card-v2">
+                            <div className="tech-image-wrapper">
+                                <img src="/home/tech-emboss.png" alt="Embossing Roller" />
+                            </div>
+                            <h4>Embossing Roller</h4>
+                            <p>We take immense pride in our embossing technology, adapted from European counterparts to focus on designs created by global artisans.</p>
+                        </div>
+                        <div className="technique-card-v2">
+                            <div className="tech-image-wrapper">
+                                <img src="/home/tech-paper.png" alt="PVC & Paper Quality" />
+                            </div>
+                            <h4>PVC & Paper Quality</h4>
+                            <p>All the paper used at Stenna is of the highest quality, ensuring powerful results and long-lasting durability for Every home.</p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 06. ARCHIVE SECTION */}
+                <section className="archive-section">
+                    <div className="archive-header">
+                        <span className="section-label" style={{ justifyContent: 'center' }}>ARCHIVE</span>
+                        <h2>Our Current Collections</h2>
+                    </div>
+                    {loading ? (
+                        <div style={{ padding: '5rem', textAlign: 'center', letterSpacing: '2px', textTransform: 'uppercase', color: '#000', fontWeight: '800' }}>
+                            Loading Collections...
+                        </div>
+                    ) : (
+                        <div className="everything-grid-v2">
+                            {groups.map((group) => (
+                                <Link
+                                    to={`/catalog?group=${group.id}`}
+                                    key={group.id}
+                                    className="everything-card"
+                                    style={{ textDecoration: 'none', color: 'inherit', padding: '0', overflow: 'hidden', border: 'none' }}
+                                >
+                                    <div style={{ height: '500px', overflow: 'hidden', background: '#f5f5f5' }}>
+                                        <img
+                                            src={collectionImages[group.name] || group.image_url || fallbackImages[groups.indexOf(group) % fallbackImages.length]}
+                                            alt={group.name}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 1.2s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                        />
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#000', fontWeight: '600' }}>
-                                        <ChevronRight size={14} /> <span>Sustainable premium materials</span>
+                                    <div style={{ padding: '2.5rem', textAlign: 'center' }}>
+                                        <h3 style={{ fontSize: '0.9rem', letterSpacing: '0.2rem', textTransform: 'uppercase' }}>{group.name}</h3>
+                                        <div style={{ width: '40px', height: '1px', background: '#eee', margin: '1.5rem auto' }}></div>
+                                        <p style={{ fontSize: '0.65rem', opacity: '0.5', letterSpacing: '0.1rem' }}>DISCOVER ARCHIVE</p>
                                     </div>
-                                </div>
-                                <Link to={`/catalog?group=${group.id}`} className="btn-zara-link" style={{ fontWeight: '800' }}>
-                                    Explore {group.name} Collection <ArrowRight size={14} style={{ marginLeft: '8px', verticalAlign: 'middle' }} />
                                 </Link>
-                            </div>
-                            <div
-                                className="zara-visual-block"
-                                style={{
-                                    backgroundImage: `url(${group.image_url || fallbackImages[index % fallbackImages.length]})`
-                                }}
-                            >
-                                <div className="visual-block-overlay"></div>
-                            </div>
-                        </section>
-                    ))
-                )}
+                            ))}
+                        </div>
+                    )}
+                </section>
 
-                {/* FOOTER VALUES
-                <section style={{ padding: '10rem 0', textAlign: 'center', borderTop: '1px solid #efefef' }}>
-                    <h2 style={{ fontSize: '3.5rem', marginBottom: '5rem', letterSpacing: '8px', fontWeight: '300' }}>The Stenna Standard</h2>
-                    <div className="grid grid-cols-3" style={{ gap: '5rem', textAlign: 'left', padding: '0 5%' }}>
-                        <div>
-                            <span className="section-label" style={{ marginBottom: '1rem' }}>QUALITY</span>
-                            <h4 style={{ letterSpacing: '2px', marginBottom: '1rem', fontWeight: '800' }}>Italian Heritage</h4>
-                            <p style={{ color: '#666', fontSize: '0.9rem' }}>Artisanal quality produced in the world's most exclusive wallpaper mills in Florence.</p>
-                        </div>
-                        <div>
-                            <span className="section-label" style={{ marginBottom: '1rem' }}>TECH</span>
-                            <h4 style={{ letterSpacing: '2px', marginBottom: '1rem', fontWeight: '800' }}>Neural Search</h4>
-                            <p style={{ color: '#666', fontSize: '0.9rem' }}>Next-gen neural discovery engine for perfect pattern matching with proprietary vision algorithms.</p>
-                        </div>
-                        <div>
-                            <span className="section-label" style={{ marginBottom: '1rem' }}>SERVICE</span>
-                            <h4 style={{ letterSpacing: '2px', marginBottom: '1rem', fontWeight: '800' }}>White Glove</h4>
-                            <p style={{ color: '#666', fontSize: '0.9rem' }}>Direct consultation services and priority sampling for architects and luxury home-owners.</p>
-                        </div>
-                    </div>
-                    <div style={{ marginTop: '8rem' }}>
-                        <Link to="/ai-recommendations" className="btn-zara-solid">Book a Consultation</Link>
-                    </div>
-                </section> */}
-
-                {/* <FloatingProductBar /> */}
+                <Footer style={{ marginTop: '0', borderTop: '1px solid #f0f0f0' }} />
             </div>
         </div>
     );

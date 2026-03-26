@@ -1,241 +1,347 @@
-/* Typography Hub - Ensuring import for luxury feel */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap');
 
-.home-page {
-    --zara-white: #ffffff;
-    --zara-black: #000000;
-    --zara-grey: #f8f8f8;
-    background-color: var(--zara-white);
-    color: var(--zara-black);
-    min-height: 100vh;
+/* Hero Carousel Section */
+.hero-carousel-container {
+    height: 100vh;
     width: 100%;
-}
-
-/* Full Width within the Parent */
-.zara-container {
-    width: 100%;
-    margin: 0 auto;
-}
-
-/* Typography Hub */
-.home-page h1,
-.home-page h2,
-.home-page h3 {
-    font-family: 'Playfair Display', serif;
-    font-weight: 400;
-    margin: 0;
-    line-height: 1.1;
-    text-transform: uppercase;
-}
-
-.home-page p {
-    font-family: 'Inter', sans-serif;
-    font-size: 1rem;
-    line-height: 1.6;
-    letter-spacing: 0.05em;
-    color: var(--zara-black);
-    font-weight: 500;
-}
-
-/* Sectional Layout */
-.zara-section {
-    min-height: 90vh;
-    margin: 8rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0;
-    /* Removing gap for edge-to-edge feel */
-    overflow: hidden;
-}
-
-.zara-section:first-child {
-    margin-top: 0;
-}
-
-.zara-section:nth-child(even) {
-    flex-direction: row-reverse;
-}
-
-.zara-content-block {
-    flex: 1;
-    padding: 0 5%;
-}
-
-.zara-visual-block {
-    flex: 1.2;
-    height: 90vh;
-    background-color: #f9f9f9;
-    background-size: cover;
-    background-position: center;
     position: relative;
     overflow: hidden;
-    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    background: #000;
 }
 
-.visual-block-overlay {
+.hero-carousel-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+}
+
+.hero-overlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.1));
-    pointer-events: none;
+    background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.3) 100%);
+    z-index: 2;
 }
 
-.zara-visual-block:hover {
-    transform: scale(1.05);
+.hero-content-GB {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    text-align: center;
+    width: 90%;
+    max-width: 1000px;
 }
 
-/* Hero Section */
-.hero-minimal-v2 {
+.hero-script-text {
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(2.5rem, 8vw, 6rem); /* Reduced scale */
+    color: #fff;
+    margin-bottom: 0.5rem;
+    line-height: 1.1;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-weight: 400; /* Less bold */
+    text-transform: none !important;
+}
+
+.hero-subtitle-text {
+    font-size: 0.9rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+}
+
+.hero-cta-btn {
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: #fff !important;
+    padding: 1.2rem 3rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.8rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.hero-cta-btn:hover {
+    background: #fff !important;
+    color: #000 !important;
+    transform: translateY(-5px);
+}
+
+/* Pagination Dots */
+.hero-pagination {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    gap: 15px;
+}
+
+.pagination-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.pagination-dot.active {
+    background: #fff;
+    transform: scale(1.4);
+    box-shadow: 0 0 15px rgba(255,255,255,0.5);
+}
+
+/* Global Spacing Refinement */
+.zara-container {
+    background: #fff;
+}
+
+/* Video Installation Section */
+.video-installation-section {
+    padding: 6rem 5%; /* Reduced from 10rem */
+    background: #fff;
+    text-align: center;
+}
+
+.video-container {
+    width: 100%;
+    margin: 3rem 0 0;
+    aspect-ratio: 16/9;
+    background: #080808;
     position: relative;
+    overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.1);
+}
+
+/* 03. NEW ECO-FRIENDLY SPLIT SECTION */
+.eco-friendly-split {
+    display: flex;
+    min-height: 80vh;
+    background: #fdfaf5; /* Creamy background from screenshot */
+}
+
+.eco-image-side {
+    flex: 1;
+    overflow: hidden;
+}
+
+.eco-image-side img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.eco-text-side {
+    flex: 1;
+    padding: 8% 6%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    text-align: left;
-    overflow: hidden;
 }
 
-.hero-content {
-    z-index: 2;
-}
-
-.hero-minimal-v2 h1 {
-    font-size: clamp(3rem, 10vw, 6rem);
-    margin-bottom: 1.5rem;
-    letter-spacing: -2px;
-}
-
-.hero-minimal-v2 p {
-    font-size: 1.2rem;
-    max-width: 600px;
-    margin-bottom: 3rem;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    color: var(--zara-black);
+.eco-text-side h2 {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    line-height: 1.2;
+    margin-bottom: 2rem;
+    color: #333;
+    text-transform: none; /* Premium sentence case */
     font-weight: 700;
 }
 
-/* Zara Button Stylings */
-.btn-zara-solid {
-    display: inline-block;
-    padding: 1.2rem 3.5rem;
-    background: var(--zara-black);
-    color: white;
-    text-decoration: none;
-    font-weight: 600;
+.eco-text-side p {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: #666;
+    margin-bottom: 3rem;
+    max-width: 500px;
+}
+
+.eco-shop-link {
     font-size: 0.8rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    transition: all 0.3s ease;
-    border: 1px solid var(--zara-black);
+    color: #88c9d1; /* Blue/teal color from screenshot */
+    text-transform: none;
+    font-weight: 500;
 }
 
-.btn-zara-solid:hover {
-    background: transparent;
-    color: var(--zara-black);
+/* 04. EVERYTHING YOU NEED - REFINED */
+.everything-section {
+    padding: 6rem 5%;
+    background: #fff;
 }
 
-.btn-zara-link {
-    display: inline-block;
-    margin-top: 1.5rem;
-    color: var(--zara-black);
-    text-decoration: none;
-    font-weight: 600;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    position: relative;
+.everything-section-header {
+    text-align: center;
+    margin-bottom: 5rem;
 }
 
-.btn-zara-link::after {
-    content: '';
-    position: absolute;
+.everything-section-header h2 {
+    font-size: 3.5rem;
+}
+
+.everything-section-header h2 span {
+    color: #88c9d1; /* Highlight from screenshot */
+}
+
+.everything-grid-v2 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.everything-card-v2 {
+    text-align: center;
+}
+
+.card-image-wrapper {
     width: 100%;
-    height: 1px;
-    bottom: -4px;
-    left: 0;
-    background-color: var(--zara-black);
-    transform: scaleX(1);
-    transition: transform 0.3s ease;
-}
-
-.btn-zara-link:hover::after {
-    transform: scaleX(0.5);
-}
-
-/* Features List Labels */
-.section-label {
-    display: flex;
-    align-items: center;
-    font-size: 0.75rem;
-    font-weight: 900;
-    letter-spacing: 4px;
+    aspect-ratio: 4/3;
+    background: #f9f9f9;
     margin-bottom: 2rem;
-    color: var(--zara-black);
+    overflow: hidden;
+}
+
+.card-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.everything-card-v2 h3 {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.everything-card-v2 p {
+    font-size: 0.8rem;
+    line-height: 1.8;
+    color: #666;
+    padding: 0 10%;
+}
+
+/* 05. TECHNIQUES SECTION - REFINED (CONSISTENT) */
+.techniques-section-v2 {
+    padding: 6rem 5%;
+    background: #fff; /* Changed from teal to white for symmetry */
+    color: #333;
+    text-align: center;
+}
+
+.techniques-section-v2 h2 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    margin-bottom: 6rem;
+    color: #000;
+    font-weight: 700;
+    text-transform: none;
+}
+
+.techniques-grid-v2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6rem 10%; /* Increased gap for breathing room */
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.technique-card-v2 {
+    text-align: left; /* Left align for premium editorial look */
+    display: flex;
+    flex-direction: column;
+}
+
+.tech-image-wrapper {
+    width: 100%;
+    aspect-ratio: 16/10;
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+    background: #f9f9f9;
+}
+
+.tech-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.technique-card-v2:hover .tech-image-wrapper img {
+    transform: scale(1.03);
+}
+
+.technique-card-v2 h4 {
+    font-size: 1.4rem; /* Matching everything-card */
+    margin-bottom: 1.5rem;
+    color: #000;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.technique-card-v2 p {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: #666;
+    max-width: 550px;
+    margin: 0; /* Align left */
+}
+
+/* 06. ARCHIVE SECTION - REFINED */
+.archive-section {
+    padding: 6rem 5% !important;
+}
+
+.archive-header {
+    text-align: center;
+    margin-bottom: 5rem;
+}
+
+.archive-header h2 {
+    font-size: 3.5rem;
 }
 
 @media (max-width: 1024px) {
+    .everything-grid, .techniques-list {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+    
+    .hero-carousel-container {
+        height: 85vh;
+    }
 
-    .zara-section,
-    .zara-section:nth-child(even) {
-        flex-direction: column-reverse;
-        gap: 0;
+    .hero-script-text {
+        font-size: 3.5rem;
+        margin-bottom: 2.5rem;
+        padding: 0 1rem;
+    }
+
+    .hero-content-GB {
+        width: 100%;
         padding: 0;
-        margin: 0;
-        min-height: auto;
     }
 
-    .zara-content-block {
-        padding: 2rem 5%;
-        /* Highly reduced side padding for edge-to-edge feel */
+    .hero-cta-btn {
+        padding: 1rem 2rem !important;
+        font-size: 0.7rem !important;
     }
-
-    .hero-minimal-v2 h1 {
-        font-size: clamp(2.2rem, 8vw, 3.5rem);
-        /* Scalable font size */
-        letter-spacing: -1px;
-        /* Slightly looser letters on mobile */
-        word-break: break-word;
-    }
-
-    .zara-content-block h2 {
-        font-size: 2.2rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .hero-minimal-v2 p,
-    .zara-content-block p {
-        font-size: 1rem;
-        letter-spacing: 1px;
-        margin-bottom: 2rem;
-    }
-
-    .hero-badges {
-        flex-direction: column;
-        /* Stack badges on mobile to prevent cropping */
-        gap: 1.2rem !important;
-        margin-bottom: 2.5rem !important;
-        align-items: flex-start;
-    }
-
-    .section-label {
-        letter-spacing: 2px;
-        /* Reduced for mobile */
-        font-size: 0.7rem;
-    }
-
-    .btn-zara-solid {
-        padding: 1.2rem 2rem;
-        width: 100%;
-        text-align: center;
-    }
-
-    .zara-visual-block {
-        width: 100%;
-        height: 80vh;
-        flex: none;
+    
+    .eco-statement-section {
+        padding: 8rem 5%;
     }
 }
 
@@ -318,13 +424,58 @@
 }
 
 @media (max-width: 1024px) {
-    .floating-product-bar-v3 {
-        width: 100%;
-        height: 120px;
+    .eco-friendly-split {
+        flex-direction: column;
     }
 
-    .carousel-item-v3 {
-        flex: 0 0 100px;
-        height: 100px;
+    .eco-image-side {
+        height: 60vh;
+    }
+
+    .eco-text-side {
+        padding: 4rem 10%;
+    }
+
+    .everything-grid-v2 {
+        grid-template-columns: 1fr;
+        gap: 4rem;
+    }
+
+    .techniques-grid-v2 {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+
+    .technique-card-v2 {
+        text-align: center;
+    }
+
+    .technique-card-v2 p {
+        margin: 0 auto;
+    }
+
+    .archive-header h2, .everything-section-header h2, .techniques-section-v2 h2 {
+        font-size: 2.5rem;
+    }
+
+    .hero-carousel-container {
+        height: 85vh;
+    }
+
+    .hero-script-text {
+        font-size: 3.5rem;
+        margin-bottom: 2.5rem;
+        padding: 0 1rem;
+    }
+
+    .hero-content-GB {
+        width: 100%;
+        padding: 0;
+    }
+
+    .hero-cta-btn {
+        padding: 1rem 2rem !important;
+        font-size: 0.7rem !important;
     }
 }
+

@@ -39,16 +39,25 @@ const ZaraMenu = ({ isOpen, onClose, user, signOut }) => {
     if (!isOpen) return null;
 
     return (
-        <div className={`zara-menu-overlay ${isOpen ? 'open' : ''}`}>
+        <div 
+            className={`zara-menu-overlay ${isOpen ? 'open' : ''}`} 
+            onClick={(e) => {
+                if (e.target.classList.contains('zara-menu-overlay')) {
+                    onClose();
+                }
+            }}
+        >
             <div className="zara-menu-container">
                 <div className="zara-menu-header">
-                    <button className="zara-close-btn" onClick={onClose} style={{ padding: '0' }}>
+                    <button className="zara-close-btn" onClick={onClose} aria-label="Close menu">
                         <div className="zara-close-icon">
                             <div className="bar"></div>
                             <div className="bar"></div>
                         </div>
                     </button>
-                    <div className="zara-logo-large">STENNA</div>
+                    <div className="zara-logo-large-container">
+                        <img src="/logo.png" alt="STENNA" className="zara-logo-img-large" />
+                    </div>
                 </div>
 
                 <div className="zara-menu-content">

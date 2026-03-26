@@ -11,6 +11,9 @@ import AiRecommendations from '../pages/AiRecommendations';
 import WallpaperDetail from '../pages/WallpaperDetail';
 import Showcase from '../pages/Showcase';
 import ProtectedRoute from '../components/ProtectedRoute';
+import About from '../pages/About';
+import Contact from '../pages/Contact';
+import FAQ from '../pages/FAQ';
 
 const AppRoutes = () => {
     return (
@@ -20,6 +23,9 @@ const AppRoutes = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/wallpaper/:slug" element={<WallpaperDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/faqs" element={<FAQ />} />
 
             {/* Protected Routes */}
             <Route
