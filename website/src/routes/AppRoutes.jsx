@@ -15,6 +15,10 @@ import About from '../pages/About';
 import Contact from '../pages/Contact';
 import FAQ from '../pages/FAQ';
 
+import PrivacyPolicy from '../pages/PrivacyPolicy';
+import RefundPolicy from '../pages/RefundPolicy';
+import ReturnPolicy from '../pages/ReturnPolicy';
+
 const AppRoutes = () => {
     return (
         <Routes>
@@ -26,6 +30,9 @@ const AppRoutes = () => {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/faqs" element={<FAQ />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/return-policy" element={<ReturnPolicy />} />
 
             {/* Protected Routes */}
             <Route

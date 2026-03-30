@@ -13,8 +13,8 @@ import { verifyToken, isAdmin } from '../middlewares/authMiddleware.js';
 const router = express.Router();
 
 router.post('/', verifyToken, isAdmin, createBook);
-router.get('/', verifyToken, isAdmin, getAllBooks);
-router.get('/:id', verifyToken, isAdmin, getBookById);
+router.get('/', getAllBooks);
+router.get('/:id', getBookById);
 router.put('/:id', verifyToken, isAdmin, updateBook);
 router.delete('/:id', verifyToken, isAdmin, deleteBook);
 

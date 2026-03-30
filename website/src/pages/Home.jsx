@@ -1,29 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchGroups } from '../services/api';
+import { fetchGroups, fetchCategories } from '../services/api';
 import FloatingProductBar from '../components/FloatingProductBar';
 import HeroCarousel from '../components/HeroCarousel';
 import Footer from '../components/Footer';
+import SidebarLeft from '../components/SidebarLeft';
+import SidebarRight from '../components/SidebarRight';
+import { useAuth } from '../context/AuthContext';
+import '../styles/CatalogLayout.css';
 import '../styles/Home.css';
 
 const Home = () => {
+    const { user } = useAuth();
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const [categories, setCategories] = useState([]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        const loadGroups = async () => {
+        document.title = 'Stenna | Premium Wallpapers';
+        const loadInitialData = async () => {
             try {
-                const data = await fetchGroups();
-                setGroups(data);
+                const [groupsData, catsData] = await Promise.all([
+                    fetchGroups(),
+                    fetchCategories()
+                ]);
+                setGroups(groupsData);
+                setCategories(catsData);
             } catch (error) {
-                console.error("Error fetching groups:", error);
+                console.error("Error fetching data:", error);
             } finally {
                 setLoading(false);
             }
         };
-        loadGroups();
+        loadInitialData();
     }, []);
+
+    const handleToggleGroup = (groupId) => {
+        if (groupId) window.location.href = `/catalog?group=${groupId}`;
+    };
+
+    const handleToggleCategory = (categoryId) => {
+        if (categoryId) window.location.href = `/catalog?category=${categoryId}`;
+    };
 
     // High-end generated images for collections
     const collectionImages = {
@@ -45,48 +66,59 @@ const Home = () => {
     ];
 
     return (
-        <div className="home-page">
-            <div className="zara-container">
-                {/* 01. HERO SECTION */}
-                <HeroCarousel />
+        <div className="home-page fade-in-up">
+            <div className="desktop-layout-container" style={{ paddingTop: '0' }}>
+                <SidebarLeft
+                    breadcrumb={[{ label: 'HOME' }]}
+                    groups={groups}
+                    categories={categories}
+                    onToggleGroup={handleToggleGroup}
+                    onToggleCategory={handleToggleCategory}
+                    showFilters={true}
+                />
 
-                {/* 02. INSTALLATION VIDEO SECTION */}
-                <section className="video-installation-section">
-                    <span className="section-label" style={{ justifyContent: 'center' }}>EXPERTISE</span>
-                    <h2 style={{ fontSize: '3rem', marginBottom: '1.5rem', fontWeight: 700 }}>Professional Wallpaper Installation</h2>
-                    <p style={{ maxWidth: '800px', margin: '0 auto', opacity: '0.6', lineHeight: 1.8 }}>
-                        Experience the precision of our master installers. We ensure every seam is invisible and every pattern is perfectly aligned, bringing your vision to life with artisanal care.
-                    </p>
-                    <div className="video-container">
-                        <video
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        >
-                            <source src="https://res.cloudinary.com/dqfjrhlrl/video/upload/v1774531281/vid_1_mxl4gs.mp4" type="video/mp4" />
-                            Your browser does not support the video tag.
-                        </video>
-                    </div>
-                </section>
+                {/* Main Content Scrollable Column */}
+                <div className="col-main-content">
+                    {/* 01. HERO SECTION */}
+                    <HeroCarousel />
 
-                {/* 03. ECO-FRIENDLY SPLIT SECTION */}
-                <section className="eco-friendly-split">
-                    <div className="eco-image-side">
-                        <img src="/home/eco-forest.png" alt="Eco-friendly Forest" />
-                    </div>
-                    <div className="eco-text-side">
-                        <span className="section-label">SUSTAINABILITY</span>
-                        <h2>Stenna Wallpaper Company Prides Itself With The Best Eco-Friendly Products In The World</h2>
-                        <p>
-                            By establishing a new factory, Stenna wallpaper adopted a water-based ink applying production process for PVC and Duplex wallpaper for the first time in India and is fulfilling advanced eco-friendly management.
-                        </p>
-                        <Link to="/catalog" className="eco-shop-link">Shop Now</Link>
-                    </div>
-                </section>
+                    {/* 02. INSTALLATION VIDEO SECTION */}
+                    <section className="video-installation-section">
+                        <span className="section-label" style={{ justifyContent: 'center' }}>EXPERTISE</span>
+                        <h3 className="installation-title">Professional Wallpaper Installation</h3>
+                        {/* <p style={{ maxWidth: '800px', margin: '0 auto', opacity: '0.6', lineHeight: 1.8 }}>
+                            Experience the precision of our master installers. We ensure every seam is invisible and every pattern is perfectly aligned, bringing your vision to life with artisanal care.
+                        </p> */}
+                        <div className="video-container">
+                            <video
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            >
+                                <source src="https://res.cloudinary.com/dqfjrhlrl/video/upload/v1774531281/vid_1_mxl4gs.mp4" type="video/mp4" />
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    </section>
 
-                {/* 04. EVERYTHING YOU NEED */}
+                    {/* 03. ECO-FRIENDLY SPLIT SECTION */}
+                    <section className="eco-friendly-split">
+                        <div className="eco-image-side">
+                            <img src="/home/eco-forest.png" alt="Eco-friendly Forest" />
+                        </div>
+                        <div className="eco-text-side">
+                            <span className="section-label">SUSTAINABILITY</span>
+                            <h3 className="eco-title">Stenna Wallpaper Company Prides Itself With The Best Eco-Friendly Products In The World</h3>
+                            <p>
+                                By establishing a new factory, Stenna wallpaper adopted a water-based ink applying production process for PVC and Duplex wallpaper for the first time in India and is fulfilling advanced eco-friendly management.
+                            </p>
+                            <Link to="/catalog" className="eco-shop-link">Shop Now</Link>
+                        </div>
+                    </section>
+
+                    {/* 04. EVERYTHING YOU NEED
                 <section className="everything-section">
                     <div className="everything-section-header">
                         <span className="section-label" style={{ justifyContent: 'center' }}>OUR PROMISE</span>
@@ -118,47 +150,49 @@ const Home = () => {
                             <p>Book an appointment and clear all your doubts. Our wallpaper experts are available for a free of cost and in-depth consultation every day.</p>
                         </div>
                     </div>
-                </section>
+                </section> */}
 
-                {/* 05. TECHNIQUES SECTION */}
-                <section className="techniques-section-v2">
-                    <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-                        <span className="section-label" style={{ justifyContent: 'center', color: '#fff' }}>INNOVATION</span>
-                        <h2>Techniques That Set Stenna Wallpapers Apart</h2>
-                    </div>
-                    <div className="techniques-grid-v2">
-                        <div className="technique-card-v2">
-                            <div className="tech-image-wrapper">
-                                <img src="/home/tech-factory.png" alt="World Class Manufacturing Facility" />
-                            </div>
-                            <h4>World Class Manufacturing Facility</h4>
-                            <p>Stenna wallpapers come with the assurance of accuracy from capture to export, consistently and flawlessly.</p>
+                    {/* 05. TECHNIQUES SECTION */}
+                    <section className="techniques-section-v2">
+                        <div style={{ textAlign: 'center', marginBottom: '0rem' }}>
+                            <span className="section-label" style={{ justifyContent: 'center', color: '#888' }}>Innovation</span>
+                            {/* <h3 className="techniques-title text-heading" style={{ color: '#000' }}>
+                                Techniques That Set Stenna Wallpapers Apart
+                            </h3> */}
                         </div>
-                        <div className="technique-card-v2">
-                            <div className="tech-image-wrapper">
-                                <img src="/home/tech-color.png" alt="Colour & Calibration" />
+                        <div className="techniques-grid-v2">
+                            <div className="technique-card-v2">
+                                <div className="tech-image-wrapper">
+                                    <img src="/home/tech-factory.png" alt="World Class Manufacturing Facility" />
+                                </div>
+                                <h4 className="text-nav" style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '1rem' }}>World Class Manufacturing Facility</h4>
+                                <p>Stenna wallpapers come with the assurance of accuracy from capture to export, consistently and flawlessly.</p>
                             </div>
-                            <h4>Colour & Calibration</h4>
-                            <p>Color is one of our greatest allies. We understand the hues and how they fit with your design theory to achieve mesmerizing results.</p>
-                        </div>
-                        <div className="technique-card-v2">
-                            <div className="tech-image-wrapper">
-                                <img src="/home/tech-emboss.png" alt="Embossing Roller" />
+                            <div className="technique-card-v2">
+                                <div className="tech-image-wrapper">
+                                    <img src="/home/tech-color.png" alt="Colour & Calibration" />
+                                </div>
+                                <h4 className="text-nav" style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '1rem' }}>Colour & Calibration</h4>
+                                <p>Color is one of our greatest allies. We understand the hues and how they fit with your design theory to achieve mesmerizing results.</p>
                             </div>
-                            <h4>Embossing Roller</h4>
-                            <p>We take immense pride in our embossing technology, adapted from European counterparts to focus on designs created by global artisans.</p>
-                        </div>
-                        <div className="technique-card-v2">
-                            <div className="tech-image-wrapper">
-                                <img src="/home/tech-paper.png" alt="PVC & Paper Quality" />
+                            <div className="technique-card-v2">
+                                <div className="tech-image-wrapper">
+                                    <img src="/home/tech-emboss.png" alt="Embossing Roller" />
+                                </div>
+                                <h4 className="text-nav" style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '1rem' }}>Embossing Roller</h4>
+                                <p>We take immense pride in our embossing technology, adapted from European counterparts to focus on designs created by global artisans.</p>
                             </div>
-                            <h4>PVC & Paper Quality</h4>
-                            <p>All the paper used at Stenna is of the highest quality, ensuring powerful results and long-lasting durability for Every home.</p>
+                            <div className="technique-card-v2">
+                                <div className="tech-image-wrapper">
+                                    <img src="/home/tech-paper.png" alt="PVC & Paper Quality" />
+                                </div>
+                                <h4 className="text-nav" style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '1rem' }}>PVC & Paper Quality</h4>
+                                <p>All the paper used at Stenna is of the highest quality, ensuring powerful results and long-lasting durability for Every home.</p>
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                {/* 06. ARCHIVE SECTION */}
+                    {/* 06. ARCHIVE SECTION
                 <section className="archive-section">
                     <div className="archive-header">
                         <span className="section-label" style={{ justifyContent: 'center' }}>ARCHIVE</span>
@@ -195,9 +229,17 @@ const Home = () => {
                             ))}
                         </div>
                     )}
-                </section>
+                        </div>
+                    )}
+                </section> */}
+                    <Footer style={{ marginTop: '0', borderTop: '1px solid #f0f0f0' }} />
+                </div>
 
-                <Footer style={{ marginTop: '0', borderTop: '1px solid #f0f0f0' }} />
+                <SidebarRight
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    user={user}
+                />
             </div>
         </div>
     );

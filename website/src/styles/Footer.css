@@ -1,39 +1,40 @@
 .footer {
     position: relative;
-    background-color: #fff; /* Switch to white background for minimalist look */
-    color: #000; /* Black text */
-    padding: 8rem 5% 4rem 5%; /* More air for luxury feel */
+    background-color: var(--color-white);
+    color: var(--color-black);
+    padding: var(--spacing-md) 5%;
     font-family: inherit;
     z-index: 10;
-    border-top: 1px solid #f0f0f0; /* Thin separation from content */
+    border-top: 1px solid var(--color-gray-border);
 }
 
 .footer-container {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 5rem; /* Wider gaps */
+    gap: 3rem;
     max-width: 1400px;
     margin: 0 auto;
+    text-align: left;
 }
 
 .footer-section h3 {
-    font-size: 0.65rem; /* Slightly smaller, more refined */
-    letter-spacing: 0.3em; /* Iconic high-end spacing */
+    font-size: var(--fs-caption);
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    margin-bottom: 3.5rem; /* More vertical separation */
-    font-weight: 700; /* Bold headers like Catalog */
-    color: #000;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 700;
+    color: var(--color-black);
     opacity: 1;
 }
 
 .footer-section p {
-    font-size: 0.65rem;
-    line-height: 2.2; /* Taller line height for architectural feel */
-    color: #000;
-    opacity: 0.6;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-size: var(--fs-body);
+    line-height: 1.4;
+    color: var(--color-black);
+    opacity: 1;
+    margin-bottom: var(--spacing-xs);
+    text-transform: none;
+    letter-spacing: 0;
 }
 
 .footer-links-list {
@@ -43,79 +44,86 @@
 }
 
 .footer-links-list li {
-    margin-bottom: 1.2rem;
+    margin-bottom: 0.5rem;
 }
 
 .footer-links-list a {
-    color: #000;
-    opacity: 0.5;
+    color: var(--color-black);
+    opacity: 1;
     text-decoration: none;
-    font-size: 0.65rem;
-    transition: opacity 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    font-size: var(--fs-body);
+    transition: color 0.2s;
+    text-transform: capitalize;
+    letter-spacing: 0;
 }
 
 .footer-links-list a:hover {
-    opacity: 1;
+    color: #000; /* Black on hover */
 }
 
 .footer-social-icons {
     display: flex;
-    gap: 3rem; /* More space */
-    margin-bottom: 4rem;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .footer-social-icons a {
-    color: #000;
-    opacity: 0.4;
+    color: #000; /* Black */
+    opacity: 1;
     transition: opacity 0.2s;
 }
 
 .footer-social-icons a:hover {
-    opacity: 1;
+    opacity: 0.6;
 }
 
 .newsletter-form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    align-items: flex-start;
+    gap: 0;
+    width: 100%;
 }
 
 .newsletter-input-group {
     display: flex;
-    border-bottom: 1px solid #ddd; /* Match catalog thin borders */
-    padding-bottom: 0.2rem;
+    justify-content: flex-start;
+    width: 100%;
+    border: 1px solid #ddd; /* Added border for input in light mode */
+    padding: 0;
 }
 
 .newsletter-input {
     background: transparent;
-    border: none;
     color: #000;
-    padding: 0.75rem 0;
-    font-size: 0.65rem;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.75rem;
     flex: 1;
     outline: none;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    text-transform: none;
+    letter-spacing: 0;
+    text-align: left;
+    border: none;
 }
 
 .newsletter-input::placeholder {
-    color: #ccc;
+    color: #999;
 }
 
 .newsletter-submit {
-    background: #000; /* Move away from teal (Shopify look) */
-    color: #fff; /* Standard Zara black/white */
+    background: var(--color-black);
+    color: var(--color-white);
     border: none;
-    padding: 1rem 1.5rem;
-    font-size: 0.6rem;
+    padding: 0.6rem var(--spacing-sm);
+    font-size: var(--fs-caption);
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.05em;
     cursor: pointer;
     text-transform: uppercase;
     transition: background 0.2s;
-    width: fit-content; /* Don't stretch across the column */
+    width: fit-content;
+    margin: 0;
 }
 
 .newsletter-submit:hover {
@@ -123,15 +131,16 @@
 }
 
 .footer-bottom {
-    margin-top: 8rem;
-    padding-top: 3rem;
+    margin-top: 4rem;
+    padding-top: 1.5rem;
     border-top: 1px solid #f0f0f0;
-    text-align: left; /* Asymmetrical / Minimalist look */
+    text-align: center; /* Centered copyright area */
+    /* Asymmetrical / Minimalist look */
 }
 
 .copyright {
-    font-size: 0.6rem;
-    color: #999;
+    font-size: var(--fs-tiny);
+    color: var(--color-black);
     letter-spacing: 0.1em;
     text-transform: uppercase;
 }
@@ -142,7 +151,7 @@
 }
 
 .footer-contact-info {
-    margin-top: 3rem;
+    margin-top: 1.5rem;
 }
 
 .footer-contact-info p {
@@ -152,8 +161,8 @@
 
 .newsletter-subtitle {
     font-size: 0.65rem;
-    margin-bottom: 2rem;
-    opacity: 0.5;
+    margin-bottom: 1rem;
+    opacity: 1; /* Solid */
     text-transform: uppercase;
     letter-spacing: 0.1em;
 }
@@ -169,13 +178,16 @@
     .footer {
         padding: 5rem 10% 4rem 10%;
     }
+
     .footer-container {
         grid-template-columns: 1fr;
         gap: 4rem;
     }
+
     .footer-section h3 {
         margin-bottom: 2rem;
     }
+
     .footer-bottom {
         text-align: center;
     }

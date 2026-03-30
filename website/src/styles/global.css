@@ -1,15 +1,18 @@
+@import url('./design-tokens.css');
+
 :root {
-  --primary-color: #2563eb;
-  --secondary-color: #64748b;
-  --bg-color: #f8fafc;
-  --card-bg: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border-color: #e2e8f0;
+  --primary-color: var(--color-black);
+  --secondary-color: var(--color-gray-soft);
+  --bg-color: var(--color-white);
+  --card-bg: var(--color-white);
+  --text-primary: var(--color-black);
+  --text-secondary: var(--color-gray-soft);
+  --border-color: var(--color-gray-border);
   --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --radius: 8px;
+  --radius: 0; /* Luxury focus: squared-off cards */
 }
 
+/* Global resets and body are inherited from App.css / design-tokens.css */
 * {
   margin: 0;
   padding: 0;
@@ -26,10 +29,10 @@ body {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-primary) !important;
   background-color: var(--bg-color);
   color: var(--text-primary);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .container {

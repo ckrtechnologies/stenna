@@ -10,7 +10,7 @@ const SidebarRight = ({
     children
 }) => {
     return (
-        <div className="col-tools-panel desktop-only">
+        <div className="col-tools-panel desktop-only" style={{ textAlign: 'right', alignItems: 'flex-end' }}>
             {/* Search Section */}
             {showSearch && (
                 <div className="tool-section">
@@ -34,7 +34,9 @@ const SidebarRight = ({
                                 letterSpacing: '0.1em',
                                 outline: 'none',
                                 background: 'transparent',
-                                textTransform: 'uppercase'
+                                textTransform: 'uppercase',
+                                textAlign: 'right',
+                                paddingRight: '20px'
                             }}
                         />
                         <Search size={14} style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
@@ -50,30 +52,30 @@ const SidebarRight = ({
             )}
 
             {/* Discovery Section */}
-            <div className="tool-section">
-                <h3>DISCOVERY</h3>
-                <Link to="/try-it-on" className="tool-link">
-                    <Layout size={16} /> TRY IT ON YOUR WALL
+            <div className="tool-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <h3 style={{ textAlign: 'right' }}>DISCOVERY</h3>
+                <Link to="/try-it-on" className="tool-link" style={{ justifyContent: 'flex-end' }}>
+                    TRY IT ON YOUR WALL <Layout size={16} />
                 </Link>
-                <Link to="/ai-recommendations" className="tool-link">
-                    <Sparkles size={16} /> AI RECOMMENDATIONS
+                <Link to="/ai-recommendations" className="tool-link" style={{ justifyContent: 'flex-end' }}>
+                    AI RECOMMENDATIONS <Sparkles size={16} />
                 </Link>
-                <Link to="/catalog" className="tool-link">
-                    <Layout size={16} /> BROWSE CATALOG
+                <Link to="/catalog" className="tool-link" style={{ justifyContent: 'flex-end' }}>
+                    BROWSE CATALOG <Layout size={16} />
                 </Link>
             </div>
 
             {/* User Account Section */}
-            <div className="tool-section">
-                <h3>ACCOUNT</h3>
-                <div className="user-display">
-                    <User size={16} />
+            <div className="tool-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <h3 style={{ textAlign: 'right' }}>ACCOUNT</h3>
+                <div className="user-display" style={{ justifyContent: 'flex-end' }}>
                     <span className="user-name-label">
                         {user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : "GUEST"}
                     </span>
+                    <User size={16} />
                 </div>
                 {user && (
-                    <Link to="/profile" className="tool-link" style={{ marginTop: '1rem', fontSize: '0.65rem' }}>
+                    <Link to="/profile" className="tool-link" style={{ marginTop: '1rem', fontSize: '0.65rem', justifyContent: 'flex-end' }}>
                         VIEW PROFILE
                     </Link>
                 )}

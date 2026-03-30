@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 /* Hero Carousel Section */
 .hero-carousel-container {
@@ -6,7 +6,7 @@
     width: 100%;
     position: relative;
     overflow: hidden;
-    background: #000;
+    background: var(--color-black);
 }
 
 .hero-carousel-slide {
@@ -26,7 +26,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.3) 100%);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.3) 100%);
     z-index: 2;
 }
 
@@ -42,23 +42,26 @@
 }
 
 .hero-script-text {
-    font-family: 'Dancing Script', cursive;
-    font-size: clamp(2.5rem, 8vw, 6rem); /* Reduced scale */
-    color: #fff;
-    margin-bottom: 0.5rem;
+    font-family: var(--font-secondary);
+    font-size: clamp(2.5rem, 8vw, 6rem);
+    /* Reduced scale */
+    color: var(--color-white);
+    margin-bottom: var(--spacing-xs);
     line-height: 1.1;
-    text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    font-weight: 400; /* Less bold */
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    font-weight: 500;
+    letter-spacing: 0.02em;
     text-transform: none !important;
 }
 
 .hero-subtitle-text {
-    font-size: 0.9rem;
-    letter-spacing: 0.3em;
+    font-family: var(--font-secondary);
+    font-size: var(--fs-body);
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 2.5rem;
-    font-weight: 300;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: var(--spacing-md);
+    font-weight: 400;
 }
 
 .hero-cta-btn {
@@ -94,28 +97,44 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255,255,255,0.5);
+    border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .pagination-dot.active {
     background: #fff;
     transform: scale(1.4);
-    box-shadow: 0 0 15px rgba(255,255,255,0.5);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
 }
 
 /* Global Spacing Refinement */
 .zara-container {
-    background: #fff;
+    background: var(--color-white);
 }
 
 /* Video Installation Section */
 .video-installation-section {
-    padding: 6rem 5%; /* Reduced from 10rem */
-    background: #fff;
+    padding: var(--spacing-md) 0;
+    background: var(--color-white);
     text-align: center;
+}
+
+.video-installation-section > .section-label,
+.video-installation-section > h3,
+.video-installation-section > p {
+    padding: 0 5%;
+}
+
+.techniques-title {
+    /* Base style, overrides handled by .text-heading and .text-nav */
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    line-height: 1.1;
+    margin-bottom: var(--spacing-sm);
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .video-container {
@@ -125,14 +144,15 @@
     background: #080808;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.1);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1);
 }
 
 /* 03. NEW ECO-FRIENDLY SPLIT SECTION */
 .eco-friendly-split {
     display: flex;
-    min-height: 80vh;
-    background: #fdfaf5; /* Creamy background from screenshot */
+    min-height: 50vh; /* Reduced from 80vh to tighten space */
+    background: #fdfaf5;
+    /* Creamy background from screenshot */
 }
 
 .eco-image-side {
@@ -160,7 +180,8 @@
     line-height: 1.2;
     margin-bottom: 2rem;
     color: #333;
-    text-transform: none; /* Premium sentence case */
+    text-transform: none;
+    /* Premium sentence case */
     font-weight: 700;
 }
 
@@ -174,15 +195,16 @@
 
 .eco-shop-link {
     font-size: 0.8rem;
-    color: #88c9d1; /* Blue/teal color from screenshot */
+    color: #88c9d1;
+    /* Blue/teal color from screenshot */
     text-transform: none;
     font-weight: 500;
 }
 
 /* 04. EVERYTHING YOU NEED - REFINED */
 .everything-section {
-    padding: 6rem 5%;
-    background: #fff;
+    padding: var(--spacing-lg) 5%;
+    background: var(--color-white);
 }
 
 .everything-section-header {
@@ -195,7 +217,8 @@
 }
 
 .everything-section-header h2 span {
-    color: #88c9d1; /* Highlight from screenshot */
+    color: #88c9d1;
+    /* Highlight from screenshot */
 }
 
 .everything-grid-v2 {
@@ -237,10 +260,13 @@
 
 /* 05. TECHNIQUES SECTION - REFINED (CONSISTENT) */
 .techniques-section-v2 {
-    padding: 6rem 5%;
-    background: #fff; /* Changed from teal to white for symmetry */
-    color: #333;
+    padding: var(--spacing-md) 0;
+    background: var(--color-white);
+    color: var(--color-black);
     text-align: center;
+}
+.techniques-section-v2 > div:first-child {
+    padding: 0 5%;
 }
 
 .techniques-section-v2 h2 {
@@ -254,13 +280,13 @@
 .techniques-grid-v2 {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 6rem 10%; /* Increased gap for breathing room */
-    max-width: 1400px;
-    margin: 0 auto;
+    gap: 6rem 4%; /* Slightly tighter gap to balance the massive width */
+    width: 100%;
 }
 
 .technique-card-v2 {
-    text-align: left; /* Left align for premium editorial look */
+    text-align: left;
+    /* Left align for premium editorial look */
     display: flex;
     flex-direction: column;
 }
@@ -285,7 +311,8 @@
 }
 
 .technique-card-v2 h4 {
-    font-size: 1.4rem; /* Matching everything-card */
+    font-size: 1.4rem;
+    /* Matching everything-card */
     margin-bottom: 1.5rem;
     color: #000;
     letter-spacing: 0.05em;
@@ -297,12 +324,13 @@
     line-height: 1.8;
     color: #666;
     max-width: 550px;
-    margin: 0; /* Align left */
+    margin: 0;
+    /* Align left */
 }
 
 /* 06. ARCHIVE SECTION - REFINED */
 .archive-section {
-    padding: 6rem 5% !important;
+    padding: var(--spacing-lg) 5% !important;
 }
 
 .archive-header {
@@ -315,11 +343,13 @@
 }
 
 @media (max-width: 1024px) {
-    .everything-grid, .techniques-list {
+
+    .everything-grid,
+    .techniques-list {
         grid-template-columns: 1fr;
         gap: 3rem;
     }
-    
+
     .hero-carousel-container {
         height: 85vh;
     }
@@ -339,7 +369,7 @@
         padding: 1rem 2rem !important;
         font-size: 0.7rem !important;
     }
-    
+
     .eco-statement-section {
         padding: 8rem 5%;
     }
@@ -443,7 +473,11 @@
 
     .techniques-grid-v2 {
         grid-template-columns: 1fr;
-        gap: 3rem;
+        gap: 4rem;
+    }
+
+    .tech-image-wrapper {
+        aspect-ratio: 4/5 !important; /* INCREASED HEIGHT FOR MOBILE */
     }
 
     .technique-card-v2 {
@@ -454,7 +488,9 @@
         margin: 0 auto;
     }
 
-    .archive-header h2, .everything-section-header h2, .techniques-section-v2 h2 {
+    .archive-header h2,
+    .everything-section-header h2,
+    .techniques-section-v2 h2 {
         font-size: 2.5rem;
     }
 
@@ -478,4 +514,3 @@
         font-size: 0.7rem !important;
     }
 }
-

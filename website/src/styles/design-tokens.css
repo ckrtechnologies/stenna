@@ -1,0 +1,83 @@
+:root {
+  /* --- TYPOGRAPHY --- */
+  --font-primary: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-secondary: 'Playfair Display', serif;
+  
+  /* Font Sizes */
+  --fs-h1: 2rem;
+  --fs-h2: 1.5rem;
+  --fs-h3: 1.1rem;
+  --fs-body: 0.85rem;
+  --fs-caption: 0.7rem;
+  --fs-tiny: 0.6rem;
+  
+  /* --- COLORS --- */
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --color-gray-soft: #999999;
+  --color-gray-border: #f0f0f0;
+  --color-bg-light: #fcfcfc;
+  --color-accent: #000000; /* Luxury focus */
+  
+  /* --- SPACING & LAYOUT --- */
+  --spacing-xs: 0.25rem;   /* 4px - Tightened */
+  --spacing-sm: 0.75rem;   /* 12px - Tightened */
+  --spacing-md: 1.5rem;    /* 24px - Tightened from 32px */
+  --spacing-lg: 2.5rem;    /* 40px - Tightened from 64px */
+  --spacing-xl: 4rem;      /* 64px - Tightened from 128px */
+  
+  /* Mobile Offsets */
+  --mobile-header-h: 50px; /* Reduced from 60px */
+  --mobile-bottom-nav-h: 60px; /* Reduced from 70px */
+  --mobile-safe-bottom: 80px; /* Tightened from 110px */
+  
+  /* Desktop Offsets */
+  --navbar-h: 0px; /* Controlled via JS usually, but kept for consistency */
+}
+
+/* Base Body Styles using Tokens */
+body {
+  font-family: var(--font-primary);
+  font-size: var(--fs-body);
+  color: var(--color-black);
+  background-color: var(--color-white);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, .luxury-text {
+  font-family: var(--font-primary); /* Zara/Editorial style uses Sans-serif mostly for headers too, using Playfair only for specific highlights */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.secondary-header {
+  font-family: var(--font-secondary);
+}
+
+/* --- TYPOGRAPHY UTILITIES (Enforce Consistency) --- */
+
+.text-heading {
+  text-transform: uppercase !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.15em !important;
+  line-height: 1.2;
+}
+
+.text-action {
+  text-transform: uppercase !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2em !important;
+  font-size: var(--fs-tiny) !important;
+}
+
+.text-nav {
+  text-transform: none !important; /* Forces Standard Case (e.g., Living Room) */
+  font-weight: 500 !important;
+  letter-spacing: 0.05em !important;
+}
+
+.text-body {
+  text-transform: none !important;
+  font-weight: 400 !important;
+  letter-spacing: normal !important;
+}

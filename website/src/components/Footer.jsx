@@ -26,7 +26,9 @@ const Footer = ({ style }) => {
                         <li><Link to="/about">About us</Link></li>
                         <li><Link to="/contact">Contact Us</Link></li>
                         <li><Link to="/faqs">FAQs</Link></li>
-                        <li><Link to="/profile/enquiries">My Enquiries</Link></li>
+                        <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+                        <li><Link to="/refund-policy">Refund Policy</Link></li>
+                        <li><Link to="/return-policy">Return Policy</Link></li>
                     </ul>
                 </div>
 

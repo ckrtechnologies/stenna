@@ -1,3 +1,5 @@
+@import url('./design-tokens.css');
+
 :root {
   --navbar-height: 0px;
 }
@@ -5,6 +7,11 @@
 body {
   padding-top: 0;
   margin: 0;
+  font-family: var(--font-primary) !important;
+  font-size: var(--fs-body);
+  color: var(--color-black);
+  background-color: var(--color-white);
+  line-height: 1.6;
 }
 
 @media (max-width: 1024px) {
@@ -59,11 +66,12 @@ body {
 
 /* Custom Zara 2-bar Hamburger */
 .zara-hamburger {
-  width: 45px;
-  height: 12px;
+  width: 32px;
+  height: 32px; /* Fixed square hit area to match zara-close-icon */
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center; /* Center bars vertically inside the square */
+  gap: 8px; /* Precise spacing between the two bars */
 }
 
 .zara-hamburger .bar {
@@ -78,6 +86,8 @@ body {
   align-items: center;
   justify-content: flex-start;
   width: 100%;
+  height: 32px;
+  /* Fixed height for identical alignment */
   transition: opacity 0.2s;
 }
 
@@ -332,7 +342,6 @@ body {
   border: none;
   padding: 0.5rem 0;
   font-size: 0.75rem;
-  text-transform: uppercase;
   letter-spacing: 1px;
   color: #888;
   cursor: pointer;
@@ -411,7 +420,6 @@ body {
   letter-spacing: 2px;
   backdrop-filter: blur(8px);
   pointer-events: none;
-  text-transform: uppercase;
   z-index: 20000;
   border-radius: 20px;
 }
@@ -487,8 +495,10 @@ body {
 
 .gallery-main-img {
   width: 100%;
-  height: 150vh; /* Laptop default */
-  object-fit: cover; /* Fill width */
+  height: 150vh;
+  /* Laptop default */
+  object-fit: cover;
+  /* Fill width */
   display: block;
 }
 
@@ -513,7 +523,8 @@ body {
 }
 
 .gallery-sidebar::-webkit-scrollbar {
-  display: none; /* Hide scrollbar Chrome/Safari */
+  display: none;
+  /* Hide scrollbar Chrome/Safari */
 }
 
 .gallery-thumb {
@@ -521,9 +532,10 @@ body {
   height: 80px;
   flex-shrink: 0;
   cursor: pointer;
-  opacity: 1; /* Fully opaque thumbnails */
+  opacity: 1;
+  /* Fully opaque thumbnails */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(0,0,0,0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
   background: #fff;
   overflow: hidden;
@@ -531,8 +543,10 @@ body {
 
 .gallery-thumb.active {
   opacity: 1;
-  width: 90px; /* 1.5x of 60px */
-  height: 120px; /* 1.5x of 80px */
+  width: 90px;
+  /* 1.5x of 60px */
+  height: 120px;
+  /* 1.5x of 80px */
   border: 3px solid #000;
   z-index: 101;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
@@ -542,9 +556,10 @@ body {
   .gallery-layout {
     display: block;
   }
-  
+
   .gallery-main-img {
-    height: 150vh; /* Tablet height */
+    height: 150vh;
+    /* Tablet height */
     object-fit: cover;
   }
 }
@@ -553,9 +568,10 @@ body {
   .gallery-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .gallery-sidebar {
-    display: flex; /* Visible on mobile */
+    display: flex;
+    /* Visible on mobile */
     bottom: 1rem;
     left: 1rem;
     width: auto;
@@ -572,19 +588,22 @@ body {
   }
 
   .gallery-thumb.active {
-    width: 60px; /* 1.5x of 40px */
-    height: 82px; /* 1.5x of 55px */
+    width: 60px;
+    /* 1.5x of 40px */
+    height: 82px;
+    /* 1.5x of 55px */
   }
-  
+
   .gallery-main {
     padding: 0;
   }
 
   .gallery-main-img {
-    height: 100vh; /* Mobile height */
+    height: 100vh;
+    /* Mobile height */
     object-fit: cover;
   }
-  
+
   .gallery-close {
     top: 1.5rem;
     right: 1.5rem;
@@ -603,7 +622,6 @@ body {
   transform: translateX(-50%);
   font-size: 0.65rem;
   letter-spacing: 0.2em;
-  text-transform: uppercase;
   color: #888;
   pointer-events: none;
   background: rgba(255, 255, 255, 0.8);
@@ -800,7 +818,6 @@ body {
   margin: 0;
   font-size: 0.75rem;
   font-weight: 400;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
   overflow: hidden;
@@ -918,7 +935,6 @@ body {
   padding: 1.5rem 0;
   border-bottom: 1px solid #eee;
   font-size: 0.9rem;
-  text-transform: uppercase;
   letter-spacing: 1px;
 }
 
@@ -1187,41 +1203,49 @@ body {
 }
 
 .zara-menu-container {
-  padding: 0;
+  padding: 0 1%; /* MATCHES desktop-layout-container padding exactly */
   height: 100%;
   display: flex;
   flex-direction: column;
+  margin-top: 0 !important; /* Ensure no inherited gap */
+}
+
+@media (max-width: 1024px) {
+  .zara-menu-container {
+    padding: 0; /* Delegate mobile padding to mobile-header-inner */
+  }
 }
 
 .zara-menu-header {
-  display: flex;
-  align-items: center;
-  padding: 2rem 3rem;
-  gap: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 @media (max-width: 1024px) {
   .zara-menu-header {
-    padding: 1.5rem 5%;
+    padding: 0 !important; /* Mobile padding handled by internal grid */
   }
 }
 
 .zara-logo-large-container {
-  flex: 1;
   display: flex;
   align-items: center;
 }
 
 .zara-logo-img-large {
-  height: 80px;
-  width: auto;
-  max-width: 300px;
+  width: 100%;
+  max-width: 180px;
+  /* Matched perfectly to SidebarLeft */
+  height: auto;
   object-fit: contain;
 }
 
 @media (max-width: 1024px) {
   .zara-logo-img-large {
-    height: 50px;
+    height: 38px; /* EXACT MATCH for .mobile-header-logo img */
+    width: auto;
     max-width: 200px;
   }
 }
@@ -1229,7 +1253,9 @@ body {
 .zara-close-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  height: 32px; /* Matches menu-trigger-sidebar height exactly */
+  width: 32px; /* Fixed width */
   background: none;
   border: none;
   cursor: pointer;
@@ -1239,12 +1265,9 @@ body {
 }
 
 .zara-close-icon {
-  width: 45px;
-  height: 45px;
+  width: 32px;
+  height: 32px; /* Fixed square hit area for rotation animation feel */
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .zara-close-icon .bar {
@@ -1252,6 +1275,11 @@ body {
   width: 100%;
   height: 1px;
   background-color: #000;
+  top: 50%;
+  /* Absolute center */
+  left: 0;
+  margin-top: -0.5px;
+  transform-origin: center;
 }
 
 .zara-close-icon .bar:first-child {
@@ -1271,7 +1299,7 @@ body {
   grid-template-columns: 1fr 1.5fr 1fr;
   gap: 2rem;
   flex-grow: 1;
-  padding: 0 3rem;
+  padding: 0 1.5%;
   overflow-y: auto;
 }
 
@@ -1298,16 +1326,12 @@ body {
 }
 
 .zara-group-list li a {
-  font-size: clamp(2rem, 6vw, 4rem);
-  font-weight: 600;
   text-decoration: none;
-  color: #000;
-  text-transform: uppercase;
-  transition: all 0.3s ease;
-  opacity: 0.15;
+  color: var(--color-gray-soft);
+  font-size: 1.1rem;
+  transition: all 0.3s;
   display: block;
-  line-height: 1.1;
-  letter-spacing: -2px;
+  padding: 0.5rem 0;
 }
 
 .zara-group-list li.active a,
@@ -1350,9 +1374,7 @@ body {
   font-size: 1rem;
   text-decoration: none;
   color: #000;
-  text-transform: uppercase;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+  transition: opacity 0.2s;
 }
 
 .zara-category-list li a:hover {
@@ -1395,7 +1417,6 @@ body {
 .zara-menu-footer-links a,
 .zara-menu-footer-links button {
   font-size: 0.8rem;
-  font-weight: 700;
   text-decoration: none;
   color: #888;
   background: none;
@@ -1404,7 +1425,6 @@ body {
   font-family: inherit;
   cursor: pointer;
   text-align: left;
-  text-transform: uppercase;
   transition: all 0.3s ease;
 }
 
@@ -1741,6 +1761,48 @@ body {
   line-height: 1;
   margin-bottom: 3rem;
   letter-spacing: 0.05em;
+}
+
+/* Zara Close Icon (rotating bars to form X) */
+.zara-close-icon {
+  width: 28px;
+  height: 28px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.zara-close-icon .bar {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background-color: #000;
+  transition: transform 0.3s ease;
+}
+
+.zara-close-icon .bar:nth-child(1) {
+  transform: rotate(45deg);
+}
+
+.zara-close-icon .bar:nth-child(2) {
+  transform: rotate(-45deg);
+}
+
+.zara-menu-header {
+  width: 100%;
+  height: auto;
+  padding: 1.5rem 0;
+  display: flex;
+  align-items: center;
+  z-index: 100;
+}
+
+@media (min-width: 1025px) {
+  .zara-menu-header {
+    padding: 2.5rem 0;
+  }
 }
 
 @media (max-width: 1024px) {

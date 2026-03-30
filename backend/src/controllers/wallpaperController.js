@@ -4,7 +4,7 @@ import { Readable } from 'stream';
 
 export const getAllWallpapers = async (req, res) => {
     try {
-        const { group_id, category_id, search, activeOnly, tag } = req.query;
+        const { group_id, category_id, book_id, search, activeOnly, tag } = req.query;
 
         // Base query - remove !inner to allow wallpapers without categories/groups to appear
         let query = supabase.from('wallpapers').select(`
@@ -12,7 +12,8 @@ export const getAllWallpapers = async (req, res) => {
             images:wallpaper_images(*),
             videos:wallpaper_videos(*),
             categories:wallpaper_categories(category:categories(*)),
-            groups:wallpaper_groups(group:category_groups(*))
+            groups:wallpaper_groups(group:category_groups(*)),
+            books:book_wallpapers(book:books(*))
         `);
 
         if (activeOnly === 'true') {
@@ -20,7 +21,41 @@ export const getAllWallpapers = async (req, res) => {
         }
 
         if (search) {
-            query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
+            // Find book IDs that match searching term
+            const { data: matchedBooks } = await supabase
+                .from('books')
+                .select('id')
+                .or(`code.ilike.%${search}%,name.ilike.%${search}%`);
+            
+            const matchedBookIds = matchedBooks?.map(b => b.id) || [];
+            
+            // Find wallpaper IDs that belong to those books
+            let relatedWallpaperIds = [];
+            if (matchedBookIds.length > 0) {
+                const { data: matchedRels } = await supabase
+                    .from('book_wallpapers')
+                    .select('wallpaper_id')
+                    .in('book_id', matchedBookIds);
+                relatedWallpaperIds = matchedRels?.map(r => r.wallpaper_id) || [];
+            }
+
+            // Also find wallpapers matching the search term directly
+            const { data: matchedDirect } = await supabase
+                .from('wallpapers')
+                .select('id')
+                .or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
+            
+            const directIds = matchedDirect?.map(w => w.id) || [];
+            
+            // Combine all IDs
+            const allMatchIds = [...new Set([...relatedWallpaperIds, ...directIds])];
+            
+            if (allMatchIds.length > 0) {
+                query = query.in('id', allMatchIds);
+            } else {
+                // No matches at all
+                return res.status(200).json([]);
+            }
         }
 
         // Apply filters - if filtering by ID, we might need a separate query or different structure
@@ -36,7 +71,8 @@ export const getAllWallpapers = async (req, res) => {
                 images:wallpaper_images(*),
                 videos:wallpaper_videos(*),
                 categories:wallpaper_categories!inner(category:categories(*)),
-                groups:wallpaper_groups(group:category_groups(*))
+                groups:wallpaper_groups(group:category_groups(*)),
+                books:book_wallpapers(book:books(*))
             `).in('wallpaper_categories.category_id', ids);
 
             if (activeOnly === 'true') query = query.eq('is_active', true);
@@ -47,13 +83,32 @@ export const getAllWallpapers = async (req, res) => {
             const ids = group_id.split(',');
             // If category_id was already present, we need to handle both
             const currentSelect = category_id ?
-                '*, images:wallpaper_images(*), videos:wallpaper_videos(*), categories:wallpaper_categories!inner(category:categories(*)), groups:wallpaper_groups!inner(group:category_groups(*))' :
-                '*, images:wallpaper_images(*), videos:wallpaper_videos(*), categories:wallpaper_categories(category:categories(*)), groups:wallpaper_groups!inner(group:category_groups(*))';
+                '*, images:wallpaper_images(*), videos:wallpaper_videos(*), categories:wallpaper_categories!inner(category:categories(*)), groups:wallpaper_groups!inner(group:category_groups(*)), books:book_wallpapers(book:books(*))' :
+                '*, images:wallpaper_images(*), videos:wallpaper_videos(*), categories:wallpaper_categories(category:categories(*)), groups:wallpaper_groups!inner(group:category_groups(*)), books:book_wallpapers(book:books(*))';
 
             query = supabase.from('wallpapers').select(currentSelect).in('wallpaper_groups.group_id', ids);
 
             if (activeOnly === 'true') query = query.eq('is_active', true);
             if (category_id) query = query.in('wallpaper_categories.category_id', category_id.split(','));
+            if (search) query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
+        }
+
+        if (book_id) {
+            const ids = book_id.split(',');
+            // Combine with existing filters if needed (similar to group_id logic above)
+            const currentSelect = `
+                *,
+                images:wallpaper_images(*),
+                videos:wallpaper_videos(*),
+                categories:wallpaper_categories${category_id ? '!inner' : ''}(category:categories(*)),
+                groups:wallpaper_groups${group_id ? '!inner' : ''}(group:category_groups(*)),
+                books:book_wallpapers!inner(book:books(*))
+            `;
+            query = supabase.from('wallpapers').select(currentSelect).in('book_wallpapers.book_id', ids);
+
+            if (activeOnly === 'true') query = query.eq('is_active', true);
+            if (category_id) query = query.in('wallpaper_categories.category_id', category_id.split(','));
+            if (group_id) query = query.in('wallpaper_groups.group_id', group_id.split(','));
             if (search) query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
         }
 
@@ -65,6 +120,7 @@ export const getAllWallpapers = async (req, res) => {
             ...w,
             categories: w.categories.map(c => c.category),
             groups: w.groups.map(g => g.group),
+            books: w.books.map(b => b.book),
             images: w.images.sort((a, b) => a.position - b.position),
             videos: w.videos.sort((a, b) => a.position - b.position)
         }));
@@ -90,7 +146,8 @@ export const getWallpaperBySlug = async (req, res) => {
             images:wallpaper_images(*),
             videos:wallpaper_videos(*),
             categories:wallpaper_categories(category:categories(*)),
-            groups:wallpaper_groups(group:category_groups(*))
+            groups:wallpaper_groups(group:category_groups(*)),
+            books:book_wallpapers(book:books(*))
         `).eq('slug', slug).single();
 
         if (error) throw error;
@@ -99,6 +156,7 @@ export const getWallpaperBySlug = async (req, res) => {
             ...data,
             categories: data.categories.map(c => c.category),
             groups: data.groups.map(g => g.group),
+            books: data.books.map(b => b.book),
             images: data.images.sort((a, b) => a.position - b.position),
             videos: data.videos.sort((a, b) => a.position - b.position)
         };

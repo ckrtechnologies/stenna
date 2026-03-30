@@ -3,7 +3,7 @@
 .desktop-layout-container {
     display: flex;
     gap: 2.5rem;
-    padding: 0 1.5% 0 0 !important;
+    padding: 0 1% 0 1% !important;
     margin-left: 0rem !important;
     width: calc(100% + 1rem) !important;
     height: calc(100vh - var(--navbar-height));
@@ -23,6 +23,7 @@
     padding-top: 0 !important;
     flex: 1;
     width: 100%;
+    margin: 0 2px; /* Slight horizontal spacing for inner bounds */
 }
 
 /* Hide scrollbar for clean look but keep functionality */
@@ -42,8 +43,9 @@
     .desktop-layout-container {
         grid-template-columns: 1fr;
         display: block;
-        padding: 0 1rem !important;
+        padding: 0 !important; /* Removed outer margin to allow full bleed */
         margin: 0 !important;
+        width: 100% !important; /* Prevent calc(100% + 1rem) from desktop from causing horizontal overflow */
         height: auto !important;
         /* Allow natural scroll for mobile */
         overflow: visible !important;
@@ -56,7 +58,8 @@
 
     .col-main-content {
         padding: 0 !important;
-        margin: 0 !important;
+        margin: 0 0.5rem !important; /* Proper even margin on mobile */
+        width: auto !important; /* Prevent width: 100% from causing it to overflow */
         height: auto !important;
         /* Remove internal scroll for mobile */
         overflow: visible !important;
@@ -87,7 +90,7 @@
     position: sticky;
     top: 0;
     flex: 0 0 auto;
-    width: 140px;
+    width: 180px; /* Reduced from 200px at request */
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -119,7 +122,7 @@
     gap: 3rem;
     white-space: nowrap;
     flex: 0 0 auto;
-    width: 140px;
+    width: 180px; /* Reduced from 200px for symmetry */
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -132,25 +135,25 @@
 }
 
 .tool-section h3 {
-    font-size: 0.65rem;
+    font-size: var(--fs-tiny);
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #999;
-    margin-bottom: 1rem;
+    color: var(--color-gray-soft);
+    margin-bottom: var(--spacing-sm);
     font-weight: 600;
 }
 
 .tool-link {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--spacing-xs);
     text-decoration: none;
-    color: #000;
-    font-size: 0.75rem;
+    color: var(--color-black);
+    font-size: var(--fs-caption);
     letter-spacing: 0.05em;
     text-transform: uppercase;
     font-weight: 500;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--spacing-xs);
     transition: opacity 0.2s;
 }
 
@@ -223,8 +226,8 @@
 .zara-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 50px 30px; /* Tighter horizontal gap, larger vertical for editorial feel */
-    padding-bottom: 8rem;
+    gap: var(--spacing-lg) var(--spacing-md);
+    padding-bottom: var(--spacing-xl);
 }
 
 .editorial-span-2 {
@@ -281,7 +284,7 @@
     grid-template-areas:
         "hero info"
         "residue residue";
-    gap: 50px;
+    gap: var(--spacing-md);
     padding: 0;
     min-height: calc(100vh - var(--navbar-height));
     align-items: stretch;
@@ -339,17 +342,60 @@
 }
 
 .zara-detail-title {
-    font-size: 1.1rem;
+    font-size: var(--fs-h3);
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-xs);
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.zara-book-number {
+    font-weight: 300;
+    font-style: italic;
+    color: #9c9c9c;
+    margin-left: 1rem;
+    font-size: 0.7em;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+/* Technical Specs Styles */
+.spec-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-top: 0.5rem;
+}
+
+.spec-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.spec-label {
+    font-size: 0.65rem;
+    color: #999;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.spec-value {
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    color: #111;
 }
 
 .zara-price {
-    font-size: 0.9rem;
+    font-size: var(--fs-body);
     font-weight: 400;
-    margin-bottom: 0.25rem;
+    margin-bottom: var(--spacing-xs);
 }
 
 .zara-vat-info {
@@ -401,11 +447,11 @@
 }
 
 .btn-zara-primary {
-    background: #000;
-    color: #fff;
-    border: 1px solid #000;
-    padding: 1.25rem;
-    font-size: 0.7rem;
+    background: var(--color-black);
+    color: var(--color-white);
+    border: 1px solid var(--color-black);
+    padding: var(--spacing-sm);
+    font-size: var(--fs-tiny);
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -418,11 +464,11 @@
 }
 
 .btn-zara-outline {
-    background: #fff;
-    color: #000;
-    border: 1px solid #000;
-    padding: 1.25rem;
-    font-size: 0.7rem;
+    background: var(--color-white);
+    color: var(--color-black);
+    border: 1px solid var(--color-black);
+    padding: var(--spacing-sm);
+    font-size: var(--fs-tiny);
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -432,7 +478,7 @@
 
 /* Related Products Grid */
 .related-wallpapers-section {
-    padding: 8rem 0 12rem 0;
+    padding: 4rem 0 8rem 0;
     border-top: 1px solid #f0f0f0;
 }
 
@@ -442,6 +488,16 @@
     font-weight: 500;
     margin-bottom: 4rem;
     text-transform: uppercase;
+}
+@media (max-width: 1024px) {
+    .related-wallpapers-section {
+        padding: 2rem 0 6rem 0;
+        border-top: none;
+    }
+    .related-title {
+        padding: 0 1rem; /* Safety padding for text */
+        margin-bottom: 2rem;
+    }
 }
 
 .related-zara-grid {
@@ -459,8 +515,9 @@
 
 @media (max-width: 1024px) {
     .related-zara-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 2rem;
+        grid-template-columns: repeat(3, 1fr); /* Client requested 3 columns */
+        gap: 0.5rem; /* Tiny gap to remove white spaces */
+        padding: 0; /* Full bleed */
     }
 }
 
@@ -478,6 +535,18 @@
     /* Enforce 3:2 Height:Width ratio */
     overflow: hidden;
     background: #f7f7f7;
+}
+
+@media (max-width: 1024px) {
+    .related-info {
+        padding: 0 0.5rem; /* Tiny pad for text below images since they touch edges */
+    }
+    .related-name {
+        font-size: 0.6rem !important;
+    }
+    .related-price {
+        font-size: 0.6rem !important;
+    }
 }
 
 .related-img-container img {
@@ -603,8 +672,8 @@
     .detail-image-grid {
         grid-template-columns: 1fr !important;
         gap: 2rem;
-        padding: 0 1rem !important;
-        /* Balanced side margins */
+        padding: 0 !important;
+        /* Removed side margins for full bleed */
     }
 
     .detail-info-section {

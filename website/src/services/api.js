@@ -8,6 +8,12 @@ export const fetchGroups = async () => {
     return response.json();
 };
 
+export const fetchBooks = async () => {
+    const response = await fetch(`${API_BASE_URL}/books`);
+    if (!response.ok) throw new Error('Failed to fetch books');
+    return response.json();
+};
+
 export const fetchCategories = async (groupId) => {
     const url = groupId
         ? `${API_BASE_URL}/categories?group_id=${groupId}`
@@ -17,13 +23,16 @@ export const fetchCategories = async (groupId) => {
     return response.json();
 };
 
-export const fetchWallpapers = async ({ groupIds, categoryIds, search }) => {
+export const fetchWallpapers = async ({ groupIds, categoryIds, bookIds, search }) => {
     const params = new URLSearchParams();
     if (groupIds && groupIds.length > 0) {
         params.append('group_id', groupIds.join(','));
     }
     if (categoryIds && categoryIds.length > 0) {
         params.append('category_id', categoryIds.join(','));
+    }
+    if (bookIds && bookIds.length > 0) {
+        params.append('book_id', bookIds.join(','));
     }
     if (search) params.append('search', search);
     params.append('activeOnly', 'true');

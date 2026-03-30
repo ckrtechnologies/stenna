@@ -1,98 +1,157 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import Footer from '../components/Footer';
+import SidebarLeft from '../components/SidebarLeft';
+import SidebarRight from '../components/SidebarRight';
+import { useAuth } from '../context/AuthContext';
 import '../styles/StaticPages.css';
+import '../styles/CatalogLayout.css';
 
 const Contact = () => {
+    const { user } = useAuth();
+    const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        document.title = 'Contact Us | Stenna';
+    }, []);
+
+    const [formData, setFormData] = useState({
+        name: '',
+        phone: '',
+        email: '',
+        comment: ''
+    });
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        console.log("Form Submitted:", formData);
+        alert("Thank you! Your message has been sent.");
+    };
+
     return (
-        <div className="static-page fade-in-up">
-            {/* Global Menu Trigger */}
-            <div 
-                className="menu-trigger-global" 
-                onClick={() => window.dispatchEvent(new CustomEvent('open-mega-menu'))}
-                style={{ 
-                    position: 'fixed', 
-                    top: '30px', 
-                    left: '30px', 
-                    zIndex: 1000, 
-                    cursor: 'pointer',
-                    padding: '10px'
-                }}
-            >
-                <div className="zara-hamburger">
-                    <div className="bar"></div>
-                    <div className="bar"></div>
+        <div className="catalog-page contact-page-standard fade-in-up" style={{ paddingTop: 0 }}>
+            <div className="desktop-layout-container is-detail-view" style={{ paddingTop: '0', marginTop: '0' }}>
+                <SidebarLeft
+                    breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'CONTACT US' }]}
+                    showFilters={false}
+                />
+
+                <div className="col-main-content" style={{ paddingTop: 0, marginTop: 0 }}>
+                    <div className="static-page fade-in-up" style={{ padding: '2rem 5%' }}>
+                        <header className="static-page-header contact-header">
+                            <h3>Stay In Touch!</h3>
+                            <div className="header-line"></div>
+                        </header>
+
+                        <div className="contact-layout-grid">
+                            {/* --- LEFT COLUMN: INTRO + FORM --- */}
+                            <div className="contact-form-column">
+                                <div className="contact-intro-text">
+                                    <p className="static-text">
+                                        Fill in your details and leave a message, our team will get in touch with you within 24 to 48 hours.
+                                    </p>
+                                    <p className="static-text">
+                                        For booking your Installation appointment, you can fill in your preferred date and time for installation and you would receive a call from our experts for confirmation of the appointment.
+                                    </p>
+                                </div>
+
+                                <form className="minimal-contact-form" onSubmit={handleSubmit}>
+                                    <div className="form-group">
+                                        <input 
+                                            type="text" 
+                                            name="name" 
+                                            placeholder="Name" 
+                                            value={formData.name}
+                                            onChange={handleInputChange}
+                                            required 
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <input 
+                                            type="tel" 
+                                            name="phone" 
+                                            placeholder="Phone Number" 
+                                            value={formData.phone}
+                                            onChange={handleInputChange}
+                                            required 
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <input 
+                                            type="email" 
+                                            name="email" 
+                                            placeholder="Email" 
+                                            value={formData.email}
+                                            onChange={handleInputChange}
+                                            required 
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <textarea 
+                                            name="comment" 
+                                            placeholder="Please leave your comment here" 
+                                            rows="6"
+                                            value={formData.comment}
+                                            onChange={handleInputChange}
+                                            required
+                                        ></textarea>
+                                    </div>
+                                    <button type="submit" className="btn-submit-contact">
+                                        SUBMIT CONTACT
+                                    </button>
+                                </form>
+                            </div>
+
+                            {/* --- RIGHT COLUMN: LOCATIONS --- */}
+                            <div className="contact-locations-column">
+                                {/* 01. HEADQUARTER */}
+                                <div className="location-item-block">
+                                    <div className="location-number">01</div>
+                                    <h3 className="location-label">HEADQUARTER</h3>
+                                    <div className="location-details">
+                                        <p className="loc-name">STENNA WALLPAPERS PVT. LTD.</p>
+                                        <p>OPP GHTORNI METRO PILLAR NO 138</p>
+                                        <p>MCD GIRLS SCHOOL LANE, IN FRONT</p>
+                                        <p>OF SAI RAM PAPER, NEAR MARUTI</p>
+                                        <p>CHOWNK, GHITORNI, NEW DELHI,</p>
+                                        <p>110030</p>
+                                        
+                                        <p className="loc-contact-meta">
+                                            <strong>Email:</strong> info@stenna.in<br/>
+                                            <strong>Call Us:</strong> +91-99715 75710
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* 02. GALLERY */}
+                                <div className="location-item-block">
+                                    <div className="location-number">02</div>
+                                    <h3 className="location-label">GALLERY</h3>
+                                    <div className="location-details">
+                                        <p className="loc-name">STENNA WALLPAPERS PVT. LTD.</p>
+                                        <p>SHOP NO 1, 4855-56 HARBANS SINGH</p>
+                                        <p>STREET, ANSARI ROAD NO. 24,</p>
+                                        <p>DARYAGANJ, DELHI, 110006</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <Footer style={{ marginTop: '0', borderTop: '1px solid #f0f0f0' }} />
                 </div>
+
+                <SidebarRight 
+                    searchQuery={searchQuery} 
+                    onSearchChange={setSearchQuery} 
+                    user={user}
+                />
             </div>
-
-            <header className="static-page-header">
-                <div className="static-breadcrumb">
-                    <Link to="/">HOME</Link> / <span>CONTACT US</span>
-                </div>
-                <h1>GET IN TOUCH</h1>
-            </header>
-
-            <section className="static-content-section">
-                <h2>Our Locations</h2>
-                <p className="static-text">
-                    Whether you are an architect, an interior designer, or a homeowner looking for the perfect 
-                    wallpaper, we are here to assist you. Visit our locations or reach out to us directly.
-                </p>
-
-                <div className="static-grid">
-                    <div className="contact-box">
-                        <h3>01. HEADQUARTER</h3>
-                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <MapPin size={20} style={{ flexShrink: 0, marginTop: '0.25rem' }} />
-                            <div>
-                                <p>STENNA WALLPAPERS PVT. LTD.</p>
-                                <p>Opp Ghitorni Metro Pillar No 138</p>
-                                <p>MCD Girls School Lane, Ghitorni</p>
-                                <p>New Delhi, 110030</p>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                            <Phone size={18} />
-                            <p>+91 7065320009</p>
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <Mail size={18} />
-                            <p>digital@stenna.in</p>
-                        </div>
-                    </div>
-
-                    <div className="contact-box">
-                        <h3>02. GALLERY</h3>
-                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <MapPin size={20} style={{ flexShrink: 0, marginTop: '0.25rem' }} />
-                            <div>
-                                <p>STENNA WALLPAPERS PVT. LTD.</p>
-                                <p>Shop No 1, 4855-56 Harbans Singh St.</p>
-                                <p>Ansari Road No. 24, Daryaganj</p>
-                                <p>Delhi, 110006</p>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                            <Phone size={18} />
-                            <p>+91 99715 75710</p>
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <Mail size={18} />
-                            <p>info@stenna.in</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* <section className="static-content-section">
-                <h2>Inquiry</h2>
-                <p className="static-text">
-                    For bulk orders, partnership inquiries, or general questions, please feel free 
-                    to drop us an email or give us a call. Our team typically responds within 24 hours.
-                </p>
-            </section> */}
-            {/* <Footer style={{ marginTop: '0', backgroundColor: '#000' }} /> */}
         </div>
     );
 };

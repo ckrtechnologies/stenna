@@ -1,25 +1,26 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Sparkles, SlidersHorizontal } from 'lucide-react';
 
 const MobileHeader = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const isCatalog = location.pathname === '/catalog';
 
     const handleMenuClick = () => {
         window.dispatchEvent(new CustomEvent('open-mega-menu'));
     };
 
     const handleSearchClick = () => {
-        if (location.pathname === '/catalog') {
+        if (isCatalog) {
             window.dispatchEvent(new CustomEvent('toggle-catalog-search'));
         } else {
             navigate('/catalog?search-open=true');
         }
     };
 
-    const handleAIClick = () => {
-        navigate('/ai-recommendations');
+    const handleFilterClick = () => {
+        window.dispatchEvent(new CustomEvent('toggle-catalog-filter'));
     };
 
     return (
@@ -46,13 +47,15 @@ const MobileHeader = () => {
                     </Link>
                 </div>
 
-                {/* Right: Search & AI */}
+                {/* Right: Filter & Search */}
                 <div className="mobile-header-right">
-                    <button className="mobile-header-icon-btn" onClick={handleSearchClick}>
+                    {isCatalog && (
+                        <button className="mobile-header-icon-btn" onClick={handleFilterClick} aria-label="Filters">
+                            <SlidersHorizontal size={22} strokeWidth={1.5} />
+                        </button>
+                    )}
+                    <button className="mobile-header-icon-btn" onClick={handleSearchClick} aria-label="Search">
                         <Search size={22} strokeWidth={1.5} />
-                    </button>
-                    <button className="mobile-header-icon-btn" onClick={handleAIClick}>
-                        <Sparkles size={22} strokeWidth={1.5} />
                     </button>
                 </div>
             </div>

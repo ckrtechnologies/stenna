@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import GroupList from './GroupList';
 import CategoryList from './CategoryList';
 
@@ -16,8 +16,19 @@ const SidebarLeft = ({
     loading = false,
     showFilters = false
 }) => {
+    const location = useLocation();
+    const isHome = location.pathname === '/';
+
     return (
-        <div className="col-filter-trigger desktop-only" style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '2rem' }}>
+        <div className="col-filter-trigger desktop-only" style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: 'calc(100vh - 20px)', 
+            gap: '1rem', 
+            overflowY: 'auto',
+            paddingRight: '10px',
+            scrollbarWidth: 'none'
+        }}>
             {/* Global Menu Trigger & Logo */}
             <div className="sidebar-brand-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div
@@ -32,7 +43,7 @@ const SidebarLeft = ({
                 </div>
 
                 <Link to="/" className="sidebar-logo">
-                    <img src="/logo.png" alt="STENNA" style={{ width: '100%', maxWidth: '120px', height: 'auto' }} />
+                    <img src="/logo.png" alt="STENNA" style={{ width: '100%', maxWidth: '180px', height: 'auto' }} />
                 </Link>
             </div>
 
@@ -52,10 +63,25 @@ const SidebarLeft = ({
                 </div>
             )}
 
+            {/* Prominent Catalog Link (Home Only) */}
+            {isHome && (
+                <div style={{ marginBottom: '0.5rem', marginTop: '-0.5rem' }}>
+                    <Link to="/catalog" className="text-action" style={{
+                        color: '#000',
+                        textDecoration: 'none',
+                        borderBottom: '1px solid #000',
+                        paddingBottom: '2px',
+                        display: 'inline-block'
+                    }}>
+                        Catalog
+                    </Link>
+                </div>
+            )}
+
             {/* Optional Filter Sections */}
             {showFilters && (
                 <>
-                    <div style={{ marginBottom: '2rem' }}>
+                    <div style={{ marginBottom: '1rem' }}>
                         <GroupList
                             groups={groups}
                             selectedGroupIds={selectedGroupIds}
@@ -63,7 +89,7 @@ const SidebarLeft = ({
                         />
                     </div>
 
-                    <div style={{ marginBottom: '2rem' }}>
+                    <div style={{ marginBottom: '1rem' }}>
                         <CategoryList
                             categories={categories}
                             selectedCategoryIds={selectedCategoryIds}
@@ -72,12 +98,12 @@ const SidebarLeft = ({
                     </div>
 
                     <div className="zara-bottom-controls">
-                        <button className="filter-word-btn" onClick={onOpenFilters} style={{ textAlign: 'left' }}>
-                            FILTERS
+                        <button className="filter-word-btn text-action" onClick={onOpenFilters} style={{ textAlign: 'left', border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}>
+                            Filters
                         </button>
 
-                        <div style={{ opacity: 0.4, fontSize: '0.6rem', letterSpacing: '0.05em', marginTop: '1rem' }}>
-                            {loading ? "REFRESHING..." : count !== null ? `${count} ARTWORKS FOUND` : ""}
+                        <div className="text-nav" style={{ opacity: 0.4, fontSize: 'var(--fs-tiny)', marginTop: '0.5rem' }}>
+                            {loading ? "Refreshing..." : count !== null ? `${count} Artworks Found` : ""}
                         </div>
                     </div>
                 </>

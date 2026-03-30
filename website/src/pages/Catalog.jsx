@@ -3,9 +3,10 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Sparkles, Layout, Search, User } from 'lucide-react';
 import '../styles/App.css';
 import '../styles/CatalogLayout.css';
-import { fetchGroups, fetchCategories, fetchWallpapers } from '../services/api';
+import { fetchGroups, fetchCategories, fetchWallpapers, fetchBooks } from '../services/api';
 import GroupList from '../components/GroupList';
 import CategoryList from '../components/CategoryList';
+import BookList from '../components/BookList';
 import WallpaperList from '../components/WallpaperList';
 import SidebarLeft from '../components/SidebarLeft';
 import SidebarRight from '../components/SidebarRight';
@@ -17,9 +18,11 @@ const Catalog = () => {
     const [searchParams] = useSearchParams();
     const [groups, setGroups] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [books, setBooks] = useState([]);
     const [wallpapers, setWallpapers] = useState([]);
     const [selectedGroupIds, setSelectedGroupIds] = useState([]);
     const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+    const [selectedBookIds, setSelectedBookIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [loading, setLoading] = useState(true);
@@ -30,14 +33,17 @@ const Catalog = () => {
 
     // Initial load for groups and all categories
     useEffect(() => {
+        document.title = 'Catalog | Stenna';
         const loadInitialData = async () => {
             try {
-                const [groupsData, catsData] = await Promise.all([
+                const [groupsData, catsData, booksData] = await Promise.all([
                     fetchGroups(),
-                    fetchCategories()
+                    fetchCategories(),
+                    fetchBooks()
                 ]);
                 setGroups(groupsData);
                 setAllCategories(catsData);
+                setBooks(booksData);
                 // Initial categories displayed (all)
                 setCategories(catsData);
             } catch (error) {
@@ -62,6 +68,7 @@ const Catalog = () => {
     useEffect(() => {
         const groupParam = searchParams.get('group');
         const catParam = searchParams.get('category');
+        const bookParam = searchParams.get('book');
         const searchParam = searchParams.get('search');
 
         if (groupParam) setSelectedGroupIds([groupParam]);
@@ -69,6 +76,9 @@ const Catalog = () => {
 
         if (catParam) setSelectedCategoryIds([catParam]);
         else setSelectedCategoryIds([]);
+
+        if (bookParam) setSelectedBookIds([bookParam]);
+        else setSelectedBookIds([]);
 
         if (searchParam || searchParams.get('search-open')) {
             setSearchQuery(searchParam || '');
@@ -105,6 +115,7 @@ const Catalog = () => {
                 const walls = await fetchWallpapers({
                     groupIds: selectedGroupIds,
                     categoryIds: selectedCategoryIds,
+                    bookIds: selectedBookIds,
                     search: debouncedSearch
                 });
                 setWallpapers(walls);
@@ -139,6 +150,16 @@ const Catalog = () => {
         );
     };
 
+    const handleToggleBook = (bookId) => {
+        if (bookId === null) {
+            setSelectedBookIds([]);
+            return;
+        }
+        setSelectedBookIds(prev =>
+            prev.includes(bookId) ? prev.filter(id => id !== bookId) : [...prev, bookId]
+        );
+    };
+
     return (
         <div className="catalog-page fade-in-up">
             {/* Filter Overlay & Drawer */}
@@ -158,12 +179,7 @@ const Catalog = () => {
                     </div>
                 </div>
 
-                {/* Pagination at the bottom of the tool panel */}
-                <div className="pagination-container-drawer">
-                    <button className="page-dot active"></button>
-                    <button className="page-dot"></button>
-                    <button className="page-dot"></button>
-                </div>
+
 
                 <button className="btn-view-results" onClick={() => setIsFilterOpen(false)}>
                     VIEW RESULTS

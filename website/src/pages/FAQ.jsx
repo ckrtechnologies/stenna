@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import Footer from '../components/Footer';
+import SidebarLeft from '../components/SidebarLeft';
+import SidebarRight from '../components/SidebarRight';
+import { useAuth } from '../context/AuthContext';
 import '../styles/StaticPages.css';
+import '../styles/CatalogLayout.css';
 
 const FAQItem = ({ question, answer }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +27,13 @@ const FAQItem = ({ question, answer }) => {
 };
 
 const FAQ = () => {
+    const { user } = useAuth();
+    const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        document.title = 'FAQs | Stenna';
+    }, []);
+
     const faqData = [
         {
             question: "What is a batch number?",
@@ -59,49 +70,47 @@ const FAQ = () => {
     ];
 
     return (
-        <div className="static-page fade-in-up">
-            {/* Global Menu Trigger */}
-            <div 
-                className="menu-trigger-global" 
-                onClick={() => window.dispatchEvent(new CustomEvent('open-mega-menu'))}
-                style={{ 
-                    position: 'fixed', 
-                    top: '30px', 
-                    left: '30px', 
-                    zIndex: 1000, 
-                    cursor: 'pointer',
-                    padding: '10px'
-                }}
-            >
-                <div className="zara-hamburger">
-                    <div className="bar"></div>
-                    <div className="bar"></div>
+        <div className="catalog-page fade-in-up" style={{ paddingTop: 0 }}>
+            <div className="desktop-layout-container is-detail-view" style={{ paddingTop: '0', marginTop: '0' }}>
+                <SidebarLeft
+                    breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'FAQs' }]}
+                    showFilters={false}
+                />
+
+                <div className="col-main-content" style={{ paddingTop: 0, marginTop: 0 }}>
+                    <div className="static-page fade-in-up" style={{ padding: '2rem 5%' }}>
+                        <header className="static-page-header">
+                            <h3>FREQUENTLY ASKED QUESTIONS</h3>
+                        </header>
+
+                        <section className="static-content-section" style={{ maxWidth: '800px', margin: '0 auto 4rem auto' }}>
+                            <h4>General Inquiries</h4>
+                            <div className="faq-list">
+                                {faqData.map((item, index) => (
+                                    <FAQItem key={index} question={item.question} answer={item.answer} />
+                                ))}
+                            </div>
+                        </section>
+
+                        <section className="static-content-section" style={{ textAlign: 'center', marginTop: '6rem', maxWidth: '800px', margin: '6rem auto 4rem auto' }}>
+                            <h4>Still Have Questions?</h4>
+                            <p className="static-text" style={{ marginBottom: '2rem', color: '#888' }}>
+                                If you couldn't find the answer to your question, please don't hesitate to contact us.
+                            </p>
+                            <Link to="/contact" className="btn-zara-primary" style={{ display: 'inline-block', textDecoration: 'none', marginTop: '1rem', padding: '1rem 3rem' }}>
+                                CONTACT SUPPORT
+                            </Link>
+                        </section>
+                    </div>
+                    <Footer style={{ marginTop: '0', borderTop: '1px solid #f0f0f0' }} />
                 </div>
+
+                <SidebarRight 
+                    searchQuery={searchQuery} 
+                    onSearchChange={setSearchQuery} 
+                    user={user}
+                />
             </div>
-
-            <header className="static-page-header">
-                <div className="static-breadcrumb">
-                    <Link to="/">HOME</Link> / <span>FAQs</span>
-                </div>
-                <h1>FREQUENTLY ASKED QUESTIONS</h1>
-            </header>
-
-            <section className="static-content-section">
-                <h2>General Inquiries</h2>
-                <div className="faq-list">
-                    {faqData.map((item, index) => (
-                        <FAQItem key={index} question={item.question} answer={item.answer} />
-                    ))}
-                </div>
-            </section>
-
-            <section className="static-content-section" style={{ textAlign: 'center', marginTop: '6rem' }}>
-                <p className="static-text" style={{ color: '#888' }}>Unable to find satisfactory answers?</p>
-                <Link to="/contact" className="btn-zara-primary" style={{ display: 'inline-block', textDecoration: 'none', marginTop: '1rem', padding: '1rem 3rem' }}>
-                    CONTACT SUPPORT
-                </Link>
-            </section>
-            <Footer style={{ marginTop: '0', backgroundColor: '#000' }} />
         </div>
     );
 };

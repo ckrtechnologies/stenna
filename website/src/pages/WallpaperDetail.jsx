@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchWallpaperBySlug, fetchWallpapers, fetchGroups, fetchCategories } from '../services/api';
+import { supabase } from '../services/supabaseClient';
 import RelatedProductCarousel from '../components/RelatedProductCarousel';
 import VisualizerModal from '../components/VisualizerModal';
 import EnquiryModal from '../components/EnquiryModal';
@@ -48,6 +49,7 @@ const WallpaperDetail = () => {
     const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
     useEffect(() => {
         if (wallpaper) {
+            document.title = `${wallpaper.name} | Stenna`;
             console.log("Wallpaper Object Loaded:", wallpaper);
             console.log("Videos available:", wallpaper.videos);
         }
@@ -59,6 +61,7 @@ const WallpaperDetail = () => {
     const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('about');
+    const [bookCode, setBookCode] = useState('');
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [activeImage, setActiveImage] = useState(0);
     const [isZoomed, setIsZoomed] = useState(false);
@@ -74,7 +77,7 @@ const WallpaperDetail = () => {
         const observer = new IntersectionObserver(
             (entries) => {
                 if (isScrollingManual) return;
-                
+
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
                         const index = parseInt(entry.target.id.split('-')[2]);
@@ -101,6 +104,7 @@ const WallpaperDetail = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [swipeDirection, setSwipeDirection] = useState(0); // -1 for left, 1 for right
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -203,8 +207,6 @@ const WallpaperDetail = () => {
                 const gId = data.groups?.[0]?.id;
                 const cId = data.categories?.[0]?.id;
 
-                // Always fetch related products if we have a group or category, 
-                // but we can optimize by checking if the IDs match what we already have
                 if (gId || cId) {
                     setListLoading(true);
                     const listData = await fetchWallpapers({
@@ -212,9 +214,8 @@ const WallpaperDetail = () => {
                         categoryIds: cId ? [cId] : [],
                         activeOnly: 'true'
                     });
-                    // Filter out the current wallpaper from the related products
-                    const filteredList = listData.filter(p => p.slug !== slug);
-                    setProductList(filteredList.slice(0, 50));
+                    // IMPORTANT: Keep ALL products including current for navigation lookup
+                    setProductList(listData.slice(0, 50));
                     setListLoading(false);
                 }
 
@@ -230,6 +231,23 @@ const WallpaperDetail = () => {
                 // Set initial selection based on current wallpaper
                 if (data.groups?.[0]?.id) setSelectedGroupIds([data.groups[0].id.toString()]);
                 if (data.categories?.[0]?.id) setSelectedCategoryIds([data.categories[0].id.toString()]);
+
+                // Fetch book code from separate 'books' table via 'book_wallpapers' join table
+                const { data: relData } = await supabase
+                    .from('book_wallpapers')
+                    .select('book:books(code)')
+                    .eq('wallpaper_id', data.id)
+                    .maybeSingle();
+
+                if (relData?.book?.code) {
+                    setBookCode(relData.book.code);
+                } else if (data.groups?.[0]?.code) {
+                    setBookCode(data.groups[0].code);
+                } else if (data.book_code) {
+                    setBookCode(data.book_code);
+                } else {
+                    setBookCode(''); // Reset if no code found
+                }
 
             } catch (err) {
                 // Only show error if we don't even have cached data
@@ -275,31 +293,29 @@ const WallpaperDetail = () => {
         if (touchStart === null) return;
         const touchEnd = e.changedTouches[0].clientX;
         const diff = touchStart - touchEnd;
-        const threshold = 50;
+        const threshold = 80;
 
         if (Math.abs(diff) > threshold) {
             if (isGalleryOpen) {
-                // Swipe Gallery Images
                 if (diff > 0) {
-                    // Swipe Left -> Next Image
                     setActiveImage(prev => (prev + 1) % wallpaper.images.length);
                 } else {
-                    // Swipe Right -> Prev Image
                     setActiveImage(prev => (prev - 1 + wallpaper.images.length) % wallpaper.images.length);
                 }
-                setIsZoomed(false); // Reset zoom when switching images
+                setIsZoomed(false);
             } else {
-                // Swipe Products
                 const currentIndex = productList.findIndex(p => p.slug === slug);
                 if (currentIndex === -1) return;
 
                 if (diff > 0) {
-                    // Swipe Left -> Next Product
+                    // Swipe Left (Diff > 0) -> Next Product
                     const nextIndex = (currentIndex + 1) % productList.length;
+                    setSwipeDirection(1);
                     navigate(`/wallpaper/${productList[nextIndex].slug}`);
                 } else {
-                    // Swipe Right -> Prev Product
+                    // Swipe Right (Diff < 0) -> Prev Product
                     const prevIndex = (currentIndex - 1 + productList.length) % productList.length;
+                    setSwipeDirection(-1);
                     navigate(`/wallpaper/${productList[prevIndex].slug}`);
                 }
             }
@@ -374,8 +390,8 @@ const WallpaperDetail = () => {
                         className="detail-page"
                         onTouchStart={handleTouchStart}
                         onTouchEnd={handleTouchEnd}
-                        style={{ 
-                            touchAction: 'pan-y', 
+                        style={{
+                            touchAction: 'pan-y',
                             paddingTop: `${dynamicPadding}px`,
                             transition: 'padding-top 0.05s linear' /* Smooth out scroll events */
                         }}
@@ -419,9 +435,9 @@ const WallpaperDetail = () => {
                                                 </div>
                                             ))}
                                         </div>
-                                        <div 
-                                            className="gallery-main" 
-                                            style={{ 
+                                        <div
+                                            className="gallery-main"
+                                            style={{
                                                 overflow: isZoomed ? 'hidden' : 'auto',
                                                 cursor: isZoomed ? 'grab' : 'zoom-in'
                                             }}
@@ -449,7 +465,7 @@ const WallpaperDetail = () => {
                                                     />
                                                 </div>
                                             ))}
-                                            
+
                                             {isZoomed && (
                                                 <button
                                                     className="zoom-close-btn"
@@ -493,10 +509,10 @@ const WallpaperDetail = () => {
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={slug}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
+                                initial={{ opacity: 0, x: swipeDirection > 0 ? 50 : swipeDirection < 0 ? -50 : 0 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: swipeDirection > 0 ? -50 : swipeDirection < 0 ? 50 : 0 }}
+                                transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
                                 className="detail-layout-container fade-in-up"
                             >
                                 {/* Part 1: Hero Section */}
@@ -516,11 +532,12 @@ const WallpaperDetail = () => {
 
                                 {/* Part 2: Info Section */}
                                 <div className="detail-info-section">
-                                    <div className="zara-breadcrumb" style={{ marginBottom: '0.5rem' }}>
-                                        <Link to="/catalog">Catalog</Link> / <span>{wallpaper.name} - {wallpaper.design_code} </span>
-                                    </div>
-
-                                    <h1 className="zara-detail-title">{wallpaper.name}</h1>
+                                    <h1 className="zara-detail-title">
+                                        {wallpaper.design_code}
+                                        {bookCode && (
+                                            <span className="zara-book-number"> / (Books : {bookCode})</span>
+                                        )}
+                                    </h1>
                                     {/* {wallpaper.price && (
                             <>
                                 <p className="zara-price">₹ {wallpaper.price}</p>
@@ -539,7 +556,7 @@ const WallpaperDetail = () => {
                                                 className={`info-tab-btn ${activeTab === 'fit' ? 'active' : ''}`}
                                                 onClick={() => setActiveTab('fit')}
                                             >
-                                                Fit Guide
+                                                Wallpaper Guide
                                             </button>
                                         </div>
                                     )}
@@ -585,6 +602,21 @@ const WallpaperDetail = () => {
                                                 <p className="story-text">{wallpaper.description}</p>
                                             </div>
                                         )}
+
+                                        {/* Technical Specifications */}
+                                        <div className="story-section">
+                                            <h4 className="story-label">Technical Specifications</h4>
+                                            <div className="spec-grid">
+                                                <div className="spec-item">
+                                                    <span className="spec-label">Roll Width</span>
+                                                    <span className="spec-value">{wallpaper.roll_width || '53 CM'}</span>
+                                                </div>
+                                                <div className="spec-item">
+                                                    <span className="spec-label">Roll Height</span>
+                                                    <span className="spec-value">{wallpaper.roll_height || '10 MT'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
                                         {/* Fallback */}
                                         {!wallpaper.vibe && !wallpaper.description && (
@@ -712,9 +744,9 @@ const WallpaperDetail = () => {
                         {/* RELATED PRODUCTS SECTION */}
                         {!listLoading && productList.length > 0 && (
                             <section className="related-wallpapers-section">
-                                <h2 className="related-title">SIMILAR ARTWORKS YOU MAY LIKE</h2>
+                                <h2 className="related-title">SIMILAR WALLPAPERS YOU MAY LIKE</h2>
                                 <div className="related-zara-grid">
-                                    {productList.slice(0, 12).map((item) => (
+                                    {productList.filter(p => p.slug !== slug).slice(0, 12).map((item) => (
                                         <Link key={item.id} to={`/wallpaper/${item.slug}`} className="related-item">
                                             <div className="related-img-container">
                                                 <img
@@ -743,14 +775,13 @@ const WallpaperDetail = () => {
                                 </div>
                             </section>
                         )}
-
                         <Footer style={{ marginTop: '4rem', borderTop: '1px solid #f0f0f0' }} />
                     </div>
                 </div>
 
-                <SidebarRight 
-                    searchQuery={searchQuery} 
-                    onSearchChange={setSearchQuery} 
+                <SidebarRight
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
                     user={user}
                 >
                     <div className="tool-section">
@@ -764,13 +795,13 @@ const WallpaperDetail = () => {
 
             {/* Mobile Sticky Action Bar */}
             <div className="mobile-sticky-actions mobile-only">
-                <button 
+                <button
                     className="mobile-action-btn primary"
                     onClick={() => setIsVisualizerOpen(true)}
                 >
                     <Camera size={18} /> TRY ON WALL
                 </button>
-                <button 
+                <button
                     className="mobile-action-btn secondary"
                     onClick={() => setIsEnquiryOpen(true)}
                 >
