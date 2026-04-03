@@ -83,8 +83,8 @@ const HeroCarousel = () => {
             {/* Pagination Indicators */}
             <div className="hero-pagination">
                 {heroSlides.map((_, idx) => (
-                    <div 
-                        key={idx} 
+                    <div
+                        key={idx}
                         className={`pagination-dot ${idx === currentIndex ? 'active' : ''}`}
                         onClick={() => setCurrentIndex(idx)}
                     />

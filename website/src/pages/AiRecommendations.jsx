@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Layout, Sparkles, User, Search } from 'lucide-react';
-import { fetchAiRecommendations } from '../services/api';
+import { fetchAiRecommendations, fetchGroups, fetchCategories } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import SidebarLeft from '../components/SidebarLeft';
 import SidebarRight from '../components/SidebarRight';
@@ -11,17 +10,38 @@ import '../styles/CatalogLayout.css';
 const AiRecommendations = () => {
     const { user } = useAuth();
     const [step, setStep] = useState(0);
-    const [answers, setAnswers] = useState({
-        roomType: '',
-        mood: '',
-        colors: '',
-        lighting: '',
-        style: ''
-    });
+    const [answers, setAnswers] = useState({ roomType: '', mood: '', colors: '', lighting: '', style: '' });
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(null);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [groups, setGroups] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [selectedGroupIds, setSelectedGroupIds] = useState([]);
+    const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+
+    useEffect(() => {
+        const loadSidebarData = async () => {
+            try {
+                const [g, c] = await Promise.all([fetchGroups(), fetchCategories()]);
+                setGroups(g);
+                setCategories(c);
+            } catch (err) {
+                console.error('Error loading sidebar data:', err);
+            }
+        };
+        loadSidebarData();
+    }, []);
+
+    const sidebarProps = {
+        groups,
+        selectedGroupIds,
+        onToggleGroup: (id) => setSelectedGroupIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]),
+        categories,
+        selectedCategoryIds,
+        onToggleCategory: (id) => setSelectedCategoryIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]),
+        showFilters: true,
+    };
 
     const questions = [
         {
@@ -89,7 +109,10 @@ const AiRecommendations = () => {
         return (
             <div className="catalog-page fade-in-up">
                 <div className="desktop-layout-container" style={{ paddingTop: '0' }}>
-                    <SidebarLeft breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'AI DESIGNER' }]} />
+                    <SidebarLeft
+                        breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'AI DESIGNER' }]}
+                        {...sidebarProps}
+                    />
                     <div className="col-main-content">
                         <div className="recommendations-page" style={{ textAlign: 'center', padding: '120px 5%', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                             <div className="spinner" style={{ width: '40px', height: '40px', border: '1px solid #eee', borderTop: '1px solid #000', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '2rem' }}></div>
@@ -113,7 +136,10 @@ const AiRecommendations = () => {
         return (
             <div className="catalog-page fade-in-up">
                 <div className="desktop-layout-container" style={{ paddingTop: '0' }}>
-                    <SidebarLeft breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'AI DESIGNER' }]} />
+                    <SidebarLeft
+                        breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'AI DESIGNER' }]}
+                        {...sidebarProps}
+                    />
 
                     {/* COLUMN 2: CONTENT */}
                     <div className="col-main-content">
@@ -171,6 +197,7 @@ const AiRecommendations = () => {
             <div className="desktop-layout-container" style={{ paddingTop: '0' }}>
                 <SidebarLeft
                     breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'AI DESIGNER' }]}
+                    {...sidebarProps}
                 />
 
                 {/* COLUMN 2: CONTENT */}

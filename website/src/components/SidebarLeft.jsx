@@ -20,17 +20,18 @@ const SidebarLeft = ({
     const isHome = location.pathname === '/';
 
     return (
-        <div className="col-filter-trigger desktop-only" style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            height: 'calc(100vh - 20px)', 
-            gap: '1rem', 
+        <div className="col-filter-trigger desktop-only" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh',
+            gap: '0.5rem', /* Reduced gap to pull View All closer */
             overflowY: 'auto',
             paddingRight: '10px',
-            scrollbarWidth: 'none'
+            scrollbarWidth: 'none',
+            paddingTop: '1.25rem' /* Closer to the top edge */
         }}>
             {/* Global Menu Trigger & Logo */}
-            <div className="sidebar-brand-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="sidebar-brand-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
                 <div
                     className="menu-trigger-sidebar"
                     onClick={() => window.dispatchEvent(new CustomEvent('open-mega-menu'))}
@@ -43,45 +44,20 @@ const SidebarLeft = ({
                 </div>
 
                 <Link to="/" className="sidebar-logo">
-                    <img src="/logo.png" alt="STENNA" style={{ width: '100%', maxWidth: '180px', height: 'auto' }} />
+                    <img src="/logo.png" alt="STENNA" style={{ width: '100%', height: 'auto', display: 'block' }} />
                 </Link>
             </div>
 
-            {/* Breadcrumb Navigation */}
-            {breadcrumb.length > 0 && (
-                <div className="zara-breadcrumb" style={{ fontSize: '0.6rem' }}>
-                    {breadcrumb.map((item, index) => (
-                        <React.Fragment key={index}>
-                            {item.path ? (
-                                <Link to={item.path}>{item.label}</Link>
-                            ) : (
-                                <span>{item.label}</span>
-                            )}
-                            {index < breadcrumb.length - 1 && ' / '}
-                        </React.Fragment>
-                    ))}
-                </div>
-            )}
-
-            {/* Prominent Catalog Link (Home Only) */}
-            {isHome && (
-                <div style={{ marginBottom: '0.5rem', marginTop: '-0.5rem' }}>
-                    <Link to="/catalog" className="text-action" style={{
-                        color: '#000',
-                        textDecoration: 'none',
-                        borderBottom: '1px solid #000',
-                        paddingBottom: '2px',
-                        display: 'inline-block'
-                    }}>
-                        Catalog
-                    </Link>
-                </div>
-            )}
+            {/* Editorial Headers */}
+            {/* <div className="sidebar-section">
+                <span className="zara-sidebar-header sidebar-header-main">HOME</span>
+                <span className="zara-sidebar-header sidebar-header-sub">CATALOG</span>
+            </div> */}
 
             {/* Optional Filter Sections */}
             {showFilters && (
                 <>
-                    <div style={{ marginBottom: '1rem' }}>
+                    <div className="sidebar-section">
                         <GroupList
                             groups={groups}
                             selectedGroupIds={selectedGroupIds}
@@ -89,7 +65,9 @@ const SidebarLeft = ({
                         />
                     </div>
 
-                    <div style={{ marginBottom: '1rem' }}>
+                    <hr className="sidebar-divider" />
+
+                    <div className="sidebar-section">
                         <CategoryList
                             categories={categories}
                             selectedCategoryIds={selectedCategoryIds}
@@ -97,13 +75,13 @@ const SidebarLeft = ({
                         />
                     </div>
 
-                    <div className="zara-bottom-controls">
+                    <div className="zara-bottom-controls" style={{ marginTop: '2rem' }}>
                         <button className="filter-word-btn text-action" onClick={onOpenFilters} style={{ textAlign: 'left', border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}>
                             Filters
                         </button>
 
-                        <div className="text-nav" style={{ opacity: 0.4, fontSize: 'var(--fs-tiny)', marginTop: '0.5rem' }}>
-                            {loading ? "Refreshing..." : count !== null ? `${count} Artworks Found` : ""}
+                        <div className="text-nav" style={{ opacity: 0.4, fontSize: '0.65rem', marginTop: '0.5rem' }}>
+                            {loading ? "Refreshing..." : count !== null ? `${count} Wallpapers Found` : ""}
                         </div>
                     </div>
                 </>

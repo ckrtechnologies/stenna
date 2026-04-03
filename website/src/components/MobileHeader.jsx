@@ -28,8 +28,8 @@ const MobileHeader = () => {
             <div className="mobile-header-inner">
                 {/* Left: Hamburger */}
                 <div className="mobile-header-left">
-                    <button 
-                        className="mobile-header-menu-btn" 
+                    <button
+                        className="mobile-header-menu-btn"
                         onClick={handleMenuClick}
                         aria-label="Toggle Navigation"
                     >

@@ -116,48 +116,48 @@
 
 /* Video Installation Section */
 .video-installation-section {
-    padding: var(--spacing-md) 0;
+    padding: var(--spacing-md) 4%;
     background: var(--color-white);
-    text-align: center;
+    text-align: left;
 }
 
-.video-installation-section > .section-label,
-.video-installation-section > h3,
-.video-installation-section > p {
-    padding: 0 5%;
+.video-installation-section > .section-label {
+    display: block;
+    margin-bottom: 0.6rem;
+    padding: 0;
+    justify-content: flex-start;
 }
 
-.techniques-title {
-    /* Base style, overrides handled by .text-heading and .text-nav */
-    font-size: clamp(1.6rem, 7vw, 2.4rem);
-    line-height: 1.1;
-    margin-bottom: var(--spacing-sm);
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
+.installation-title {
+    font-family: var(--font-secondary); /* Playfair Display — serif editorial */
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-transform: none; /* Override global h3 uppercase */
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--color-black);
 }
 
 .video-container {
     width: 100%;
-    margin: 3rem 0 0;
+    margin: 1rem 0 0;
     aspect-ratio: 16/9;
     background: #080808;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1);
 }
 
-/* 03. NEW ECO-FRIENDLY SPLIT SECTION */
+/* 03. ECO-FRIENDLY SPLIT SECTION */
 .eco-friendly-split {
     display: flex;
-    min-height: 50vh; /* Reduced from 80vh to tighten space */
-    background: #fdfaf5;
-    /* Creamy background from screenshot */
+    min-height: 55vh;
 }
 
 .eco-image-side {
-    flex: 1;
+    width: 50%;
     overflow: hidden;
+    min-height: 500px;
 }
 
 .eco-image-side img {
@@ -167,38 +167,58 @@
 }
 
 .eco-text-side {
-    flex: 1;
-    padding: 8% 6%;
+    width: 50%;
+    padding: 6% 8%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
+    background: #000;
+    color: #fff;
 }
 
-.eco-text-side h2 {
-    font-size: clamp(2rem, 4vw, 3.5rem);
-    line-height: 1.2;
-    margin-bottom: 2rem;
-    color: #333;
+.eco-text-side .section-label {
+    color: #888;
+    display: block;
+    margin-bottom: 1.5rem;
+}
+
+.eco-title {
+    font-family: var(--font-secondary);
+    font-size: clamp(1.4rem, 2.8vw, 2.2rem);
+    font-weight: 400;
+    line-height: 1.3;
+    color: #fff;
     text-transform: none;
-    /* Premium sentence case */
-    font-weight: 700;
+    letter-spacing: 0;
+    margin: 0 0 1.5rem 0;
 }
 
 .eco-text-side p {
-    font-size: 1rem;
+    font-size: var(--fs-body);
     line-height: 1.8;
-    color: #666;
-    margin-bottom: 3rem;
-    max-width: 500px;
+    color: #bbb;
+    margin-bottom: 2.5rem;
+    max-width: 420px;
 }
 
+/* SHOP NOW — outlined white button on black */
 .eco-shop-link {
-    font-size: 0.8rem;
-    color: #88c9d1;
-    /* Blue/teal color from screenshot */
-    text-transform: none;
-    font-weight: 500;
+    display: inline-block;
+    font-size: var(--fs-tiny);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #fff;
+    text-decoration: none;
+    border: 1px solid #fff;
+    padding: 0.7rem 1.6rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.eco-shop-link:hover {
+    background: #fff;
+    color: #000;
 }
 
 /* 04. EVERYTHING YOU NEED - REFINED */
@@ -258,74 +278,66 @@
     padding: 0 10%;
 }
 
-/* 05. TECHNIQUES SECTION - REFINED (CONSISTENT) */
+/* 05. INNOVATION / TECHNIQUES — 4-column editorial grid */
 .techniques-section-v2 {
-    padding: var(--spacing-md) 0;
-    background: var(--color-white);
+    padding: var(--spacing-lg) 4%;
+    background: #fff; /* Removed grey background to separate from footer */
     color: var(--color-black);
-    text-align: center;
-}
-.techniques-section-v2 > div:first-child {
-    padding: 0 5%;
+    text-align: left;
 }
 
-.techniques-section-v2 h2 {
-    font-size: clamp(2.5rem, 5vw, 4rem);
-    margin-bottom: 6rem;
-    color: #000;
-    font-weight: 700;
-    text-transform: none;
+.techniques-section-v2 > div:first-child {
+    padding: 0;
+    margin-bottom: 1.5rem;
 }
 
 .techniques-grid-v2 {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6rem 4%; /* Slightly tighter gap to balance the massive width */
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
     width: 100%;
 }
 
 .technique-card-v2 {
     text-align: left;
-    /* Left align for premium editorial look */
     display: flex;
     flex-direction: column;
 }
 
 .tech-image-wrapper {
     width: 100%;
-    aspect-ratio: 16/10;
-    margin-bottom: 2.5rem;
+    aspect-ratio: 3/4; /* Taller editorial aspect ratio */
+    margin-bottom: 1rem;
     overflow: hidden;
-    background: #f9f9f9;
+    background: #e8e8e8;
 }
 
 .tech-image-wrapper img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .technique-card-v2:hover .tech-image-wrapper img {
-    transform: scale(1.03);
+    transform: scale(1.04);
 }
 
 .technique-card-v2 h4 {
-    font-size: 1.4rem;
-    /* Matching everything-card */
-    margin-bottom: 1.5rem;
+    font-size: var(--fs-tiny);
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
     color: #000;
-    letter-spacing: 0.05em;
-    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.3;
 }
 
 .technique-card-v2 p {
-    font-size: 0.9rem;
-    line-height: 1.8;
+    font-size: var(--fs-tiny);
+    line-height: 1.7;
     color: #666;
-    max-width: 550px;
     margin: 0;
-    /* Align left */
 }
 
 /* 06. ARCHIVE SECTION - REFINED */
@@ -458,12 +470,17 @@
         flex-direction: column;
     }
 
+    .eco-image-side, .eco-text-side {
+        width: 100%;
+    }
+
     .eco-image-side {
-        height: 60vh;
+        height: 50vh;
+        min-height: auto;
     }
 
     .eco-text-side {
-        padding: 4rem 10%;
+        padding: 4rem 8%;
     }
 
     .everything-grid-v2 {
@@ -477,7 +494,7 @@
     }
 
     .tech-image-wrapper {
-        aspect-ratio: 4/5 !important; /* INCREASED HEIGHT FOR MOBILE */
+        aspect-ratio: 3/4 !important; /* Consistent taller ratio on mobile */
     }
 
     .technique-card-v2 {

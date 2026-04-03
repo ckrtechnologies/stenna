@@ -67,11 +67,14 @@ body {
 /* Custom Zara 2-bar Hamburger */
 .zara-hamburger {
   width: 32px;
-  height: 32px; /* Fixed square hit area to match zara-close-icon */
+  height: 32px;
+  /* Fixed square hit area to match zara-close-icon */
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Center bars vertically inside the square */
-  gap: 8px; /* Precise spacing between the two bars */
+  justify-content: center;
+  /* Center bars vertically inside the square */
+  gap: 8px;
+  /* Precise spacing between the two bars */
 }
 
 .zara-hamburger .bar {
@@ -1191,42 +1194,67 @@ body {
   height: 100vh;
   background: white;
   z-index: 4000;
-  opacity: 1;
-  /* Always opaque during transition */
-  visibility: visible;
-  transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
-  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), visibility 0s linear 0.5s;
+  transform: translate(-100%);
 }
 
 .zara-menu-overlay.open {
-  transform: translateX(0);
+  transform: translate(0);
+  visibility: visible;
+  transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), visibility 0s linear 0s;
 }
 
 .zara-menu-container {
-  padding: 0 1%; /* MATCHES desktop-layout-container padding exactly */
+  padding: 0 2.5%;
+  padding-top: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
-  margin-top: 0 !important; /* Ensure no inherited gap */
+  box-sizing: border-box;
 }
 
 @media (max-width: 1024px) {
   .zara-menu-container {
-    padding: 0; /* Delegate mobile padding to mobile-header-inner */
+    padding: 0;
+    /* Delegate mobile padding to mobile-header-inner */
   }
 }
 
+/* Menu Header — no top padding, X is fixed outside the panel */
 .zara-menu-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 2.5rem;
+  min-height: 64px;
+  border-bottom: 1px solid #e5e5e0;
   width: 100%;
   box-sizing: border-box;
-  margin-top: 0 !important;
-  padding-top: 0 !important;
 }
 
-@media (max-width: 1024px) {
-  .zara-menu-header {
-    padding: 0 !important; /* Mobile padding handled by internal grid */
-  }
+.zara-menu-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zara-menu-logo img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Section column labels (COLLECTIONS / BY ROOM / DISCOVER) */
+.zara-menu-col-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #a0a090;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
 }
 
 .zara-logo-large-container {
@@ -1244,7 +1272,8 @@ body {
 
 @media (max-width: 1024px) {
   .zara-logo-img-large {
-    height: 38px; /* EXACT MATCH for .mobile-header-logo img */
+    height: 38px;
+    /* EXACT MATCH for .mobile-header-logo img */
     width: auto;
     max-width: 200px;
   }
@@ -1253,9 +1282,9 @@ body {
 .zara-close-btn {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  height: 32px; /* Matches menu-trigger-sidebar height exactly */
-  width: 32px; /* Fixed width */
+  justify-content: center;
+  height: 32px;
+  width: 32px;
   background: none;
   border: none;
   cursor: pointer;
@@ -1264,9 +1293,49 @@ body {
   transition: opacity 0.2s;
 }
 
+/* Fixed X — pinned at exact same screen position as the hamburger in SidebarLeft (desktop)
+   top: 1.25rem matches .col-filter-trigger paddingTop
+   left: 1% matches the layout container's horizontal padding */
+.zara-fixed-close-btn {
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem; /* Matched to .desktop-layout-container padding */
+  z-index: 4001;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+  line-height: normal; /* Reset potential inherited line-height */
+}
+
+/* Mobile: reposition X to match mobile-header hamburger button position
+   Mobile header is 50px tall, hamburger is vertically centered in it.
+   top = (50px - 32px) / 2 = 9px to center the 32px X icon in 50px header
+   left = 0.75rem matches .mobile-header-inner padding (--spacing-sm) */
+@media (max-width: 768px) {
+  .zara-fixed-close-btn {
+    top: calc((50px - 32px) / 2);
+    left: 1rem; /* Matched to MobileHeader hamburger position (0.75rem + 0.25rem) */
+    z-index: 5000;
+    /* Above mobile header z-index 2500 */
+  }
+}
+
+.zara-fixed-close-btn:hover {
+  opacity: 0.5;
+}
+
 .zara-close-icon {
   width: 32px;
-  height: 32px; /* Fixed square hit area for rotation animation feel */
+  height: 32px;
+  /* Fixed square hit area for rotation animation feel */
   position: relative;
 }
 
@@ -1296,68 +1365,133 @@ body {
 
 .zara-menu-content {
   display: grid;
-  grid-template-columns: 1fr 1.5fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 2rem;
   flex-grow: 1;
-  padding: 0 1.5%;
+  padding: 5rem 1.5% 2rem;
   overflow-y: auto;
 }
 
 @media (max-width: 1024px) {
   .zara-menu-content {
     grid-template-columns: 1fr;
-    padding: 0 5%;
+    padding: 3rem 5% 5rem;
     gap: 0;
   }
 }
 
-/* Groups Column */
+/* Groups Column — large greyed-out collection names */
 .zara-group-list {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
-.zara-group-list li {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.zara-group-list li a {
+.zara-group-link {
   text-decoration: none;
-  color: var(--color-gray-soft);
-  font-size: 1.1rem;
-  transition: all 0.3s;
+  color: #0A0A0A;
+  opacity: 0.15;
+  font-size: clamp(1.8rem, 4vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  transition: opacity 0.2s ease;
   display: block;
-  padding: 0.5rem 0;
+  line-height: 1.3; /* Increased for better desktop presence */
+  padding: 0.75rem 0; /* Increased vertical spacing */
 }
 
-.zara-group-list li.active a,
-.zara-group-list li a:hover {
+.zara-group-list li.active .zara-group-link,
+.zara-group-link:hover {
   opacity: 1;
-  padding-left: 0;
 }
 
 .zara-group-list li.active::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  background-color: #000;
-  border-radius: 50%;
-  position: absolute;
-  left: -20px;
+  display: none;
 }
 
-/* Categories Column */
-.section-label {
-  display: block;
-  font-size: 0.7rem;
+/* Mobile accordion button — same visual as zara-group-link but is a <button> */
+.zara-group-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #0A0A0A;
+  opacity: 0.15;
+  font-size: clamp(1.8rem, 4vw, 3.5rem);
   font-weight: 600;
-  color: #888;
-  margin-bottom: 1.5rem;
-  letter-spacing: 1px;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  transition: opacity 0.2s ease;
+}
+
+.zara-group-btn:hover,
+.zara-group-list li.active .zara-group-btn {
+  opacity: 1;
+}
+
+.zara-accordion-arrow {
+  font-size: 1.2rem;
+  font-weight: 300;
+  color: #aaa;
+  flex-shrink: 0;
+  margin-left: 0.75rem;
+  transition: color 0.2s;
+}
+
+/* Inline submenu expanded below a collection on mobile */
+.zara-mobile-subcats {
+  list-style: none;
+  padding: 0.5rem 0 0.75rem 0;
+  margin: 0;
+  border-left: 1px solid #eee;
+  padding-left: 1rem;
+  animation: fadeInUp 0.25s ease;
+}
+
+.zara-subcat-link {
+  display: block;
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: #000;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.35rem 0;
+  transition: opacity 0.2s;
+}
+
+.zara-subcat-link:hover {
+  opacity: 0.5;
+}
+
+.zara-subcat-all {
+  color: #000;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+/* Category / Discover links */
+.zara-cat-link {
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: #0A0A0A; /* Solid dark color */
+  font-weight: 600; /* Increased weight for visibility */
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+  display: block;
+  padding: 0.85rem 0; /* Significantly increased to fill screen */
+}
+
+.zara-cat-link:hover {
+  opacity: 0.5;
 }
 
 .zara-category-list {
@@ -1367,18 +1501,7 @@ body {
 }
 
 .zara-category-list li {
-  margin-bottom: 1rem;
-}
-
-.zara-category-list li a {
-  font-size: 1rem;
-  text-decoration: none;
-  color: #000;
-  transition: opacity 0.2s;
-}
-
-.zara-category-list li a:hover {
-  text-decoration: underline;
+  margin-bottom: 0;
 }
 
 /* Editorial Column */
@@ -1414,18 +1537,33 @@ body {
   padding-bottom: 2rem;
 }
 
+.zara-menu-footer-links {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .zara-menu-footer-links a,
 .zara-menu-footer-links button {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   text-decoration: none;
-  color: #888;
+  color: #555;
   background: none;
   border: none;
-  padding: 0;
+  padding: 0.25rem 0;
   font-family: inherit;
   cursor: pointer;
-  text-align: left;
-  transition: all 0.3s ease;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 400;
+  transition: color 0.2s ease;
+  text-align: inherit;
+}
+
+.zara-menu-footer-links a:hover,
+.zara-menu-footer-links button:hover {
+  color: #000;
 }
 
 /* User Profile Section in ZaraMenu */
@@ -1508,9 +1646,9 @@ body {
 
   .zara-menu-content {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 1rem;
     overflow-y: auto;
-    padding-bottom: 4rem;
+    padding-bottom: 1.5rem;
   }
 
   .editorial-image-container {
@@ -1793,7 +1931,7 @@ body {
 .zara-menu-header {
   width: 100%;
   height: auto;
-  padding: 1.5rem 0;
+  padding: 0;
   display: flex;
   align-items: center;
   z-index: 100;
@@ -1801,7 +1939,18 @@ body {
 
 @media (min-width: 1025px) {
   .zara-menu-header {
-    padding: 2.5rem 0;
+    padding-top: 1.25rem;
+    padding-bottom: 1rem;
+  }
+}
+
+/* Mobile menu header: zero padding, exact 50px — matches mobile nav height */
+@media (max-width: 768px) {
+  .zara-menu-header {
+    padding: 0 !important;
+    height: 50px !important;
+    min-height: 50px;
+    flex-shrink: 0;
   }
 }
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Layout, Sparkles, User } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 const SidebarRight = ({
     searchQuery = '',
@@ -10,11 +10,11 @@ const SidebarRight = ({
     children
 }) => {
     return (
-        <div className="col-tools-panel desktop-only" style={{ textAlign: 'right', alignItems: 'flex-end' }}>
-            {/* Search Section */}
+        <div className="col-tools-panel desktop-only">
+            {/* Search */}
             {showSearch && (
                 <div className="tool-section">
-                    <div className="search-input-wrapper-sidebar" style={{ position: 'relative', marginBottom: '2rem' }}>
+                    <div style={{ position: 'relative' }}>
                         <input
                             type="text"
                             placeholder="SEARCH"
@@ -28,54 +28,46 @@ const SidebarRight = ({
                             style={{
                                 width: '100%',
                                 border: 'none',
-                                borderBottom: '1px solid #000',
-                                padding: '0.5rem 0',
-                                fontSize: '0.75rem',
-                                letterSpacing: '0.1em',
+                                borderBottom: '1px solid #ccc',
+                                padding: '0.4rem 20px 0.4rem 0',
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.08em',
                                 outline: 'none',
                                 background: 'transparent',
                                 textTransform: 'uppercase',
                                 textAlign: 'right',
-                                paddingRight: '20px'
+                                color: '#888',
+                                fontWeight: 400,
                             }}
                         />
-                        <Search size={14} style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+                        <Search size={12} style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }} />
                     </div>
                 </div>
             )}
 
-            {/* Page Specific Actions (Passed as children) */}
+            {/* Page Specific Actions */}
             {children && (
                 <div className="tool-section page-specific-actions">
                     {children}
                 </div>
             )}
 
-            {/* Discovery Section */}
-            <div className="tool-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <h3 style={{ textAlign: 'right' }}>DISCOVERY</h3>
-                <Link to="/try-it-on" className="tool-link" style={{ justifyContent: 'flex-end' }}>
-                    TRY IT ON YOUR WALL <Layout size={16} />
-                </Link>
-                <Link to="/ai-recommendations" className="tool-link" style={{ justifyContent: 'flex-end' }}>
-                    AI RECOMMENDATIONS <Sparkles size={16} />
-                </Link>
-                <Link to="/catalog" className="tool-link" style={{ justifyContent: 'flex-end' }}>
-                    BROWSE CATALOG <Layout size={16} />
-                </Link>
+            {/* Discovery */}
+            <div className="tool-section">
+                <h3>DISCOVERY</h3>
+                <Link to="/try-it-on" className="tool-link">TRY IT ON YOUR WALL</Link>
+                <Link to="/ai-recommendations" className="tool-link">AI RECOMMENDATIONS</Link>
+                <Link to="/catalog" className="tool-link">BROWSE CATALOG</Link>
             </div>
 
-            {/* User Account Section */}
-            <div className="tool-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <h3 style={{ textAlign: 'right' }}>ACCOUNT</h3>
-                <div className="user-display" style={{ justifyContent: 'flex-end' }}>
-                    <span className="user-name-label">
-                        {user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : "GUEST"}
-                    </span>
-                    <User size={16} />
-                </div>
+            {/* Account */}
+            <div className="tool-section">
+                <h3>ACCOUNT</h3>
+                <span style={{ fontSize: '0.65rem', fontWeight: 400, color: '#888', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    {user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : 'GUEST'}
+                </span>
                 {user && (
-                    <Link to="/profile" className="tool-link" style={{ marginTop: '1rem', fontSize: '0.65rem', justifyContent: 'flex-end' }}>
+                    <Link to="/profile" className="tool-link" style={{ marginTop: '0.4rem' }}>
                         VIEW PROFILE
                     </Link>
                 )}

@@ -104,7 +104,6 @@ const WallpaperList = ({ wallpapers, isAlternating = false }) => {
                             </div>
                             <div className="card-content zara-product-info" style={{ padding: '0.5rem 0' }}>
                                 <h4 style={{ fontSize: '0.65rem', fontWeight: '400', letterSpacing: '0.05em' }}>{wallpaper.name}</h4>
-                                <p className="slug" style={{ fontSize: '0.6rem', color: '#999', marginTop: '2px' }}>{wallpaper.slug}</p>
                             </div>
                         </Link>
                     </div>

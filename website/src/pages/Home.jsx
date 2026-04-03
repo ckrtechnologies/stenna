@@ -84,7 +84,7 @@ const Home = () => {
 
                     {/* 02. INSTALLATION VIDEO SECTION */}
                     <section className="video-installation-section">
-                        <span className="section-label" style={{ justifyContent: 'center' }}>EXPERTISE</span>
+                        <span className="section-label">EXPERTISE</span>
                         <h3 className="installation-title">Professional Wallpaper Installation</h3>
                         {/* <p style={{ maxWidth: '800px', margin: '0 auto', opacity: '0.6', lineHeight: 1.8 }}>
                             Experience the precision of our master installers. We ensure every seam is invisible and every pattern is perfectly aligned, bringing your vision to life with artisanal care.
@@ -111,10 +111,10 @@ const Home = () => {
                         <div className="eco-text-side">
                             <span className="section-label">SUSTAINABILITY</span>
                             <h3 className="eco-title">Stenna Wallpaper Company Prides Itself With The Best Eco-Friendly Products In The World</h3>
-                            <p>
+                            {/* <p>
                                 By establishing a new factory, Stenna wallpaper adopted a water-based ink applying production process for PVC and Duplex wallpaper for the first time in India and is fulfilling advanced eco-friendly management.
-                            </p>
-                            <Link to="/catalog" className="eco-shop-link">Shop Now</Link>
+                            </p> */}
+                            {/* <Link to="/catalog" className="eco-shop-link">SHOP NOW</Link> */}
                         </div>
                     </section>
 
@@ -152,41 +152,38 @@ const Home = () => {
                     </div>
                 </section> */}
 
-                    {/* 05. TECHNIQUES SECTION */}
+                    {/* 05. INNOVATION SECTION */}
                     <section className="techniques-section-v2">
-                        <div style={{ textAlign: 'center', marginBottom: '0rem' }}>
-                            <span className="section-label" style={{ justifyContent: 'center', color: '#888' }}>Innovation</span>
-                            {/* <h3 className="techniques-title text-heading" style={{ color: '#000' }}>
-                                Techniques That Set Stenna Wallpapers Apart
-                            </h3> */}
+                        <div>
+                            <span className="section-label">INNOVATION</span>
                         </div>
                         <div className="techniques-grid-v2">
                             <div className="technique-card-v2">
                                 <div className="tech-image-wrapper">
                                     <img src="/home/tech-factory.png" alt="World Class Manufacturing Facility" />
                                 </div>
-                                <h4 className="text-nav" style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '1rem' }}>World Class Manufacturing Facility</h4>
+                                <h4 className="text-action">World Class Manufacturing Facility</h4>
                                 <p>Stenna wallpapers come with the assurance of accuracy from capture to export, consistently and flawlessly.</p>
                             </div>
                             <div className="technique-card-v2">
                                 <div className="tech-image-wrapper">
                                     <img src="/home/tech-color.png" alt="Colour & Calibration" />
                                 </div>
-                                <h4 className="text-nav" style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '1rem' }}>Colour & Calibration</h4>
+                                <h4 className="text-action">Colour & Calibration</h4>
                                 <p>Color is one of our greatest allies. We understand the hues and how they fit with your design theory to achieve mesmerizing results.</p>
                             </div>
                             <div className="technique-card-v2">
                                 <div className="tech-image-wrapper">
                                     <img src="/home/tech-emboss.png" alt="Embossing Roller" />
                                 </div>
-                                <h4 className="text-nav" style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '1rem' }}>Embossing Roller</h4>
+                                <h4 className="text-action">Embossing Roller</h4>
                                 <p>We take immense pride in our embossing technology, adapted from European counterparts to focus on designs created by global artisans.</p>
                             </div>
                             <div className="technique-card-v2">
                                 <div className="tech-image-wrapper">
                                     <img src="/home/tech-paper.png" alt="PVC & Paper Quality" />
                                 </div>
-                                <h4 className="text-nav" style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '1rem' }}>PVC & Paper Quality</h4>
+                                <h4 className="text-action">PVC & Paper Quality</h4>
                                 <p>All the paper used at Stenna is of the highest quality, ensuring powerful results and long-lasting durability for Every home.</p>
                             </div>
                         </div>

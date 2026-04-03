@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Layout, Sparkles, User, Search } from 'lucide-react';
-import { fetchVisualizationHistory } from '../services/api';
+import { fetchVisualizationHistory, fetchGroups, fetchCategories } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import SidebarLeft from '../components/SidebarLeft';
 import SidebarRight from '../components/SidebarRight';
@@ -14,13 +13,27 @@ const TryItOn = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [groups, setGroups] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [selectedGroupIds, setSelectedGroupIds] = useState([]);
+    const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const [groupsData, categoriesData] = await Promise.all([fetchGroups(), fetchCategories()]);
+                setGroups(groupsData);
+                setCategories(categoriesData);
+            } catch (err) {
+                console.error('Error loading sidebar data:', err);
+            }
+        };
+        loadData();
+    }, []);
 
     useEffect(() => {
         const loadHistory = async () => {
-            if (!user) {
-                setLoading(false);
-                return;
-            }
+            if (!user) { setLoading(false); return; }
             try {
                 const data = await fetchVisualizationHistory();
                 setHistory(data);
@@ -40,7 +53,16 @@ const TryItOn = () => {
         return (
             <div className="catalog-page fade-in-up">
                 <div className="desktop-layout-container" style={{ paddingTop: '0' }}>
-                    <SidebarLeft breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'ROOM TRIES' }]} />
+                    <SidebarLeft
+                        breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'ROOM TRIES' }]}
+                        groups={groups}
+                        selectedGroupIds={selectedGroupIds}
+                        onToggleGroup={(id) => setSelectedGroupIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])}
+                        categories={categories}
+                        selectedCategoryIds={selectedCategoryIds}
+                        onToggleCategory={(id) => setSelectedCategoryIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])}
+                        showFilters={true}
+                    />
 
                     <div className="col-main-content">
                         <div className="try-it-on-page" style={{ padding: '4rem 1rem' }}>
@@ -68,7 +90,16 @@ const TryItOn = () => {
     return (
         <div className="catalog-page fade-in-up">
             <div className="desktop-layout-container" style={{ paddingTop: '0' }}>
-                <SidebarLeft breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'ROOM TRIES' }]} />
+                <SidebarLeft
+                    breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'ROOM TRIES' }]}
+                    groups={groups}
+                    selectedGroupIds={selectedGroupIds}
+                    onToggleGroup={(id) => setSelectedGroupIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])}
+                    categories={categories}
+                    selectedCategoryIds={selectedCategoryIds}
+                    onToggleCategory={(id) => setSelectedCategoryIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])}
+                    showFilters={true}
+                />
 
                 <div className="col-main-content">
                     <div className="try-it-on-page" style={{ padding: '0' }}>

@@ -16,10 +16,21 @@ import { useAuth } from '../context/AuthContext';
 import {
     Sparkles, Layout, Search, User, CheckCircle, XCircle,
     Home, Heart, Star, Smile, Coffee, Feather, Zap,
-    Camera, Book, Brush, Sun
+    Camera, Book, Brush, Sun,
+    ShieldCheck, Clock
 } from 'lucide-react';
 import '../styles/App.css';
 import '../styles/CatalogLayout.css';
+
+// Utility for client-side randomization
+const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+};
 
 // --- Storytelling Helpers ---
 const getIconForItem = (item) => {
@@ -60,7 +71,7 @@ const WallpaperDetail = () => {
     const [isVisualizerOpen, setIsVisualizerOpen] = useState(false);
     const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('about');
+    const [activeTab, setActiveTab] = useState('ABOUT');
     const [bookCode, setBookCode] = useState('');
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [activeImage, setActiveImage] = useState(0);
@@ -105,6 +116,7 @@ const WallpaperDetail = () => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [swipeDirection, setSwipeDirection] = useState(0); // -1 for left, 1 for right
+    const [visibleCount, setVisibleCount] = useState(isMobile ? 4 : 6); // Default 2 rows for both mobile & desktop
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -203,30 +215,67 @@ const WallpaperDetail = () => {
                     setActiveImage(0);
                 }
 
-                // If collection jump or new product, fetch related wallpapers
-                const gId = data.groups?.[0]?.id;
-                const cId = data.categories?.[0]?.id;
+                // Tiered Related Wallpapers Logic
+                setListLoading(true);
 
-                if (gId || cId) {
-                    setListLoading(true);
-                    const listData = await fetchWallpapers({
-                        groupIds: gId ? [gId] : [],
-                        categoryIds: cId ? [cId] : [],
-                        activeOnly: 'true'
-                    });
-                    // IMPORTANT: Keep ALL products including current for navigation lookup
-                    setProductList(listData.slice(0, 50));
-                    setListLoading(false);
-                }
-
-                // Initial load for groups and all categories
+                // Fetch metadata for classification (groups & categories)
                 const [groupsData, catsData] = await Promise.all([
                     fetchGroups(),
                     fetchCategories()
                 ]);
+
                 setGroups(groupsData);
                 setAllCategories(catsData);
                 setCategories(catsData);
+
+                // Identify color and style group IDs
+                const colorGroupIds = groupsData
+                    .filter(g => /color|palette|shade|hue/i.test(g.name))
+                    .map(g => g.id);
+                const styleGroupIds = groupsData
+                    .filter(g => /style|vibe|look|aesthetic|theme/i.test(g.name))
+                    .map(g => g.id);
+
+                // Get current wallpaper's categories categorized by type
+                const currentColCats = data.categories?.filter(c => colorGroupIds.includes(c.group_id)).map(c => c.id) || [];
+                const currentStyleCats = data.categories?.filter(c => styleGroupIds.includes(c.group_id)).map(c => c.id) || [];
+                const currentCollectionIds = data.groups?.filter(g => !colorGroupIds.includes(g.id) && !styleGroupIds.includes(g.id)).map(g => g.id) || [];
+
+                // Sequential Tiered Fetching
+                const [tier1, tier2, tier3] = await Promise.all([
+                    // Tier 1: Collection match
+                    currentCollectionIds.length > 0 
+                        ? fetchWallpapers({ groupIds: currentCollectionIds }) 
+                        : Promise.resolve([]),
+                    // Tier 2: Color match
+                    currentColCats.length > 0 
+                        ? fetchWallpapers({ categoryIds: currentColCats }) 
+                        : Promise.resolve([]),
+                    // Tier 3: Style match
+                    currentStyleCats.length > 0 
+                        ? fetchWallpapers({ categoryIds: currentStyleCats }) 
+                        : Promise.resolve([])
+                ]);
+
+                // Combine, prioritize and deduplicate using ID as key
+                const uniqueRelated = new Map();
+                
+                // Tier 1: Collections (Highest priority)
+                tier1.forEach(item => { if (item.slug !== slug) uniqueRelated.set(item.id, item); });
+                // Tier 2: Color
+                tier2.forEach(item => { if (item.slug !== slug && !uniqueRelated.has(item.id)) uniqueRelated.set(item.id, item); });
+                // Tier 3: Style
+                tier3.forEach(item => { if (item.slug !== slug && !uniqueRelated.has(item.id)) uniqueRelated.set(item.id, item); });
+
+                // If still too few, add general category matches
+                if (uniqueRelated.size < 20 && data.categories?.length > 0) {
+                    const allCatMatches = await fetchWallpapers({ categoryIds: data.categories.map(c => c.id) });
+                    allCatMatches.forEach(item => { if (item.slug !== slug && !uniqueRelated.has(item.id)) uniqueRelated.set(item.id, item); });
+                }
+
+                // Final list (No slice(0, 50) as per user request for "unlimited")
+                setProductList(Array.from(uniqueRelated.values()));
+                setListLoading(false);
 
                 // Set initial selection based on current wallpaper
                 if (data.groups?.[0]?.id) setSelectedGroupIds([data.groups[0].id.toString()]);
@@ -518,193 +567,188 @@ const WallpaperDetail = () => {
                                 {/* Part 1: Hero Section */}
                                 <div className="detail-hero-section">
                                     {wallpaper.images?.[0] && (
-                                        <img
-                                            src={wallpaper.images[0].image_url}
-                                            alt={wallpaper.name}
-                                            className="detail-hero-image"
-                                            onClick={() => {
-                                                setActiveImage(0);
-                                                setIsGalleryOpen(true);
-                                            }}
-                                        />
+                                        <div className="detail-hero-inner">
+                                            <img
+                                                src={wallpaper.images[0].image_url}
+                                                alt={wallpaper.name}
+                                                className="detail-hero-image"
+                                                onClick={() => {
+                                                    setActiveImage(0);
+                                                    setIsGalleryOpen(true);
+                                                }}
+                                            />
+                                        </div>
                                     )}
                                 </div>
 
                                 {/* Part 2: Info Section */}
-                                <div className="detail-info-section">
-                                    <h1 className="zara-detail-title">
-                                        {wallpaper.design_code}
-                                        {bookCode && (
-                                            <span className="zara-book-number"> / (Books : {bookCode})</span>
+                                <div className="detail-info-section str-layout">
+                                    {/* 1. Breadcrumbs (Clickable) */}
+                                    <nav className="str-breadcrumb" aria-label="breadcrumb">
+                                        <Link to="/">HOME</Link> / <Link to="/catalog">CATALOG</Link> / <span>{wallpaper.name || wallpaper.design_code}</span>
+                                    </nav>
+
+                                    {/* 2. Design Code + Book Name */}
+                                    <div className="str-header-block">
+                                        <div className="str-header-left">
+                                            <h1 className="str-title">
+                                                {wallpaper.design_code} 
+                                            </h1>
+                                            {bookCode && <p className="str-subtitle">{bookCode}</p>}
+                                        </div>
+                                        {wallpaper.swatch && (
+                                            <div className="str-header-swatch">
+                                                <img src={wallpaper.swatch} alt="Texture Preview" />
+                                            </div>
                                         )}
-                                    </h1>
-                                    {/* {wallpaper.price && (
-                            <>
-                                <p className="zara-price">₹ {wallpaper.price}</p>
-                                <p className="zara-vat-info">MRP INCL. OF ALL TAXES</p>
-                            </>
-                        )} */}                                     {/* ── Mobile Tab Bar ── */}
+                                    </div>
+
+                                    {/* 2.1 Mobile Tab Navigation */}
                                     {isMobile && (
-                                        <div className="info-tab-bar">
-                                            <button
-                                                className={`info-tab-btn ${activeTab === 'about' ? 'active' : ''}`}
-                                                onClick={() => setActiveTab('about')}
-                                            >
-                                                About
-                                            </button>
-                                            <button
-                                                className={`info-tab-btn ${activeTab === 'fit' ? 'active' : ''}`}
-                                                onClick={() => setActiveTab('fit')}
-                                            >
-                                                Wallpaper Guide
-                                            </button>
+                                        <div className="str-mobile-tabs">
+                                            {['ABOUT', 'SPECS', 'GUIDE'].map((tab) => (
+                                                <button 
+                                                    key={tab}
+                                                    className={`str-tab-btn ${activeTab === tab ? 'active' : ''}`}
+                                                    onClick={() => setActiveTab(tab)}
+                                                >
+                                                    {tab}
+                                                </button>
+                                            ))}
                                         </div>
                                     )}
 
-                                    {/* Swatch Section */}
-                                    {wallpaper.swatch && (
-                                        <div className="swatch-section" style={{ marginBottom: '2rem' }}>
-                                            <h4 className="story-label">Texture Swatch</h4>
-                                            <div className="swatch-preview">
-                                                <img src={wallpaper.swatch} alt="Texture Swatch" />
-                                            </div>
-                                        </div>
+                                    <hr className="str-divider" />
+
+                                    {/* 3. Tagline & Description & Vibe (ABOUT Tab) */}
+                                    {(!isMobile || activeTab === 'ABOUT') && (
+                                        <>
+                                            {(wallpaper.tagline || wallpaper.subtitle) && (
+                                                <>
+                                                    <div className="str-section">
+                                                        <h4 className="str-label">TAGLINE</h4>
+                                                        <p className="str-tagline-text">{wallpaper.tagline || wallpaper.subtitle}</p>
+                                                    </div>
+                                                    <hr className="str-divider" />
+                                                </>
+                                            )}
+
+                                            {wallpaper.description && (
+                                                <>
+                                                    <div className="str-section">
+                                                        <h4 className="str-label">DESCRIPTION</h4>
+                                                        <p className="str-body">{wallpaper.description}</p>
+                                                    </div>
+                                                    <hr className="str-divider" />
+                                                </>
+                                            )}
+
+                                            {wallpaper.vibe && (
+                                                <>
+                                                    <div className="str-section">
+                                                        <h4 className="str-label">VIBE</h4>
+                                                        <div className="str-chips">
+                                                            {wallpaper.vibe.split(/[\s•.]+/).filter(v => v.trim()).map((v, i) => (
+                                                                <div key={i} className="str-chip">
+                                                                    <span>{v.trim()}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <hr className="str-divider" />
+                                                </>
+                                            )}
+                                        </>
                                     )}
 
-                                    {/* ── About: Tagline + Vibe + Description ── */}
-                                    <div className={isMobile ? (activeTab === 'about' ? 'info-tab-panel active' : 'info-tab-panel') : ''}>
-                                        {/* Tagline */}
-                                        {wallpaper.tagline && (
-                                            <div className="story-section" style={{ borderTop: 'none', paddingTop: 0, marginTop: '0.5rem' }}>
-                                                <p className="story-tagline">{wallpaper.tagline}</p>
+                                    {/* 4. Technical Specs & Guarantee (SPECS Tab) */}
+                                    {(!isMobile || activeTab === 'SPECS') && (
+                                        <>
+                                            <div className="str-section">
+                                                <h4 className="str-label">TECHNICAL SPECIFICATIONS</h4>
+                                                <div className="str-specs">
+                                                    <div className="str-spec">
+                                                        <div className="str-spec-label">ROLL WIDTH</div>
+                                                        <div className="str-spec-value">{wallpaper.roll_width || '53 CM'}</div>
+                                                    </div>
+                                                    <div className="str-spec">
+                                                        <div className="str-spec-label">ROLL HEIGHT</div>
+                                                        <div className="str-spec-value">{wallpaper.roll_height || '10 MT'}</div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        )}
+                                            <hr className="str-divider" />
 
-                                        {/* Vibe */}
-                                        {wallpaper.vibe && (
-                                            <div className="story-section">
-                                                <h4 className="story-label">Vibe</h4>
-                                                <div className="story-chips">
-                                                    {wallpaper.vibe.split(/[•.]/).filter(v => v.trim()).map((v, i) => (
-                                                        <span key={i} className="story-chip">
-                                                            {getIconForItem(v)}
-                                                            {v.trim()}
-                                                        </span>
+                                            <div className="str-section">
+                                                <div className="features-guarantee-banner">
+                                                    <img src="/details-icon.avif" alt="Features & Specifications" className="str-features-banner" />
+                                                </div>
+                                            </div>
+                                            <hr className="str-divider" />
+                                        </>
+                                    )}
+
+                                    {/* 5. Swatch & Guidance (GUIDE Tab) */}
+                                    {(!isMobile || activeTab === 'GUIDE') && (
+                                        <>
+                                            {/* {wallpaper.swatch && (
+                                                <>
+                                                    <div className="str-section">
+                                                        <h4 className="str-label">TEXTURE SWATCH</h4>
+                                                        <div className="str-swatch-container">
+                                                            <img src={wallpaper.swatch} alt="Texture Swatch" className="str-swatch" />
+                                                        </div>
+                                                    </div>
+                                                    <hr className="str-divider" />
+                                                </>
+                                            )} */}
+
+                                            <div className="str-section">
+                                                <h4 className="str-label">CHOOSE THIS DESIGN IF_</h4>
+                                                <ul className="str-list">
+                                                    {(wallpaper.choose_if ? wallpaper.choose_if.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
+                                                        "You seek a sophisticated, high-end atmosphere",
+                                                        "You appreciate intricate textures and premium finishes",
+                                                        "You want a durable, long-lasting wall covering",
+                                                        "This design complements modern and contemporary furniture"
+                                                    ]).filter(v => v && v.trim()).map((v, i) => (
+                                                        <li key={i}>
+                                                            <CheckCircle size={18} strokeWidth={2} className="str-icon-check" />
+                                                            <span>{v.trim()}</span>
+                                                        </li>
                                                     ))}
-                                                </div>
+                                                </ul>
                                             </div>
-                                        )}
+                                            <hr className="str-divider" />
 
-                                        {/* Description */}
-                                        {wallpaper.description && (
-                                            <div className="story-section">
-                                                <h4 className="story-label">Description</h4>
-                                                <p className="story-text">{wallpaper.description}</p>
-                                            </div>
-                                        )}
+                                            {wallpaper.avoid_if && (
+                                                <>
+                                                    <div className="str-section">
+                                                        <h4 className="str-label">AVOID IF_</h4>
+                                                        <ul className="str-list str-avoid-list">
+                                                            {(wallpaper.avoid_if ? wallpaper.avoid_if.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
+                                                                "The wall surface has significant unaddressed dampness",
+                                                                "You prefer extremely smooth, non-textured surfaces",
+                                                                "The room receives constant direct abrasive contact"
+                                                            ]).filter(v => v && v.trim()).map((v, i) => (
+                                                                <li key={i}>
+                                                                    <XCircle size={18} strokeWidth={2} className="str-icon-cross" />
+                                                                    <span>{v.trim()}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                    <hr className="str-divider" />
+                                                </>
+                                            )}
+                                        </>
+                                    )}
 
-                                        {/* Technical Specifications */}
-                                        <div className="story-section">
-                                            <h4 className="story-label">Technical Specifications</h4>
-                                            <div className="spec-grid">
-                                                <div className="spec-item">
-                                                    <span className="spec-label">Roll Width</span>
-                                                    <span className="spec-value">{wallpaper.roll_width || '53 CM'}</span>
-                                                </div>
-                                                <div className="spec-item">
-                                                    <span className="spec-label">Roll Height</span>
-                                                    <span className="spec-value">{wallpaper.roll_height || '10 MT'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Fallback */}
-                                        {!wallpaper.vibe && !wallpaper.description && (
-                                            <div className="story-section" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
-                                                <p className="story-text" style={{ color: '#999' }}>{`Experience the luxury of ${wallpaper.name}. Designed for high-end interiors, this premium wallpaper combines texture and durability.`}</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* ── Fit Guide: Choose if + Avoid if + Ideal For ── */}
-                                    <div className={isMobile ? (activeTab === 'fit' ? 'info-tab-panel active' : 'info-tab-panel') : ''}>
-                                        {/* Choose this design if */}
-                                        <div className="story-section" style={isMobile && activeTab === 'fit' ? { borderTop: 'none', paddingTop: 0 } : {}}>
-                                            <h4 className="story-label">Choose this design if…</h4>
-                                            <ul className="story-list">
-                                                {(wallpaper.choose_if ? wallpaper.choose_if.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
-                                                    "You seek a sophisticated, high-end atmosphere for your space",
-                                                    "You appreciate intricate textures and premium finishes",
-                                                    "You want a durable and long-lasting wall covering",
-                                                    "This design complements modern and contemporary furniture",
-                                                    "You seek a statement piece that transforms your entire room"
-                                                ]).filter(v => v && v.trim()).map((v, i) => (
-                                                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', marginBottom: '0.8rem' }}>
-                                                        <CheckCircle size={16} className="fit-icon success" style={{ marginTop: '0.2rem', flexShrink: 0 }} />
-                                                        <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: '1.4' }}>{v.trim()}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-
-                                        {/* Avoid if */}
-                                        <div className="story-section">
-                                            <h4 className="story-label">Avoid if…</h4>
-                                            <ul className="story-list">
-                                                {(wallpaper.avoid_if ? wallpaper.avoid_if.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
-                                                    "The wall surface has significant unaddressed dampness",
-                                                    "You are looking for a completely smooth, non-textured surface",
-                                                    "You prefer extremely high-contrast or neon color patterns",
-                                                    "The room receives constant direct abrasive contact"
-                                                ]).filter(v => v && v.trim()).map((v, i) => (
-                                                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', marginBottom: '0.8rem' }}>
-                                                        <XCircle size={16} className="fit-icon error" style={{ marginTop: '0.2rem', flexShrink: 0 }} />
-                                                        <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: '1.4' }}>{v.trim()}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-
-                                        {/* Ideal For */}
-                                        <div className="story-section">
-                                            <h4 className="story-label">Ideal For</h4>
-                                            <ul className="story-list">
-                                                {(wallpaper.ideal_for ? wallpaper.ideal_for.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
-                                                    "Bedroom",
-                                                    "Living Room",
-                                                    "Hallway",
-                                                    "Office Space",
-                                                    "Feature Wall"
-                                                ]).filter(v => v && v.trim()).map((v, i) => (
-                                                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', marginBottom: '0.8rem' }}>
-                                                        <span className="fit-icon success" style={{ display: 'flex', alignItems: 'center', marginTop: '0.2rem', flexShrink: 0 }}>
-                                                            {getIconForItem(v)}
-                                                        </span>
-                                                        <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: '1.4' }}>{v.trim()}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-
-                                        {/* Empty state for fit tab */}
-                                        {isMobile && activeTab === 'fit' && !wallpaper.choose_if && !wallpaper.avoid_if && !wallpaper.ideal_for && (
-                                            <div className="story-section" style={{ borderTop: 'none', paddingTop: 0 }}>
-                                                <p className="story-text" style={{ color: '#bbb' }}>No fit guide available for this design.</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="zara-detail-actions">
-                                        <button
-                                            className="btn-zara-primary"
-                                            onClick={() => setIsVisualizerOpen(true)}
-                                        >
+                                    <div className="str-actions">
+                                        <button className="str-btn str-btn-dark" onClick={() => setIsVisualizerOpen(true)}>
                                             TRY ON MY WALL
                                         </button>
-                                        <button
-                                            className="btn-zara-outline"
-                                            onClick={() => setIsEnquiryOpen(true)}
-                                        >
+                                        <button className="str-btn str-btn-light" onClick={() => setIsEnquiryOpen(true)}>
                                             ENQUIRE FOR QUOTE
                                         </button>
                                     </div>
@@ -746,7 +790,7 @@ const WallpaperDetail = () => {
                             <section className="related-wallpapers-section">
                                 <h2 className="related-title">SIMILAR WALLPAPERS YOU MAY LIKE</h2>
                                 <div className="related-zara-grid">
-                                    {productList.filter(p => p.slug !== slug).slice(0, 12).map((item) => (
+                                    {productList.filter(p => p.slug !== slug).slice(0, visibleCount).map((item) => (
                                         <Link key={item.id} to={`/wallpaper/${item.slug}`} className="related-item">
                                             <div className="related-img-container">
                                                 <img
@@ -762,6 +806,15 @@ const WallpaperDetail = () => {
                                         </Link>
                                     ))}
                                 </div>
+
+                                {productList.length > visibleCount && (
+                                    <div className="related-view-more">
+                                        <button className="view-more-btn" onClick={() => setVisibleCount(prev => prev + 12)}>
+                                            <span className="plus-icon">+</span>
+                                            VIEW MORE
+                                        </button>
+                                    </div>
+                                )}
                             </section>
                         )}
 
@@ -786,7 +839,11 @@ const WallpaperDetail = () => {
                 >
                     <div className="tool-section">
                         <h3>ACTIONS</h3>
-                        <button onClick={() => setIsEnquiryOpen(true)} className="tool-link" style={{ background: 'none', border: 'none', width: '100%', padding: 0, textAlign: 'left' }}>
+                        <button
+                            onClick={() => setIsEnquiryOpen(true)}
+                            className="tool-link"
+                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
                             ENQUIRE NOW
                         </button>
                     </div>

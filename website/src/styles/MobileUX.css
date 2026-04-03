@@ -1,5 +1,13 @@
-/* --- MOBILE SPECIFIC UX ENHANCEMENTS --- */
-@media (max-width: 768px) {
+/* --- MOBILE & TABLET SPECIFIC UX ENHANCEMENTS --- */
+@media (max-width: 1024px) {
+  :root {
+    --fs-h1: 2rem;
+    --fs-h2: 1.5rem;
+    --fs-h3: 1.1rem;
+    --fs-body: 0.95rem; /* Larger body for tablet readability */
+    --fs-caption: 0.8rem;
+    --fs-tiny: 0.7rem;
+  }
   /* Force Edge-to-Edge Content */
   .container, 
   .main-content, 
@@ -188,9 +196,58 @@
   }
 }
 
-/* Ensure these are GONE on desktop/tablet */
-@media (min-width: 769px) {
+/* Ensure these are GONE on desktop (large screens) */
+@media (min-width: 1025px) {
   .mobile-only {
     display: none !important;
+  }
+}
+
+/* Tablet specific enhancements for text visibility */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --fs-h1: 2.5rem;
+    --fs-h2: 1.8rem;
+    --fs-h3: 1.3rem;
+    --fs-body: 1.1rem;
+    --fs-caption: 0.9rem;
+    --fs-tiny: 0.8rem;
+  }
+  
+  .str-title {
+    font-size: 24px !important;
+    font-weight: 500 !important;
+  }
+
+  .str-tagline-text {
+    font-size: 1.2rem !important;
+  }
+
+  .str-body {
+    font-size: 1.1rem !important;
+    max-width: 100% !important;
+  }
+
+  .str-spec-value {
+    font-size: 1.1rem !important;
+  }
+  
+  .feature-item span {
+    font-size: 1rem !important;
+  }
+  
+  .feature-item img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+/* Mobile small-screen refinements for Product Title */
+@media (max-width: 768px) {
+  .str-title {
+    font-size: 1.05rem !important; /* Smaller normalized size */
+    font-weight: 300 !important; /* Lighter weight for editorial feel */
+    letter-spacing: 0.15em !important;
+    margin-top: 4px !important;
   }
 }

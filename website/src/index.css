@@ -1,5 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
 :root {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'DM Sans', system-ui, sans-serif;
     line-height: 1.2;
     font-weight: 400;
 
@@ -80,13 +82,13 @@ button:focus-visible {
         --zara-spacing-lg: 1rem;
     }
 
-#site-footer {
-    position: relative !important;
-    bottom: auto !important;
-    left: auto !important;
-    width: 100% !important;
-    z-index: 10 !important;
-    display: block !important;
-    clear: both !important;
-}
+    #site-footer {
+        position: relative !important;
+        bottom: auto !important;
+        left: auto !important;
+        width: 100% !important;
+        z-index: 10 !important;
+        display: block !important;
+        clear: both !important;
+    }
 }
