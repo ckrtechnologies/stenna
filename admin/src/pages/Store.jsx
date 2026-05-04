@@ -114,7 +114,7 @@ const Store = () => {
                 </form>
             </div>
 
-            <style jsx>{`
+            <style>{`
         .settings-container { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; overflow: hidden; box-shadow: var(--shadow-premium); }
         .settings-form { padding: 2rem; }
         .settings-section { margin-bottom: 3rem; }

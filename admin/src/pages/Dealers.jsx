@@ -270,7 +270,7 @@ const Dealers = () => {
                 dealer={currentDealer}
             />
 
-            <style jsx>{`
+            <style>{`
                 .name-cell { display: flex; flex-direction: column; }
                 .name-cell strong { color: var(--text-main); font-size: 0.9375rem; }
                 .name-cell span { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.125rem; }

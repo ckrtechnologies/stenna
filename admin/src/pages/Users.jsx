@@ -99,7 +99,7 @@ const Users = () => {
                 </table>
             </div>
 
-            <style jsx>{`
+            <style>{`
         .user-cell { display: flex; align-items: center; gap: 1rem; }
         .avatar { width: 40px; height: 40px; border-radius: 9999px; background: var(--border-highlight); display: flex; align-items: center; justify-content: center; color: var(--text-dim); overflow: hidden; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }

@@ -24,6 +24,8 @@ const app = express();
 
 // Middleware
 app.use(helmet());
+
+
 app.use(cors({
     origin: true, // Allows all origins with credentials
     credentials: true
@@ -37,6 +39,13 @@ app.get('/', (req, res) => {
     console.log("Ping: Root endpoint hit");
     res.json({ message: 'Wallpaper API is running' });
 });
+
+
+// Updated lines in app.js
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+
 
 // Versioned Routes
 const apiV1 = express.Router();

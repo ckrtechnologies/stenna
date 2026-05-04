@@ -23,28 +23,14 @@ const ZaraMenu = ({ isOpen, onClose, user, signOut }) => {
         if (isOpen) loadData();
     }, [isOpen]);
 
-    // Filter criteria for Styles (Collections) and Rooms
-    const STYLE_KEYWORDS = [
-        'geometric', 'nature', 'botanical', 'classic', 'modern', 
-        'plain', 'textured', 'abstract'
-    ];
-    
-    const ROOM_KEYWORDS = [
-        'living', 'drawing', 'bedroom', 'office', 'kitchen', 
-        'bathroom', 'dining', 'nursery', 'kids', 'foyer', 
-        'entryway', 'hallway', 'ceiling'
-    ];
-
     const getStyles = () => {
-        return categories.filter(cat => 
-            STYLE_KEYWORDS.some(style => cat.name.toLowerCase().includes(style))
-        );
+        const styleGroup = groups.find(g => g.slug === 'style');
+        return styleGroup ? categories.filter(cat => cat.group_id === styleGroup.id) : [];
     };
 
     const getRooms = () => {
-        return categories.filter(cat => 
-            ROOM_KEYWORDS.some(room => cat.name.toLowerCase().includes(room))
-        );
+        const roomGroup = groups.find(g => g.slug === 'room');
+        return roomGroup ? categories.filter(cat => cat.group_id === roomGroup.id) : [];
     };
 
     const styles = getStyles();
@@ -118,8 +104,25 @@ const ZaraMenu = ({ isOpen, onClose, user, signOut }) => {
                             </ul>
                         </div>
 
-                        {/* Column 2: By Room */}
+                        {/* Column 2: Exclusives + By Room */}
                         <div className="zara-menu-column categories-col">
+                            {/* Exclusives Section - Moved to top for visibility */}
+                            <div className="exclusives-section">
+                                <span className="zara-menu-col-label">COLLECTIONS</span>
+                                <Link to="/catalog?group=new" className="zara-exclusive-link" onClick={onClose}>
+                                    <div className="zara-exclusive-content">
+                                        <span>NEW ARRIVALS</span>
+                                        <span className="zara-badge-new">NEW</span>
+                                    </div>
+                                </Link>
+                                <Link to="/catalog?group=limited-stock" className="zara-exclusive-link" onClick={onClose}>
+                                    <div className="zara-exclusive-content">
+                                        <span>LIMITED STOCK</span>
+                                        <span className="zara-badge-limited">HOT</span>
+                                    </div>
+                                </Link>
+                            </div>
+
                             <span className="zara-menu-col-label">BY ROOM</span>
                             <ul className="zara-category-list">
                                 {rooms.map(cat => (

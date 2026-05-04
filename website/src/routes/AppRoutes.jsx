@@ -35,14 +35,7 @@ const AppRoutes = () => {
             <Route path="/return-policy" element={<ReturnPolicy />} />
 
             {/* Protected Routes */}
-            <Route
-                path="/catalog"
-                element={
-                    <ProtectedRoute>
-                        <Catalog />
-                    </ProtectedRoute>
-                }
-            />
+            <Route path="/catalog" element={<Catalog />} />
             <Route
                 path="/my-queries"
                 element={
@@ -75,14 +68,7 @@ const AppRoutes = () => {
                     </ProtectedRoute>
                 }
             />
-            <Route
-                path="/ai-recommendations"
-                element={
-                    <ProtectedRoute>
-                        <AiRecommendations />
-                    </ProtectedRoute>
-                }
-            />
+            <Route path="/ai-recommendations" element={<AiRecommendations />} />
         </Routes>
     );
 };

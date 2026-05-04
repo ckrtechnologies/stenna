@@ -161,7 +161,11 @@ const AiRecommendations = () => {
                                             <Link to={`/wallpaper/${item.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                                                 <div className="image-container" style={{ position: 'relative', marginBottom: '1.5rem' }}>
                                                     <img src={item.images?.[0]?.image_url || 'https://via.placeholder.com/400x533?text=Stenna+Design'} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                    <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: '#fff', padding: '0.4rem 0.8rem', fontSize: '0.6rem', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase' }}>AI RECOMMENDATION</div>
+                                                    <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: '#fff', padding: '0.4rem 0.8rem', fontSize: '0.6rem', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', zIndex: 5 }}>AI RECOMMENDATION</div>
+                                                    {(item.groups?.some(g => g.name?.toLowerCase() === 'new') || 
+                                                      item.categories?.some(c => c.name?.toLowerCase() === 'new')) && (
+                                                        <span className="new-arrival-badge">NEW</span>
+                                                    )}
                                                 </div>
                                                 <div className="product-info" style={{ textAlign: 'left' }}>
                                                     <h3 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem', fontWeight: '600' }}>{item.name}</h3>

@@ -73,7 +73,7 @@ const ProductNavigator = ({ products }) => {
                         className={`speed-nav-item ${i === activeIndex ? 'active' : ''}`}
                         onClick={() => handleProductSelect(i)}
                     >
-                        <span className="speed-nav-label">0{i + 1} // {p.name.substring(0, 10)}</span>
+                        <span className="speed-nav-label">0{i + 1} // {(p.name || '').substring(0, 10)}</span>
                     </div>
                 ))}
             </div>
@@ -98,8 +98,12 @@ const ProductNavigator = ({ products }) => {
                                         <div
                                             className="product-image-box"
                                             onClick={() => setIsModalOpen(true)}
+                                            style={{ position: 'relative', overflow: 'hidden' }}
                                         >
                                             <img src={product.image_url} alt={product.name} />
+                                            {product.groups?.some(g => g.name?.toLowerCase() === 'new') && (
+                                                <div className="new-arrival-badge">NEW</div>
+                                            )}
                                         </div>
                                         <div className="product-meta-tags">
                                             <span className="tag">{product.category_name || 'COLLECTION'}</span>

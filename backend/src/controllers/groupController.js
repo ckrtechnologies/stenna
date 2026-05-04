@@ -58,3 +58,41 @@ export const deleteGroup = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const bulkAddWallpapersToGroup = async (req, res) => {
+    const { id } = req.params;
+    const { wallpaperIds, groupIds } = req.body;
+
+    const targetGroupIds = groupIds || (id ? [id] : []);
+
+    if (!Array.isArray(wallpaperIds) || wallpaperIds.length === 0) {
+        return res.status(400).json({ message: 'wallpaperIds must be a non-empty array' });
+    }
+    if (targetGroupIds.length === 0) {
+        return res.status(400).json({ message: 'No group IDs provided' });
+    }
+
+    try {
+        const rows = [];
+        targetGroupIds.forEach(groupId => {
+            wallpaperIds.forEach(wallpaperId => {
+                rows.push({ group_id: groupId, wallpaper_id: wallpaperId });
+            });
+        });
+
+        const { data, error } = await supabase
+            .from('wallpaper_groups')
+            .upsert(rows, { onConflict: 'group_id,wallpaper_id', ignoreDuplicates: true })
+            .select();
+
+        if (error) throw error;
+
+        res.status(201).json({ 
+            message: `${wallpaperIds.length} wallpaper(s) added to ${targetGroupIds.length} group(s)`, 
+            data 
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+

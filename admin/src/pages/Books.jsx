@@ -252,7 +252,7 @@ const Books = () => {
                 book={currentBook}
             />
 
-            <style jsx>{`
+            <style>{`
                 .page-container { padding: 2rem; max-width: 100%; margin: 0 auto; }
                 .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; }
                 .page-header h1 { font-size: 1.875rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem; letter-spacing: -0.025em; }

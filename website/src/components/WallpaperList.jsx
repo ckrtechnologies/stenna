@@ -30,6 +30,9 @@ const WallpaperList = ({ wallpapers, isAlternating = false }) => {
                                     alt={wallpaper.name}
                                     loading="lazy"
                                 />
+                                {wallpaper.groups?.some(g => g.name?.toLowerCase() === 'new') && (
+                                    <span className="new-arrival-badge">NEW</span>
+                                )}
                             </Link>
                         </div>
                         <div className="alt-text-box">
@@ -37,7 +40,10 @@ const WallpaperList = ({ wallpapers, isAlternating = false }) => {
                                 ITEM {index + 1}
                             </span>
                             <h4>{wallpaper.name}</h4>
-                            <p>{wallpaper.description || "Discover the essence of architectural purity with our hand-curated collection of premium wall coverings."}</p>
+                            <span className="alt-price" style={{ fontSize: '0.9rem', fontWeight: '600', color: '#111', display: 'block', marginTop: '0.5rem' }}>
+                                Rs. {wallpaper.price || '0.00'}
+                            </span>
+                            <p style={{ marginTop: '1rem' }}>{wallpaper.description || "Discover the essence of architectural purity with our hand-curated collection of premium wall coverings."}</p>
                             <Link to={`/wallpaper/${wallpaper.slug}`} className="btn-zara-link" style={{ marginTop: '2rem' }}>
                                 VIEW DETAILS
                             </Link>
@@ -101,9 +107,13 @@ const WallpaperList = ({ wallpapers, isAlternating = false }) => {
                                     alt={wallpaper.name}
                                     loading="lazy"
                                 />
+                                {wallpaper.groups?.some(g => g.name?.toLowerCase() === 'new') && (
+                                    <span className="new-arrival-badge">NEW</span>
+                                )}
                             </div>
                             <div className="card-content zara-product-info" style={{ padding: '0.5rem 0' }}>
-                                <h4 style={{ fontSize: '0.65rem', fontWeight: '400', letterSpacing: '0.05em' }}>{wallpaper.name}</h4>
+                                <h4 style={{ fontSize: '0.65rem', fontWeight: '400', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{wallpaper.name}</h4>
+                                <span style={{ fontSize: '0.6rem', color: '#888', fontWeight: '500' }}>Rs. {wallpaper.price || '0.00'}</span>
                             </div>
                         </Link>
                     </div>

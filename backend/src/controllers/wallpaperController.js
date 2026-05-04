@@ -1,6 +1,10 @@
 import { supabase } from '../config/supabase.js';
 import csv from 'csv-parser';
 import { Readable } from 'stream';
+import { scoreWallpaper } from '../utils/scoreWallpaper.js';
+import fs from 'fs';
+import path from 'path';
+import { deleteAssetFromDisk } from './uploadController.js';
 
 export const getAllWallpapers = async (req, res) => {
     try {
@@ -26,9 +30,9 @@ export const getAllWallpapers = async (req, res) => {
                 .from('books')
                 .select('id')
                 .or(`code.ilike.%${search}%,name.ilike.%${search}%`);
-            
+
             const matchedBookIds = matchedBooks?.map(b => b.id) || [];
-            
+
             // Find wallpaper IDs that belong to those books
             let relatedWallpaperIds = [];
             if (matchedBookIds.length > 0) {
@@ -44,12 +48,12 @@ export const getAllWallpapers = async (req, res) => {
                 .from('wallpapers')
                 .select('id')
                 .or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
-            
+
             const directIds = matchedDirect?.map(w => w.id) || [];
-            
+
             // Combine all IDs
             const allMatchIds = [...new Set([...relatedWallpaperIds, ...directIds])];
-            
+
             if (allMatchIds.length > 0) {
                 query = query.in('id', allMatchIds);
             } else {
@@ -127,9 +131,14 @@ export const getAllWallpapers = async (req, res) => {
 
         // Handle tags (trending/new)
         if (tag === 'trending') {
-            formattedData = formattedData.sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
+            formattedData = formattedData.sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 20);
         } else if (tag === 'new_arrival') {
-            formattedData = formattedData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
+            formattedData = formattedData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+        } else if (tag === 'limited_stock') {
+            formattedData = formattedData
+                .filter(w => (w.quantity || 0) > 0 && (w.quantity || 0) <= 20)
+                .sort((a, b) => (a.quantity || 0) - (b.quantity || 0))
+                .slice(0, 50);
         }
 
         res.status(200).json(formattedData);
@@ -168,7 +177,11 @@ export const getWallpaperBySlug = async (req, res) => {
 };
 
 export const createWallpaper = async (req, res) => {
-    const { images, videos, category_ids, group_ids, categories, groups, ...wallpaperData } = req.body;
+    const {
+        images, videos, category_ids, group_ids, book_ids,
+        categories, groups, books,
+        ...wallpaperData
+    } = req.body;
     try {
         // 1. Create wallpaper entry
         const { data: wallpaper, error: wError } = await supabase
@@ -221,6 +234,16 @@ export const createWallpaper = async (req, res) => {
             if (groupError) throw groupError;
         }
 
+        // 5. Handle Books
+        if (book_ids && book_ids.length > 0) {
+            const bookInserts = book_ids.map(id => ({
+                wallpaper_id: wallpaper.id,
+                book_id: id
+            }));
+            const { error: bookError } = await supabase.from('book_wallpapers').insert(bookInserts);
+            if (bookError) throw bookError;
+        }
+
         res.status(201).json({ message: 'Wallpaper created successfully', id: wallpaper.id });
     } catch (error) {
         console.error('Create Error:', error);
@@ -230,39 +253,64 @@ export const createWallpaper = async (req, res) => {
 
 export const updateWallpaper = async (req, res) => {
     const { id } = req.params;
-    // Strip out non-column fields for the main table
-    const { images, videos, category_ids, group_ids, categories, groups, ...wallpaperData } = req.body;
+    const {
+        images, videos, category_ids, group_ids, book_ids,
+        categories, groups, books,
+        ...wallpaperData
+    } = req.body;
+
     try {
+        // 0. Fetch existing state for cleanup
+        const { data: oldWallpaper } = await supabase
+            .from('wallpapers')
+            .select('swatch, images:wallpaper_images(image_url), videos:wallpaper_videos(video_url)')
+            .eq('id', id)
+            .single();
+
         // 1. Update basic info
         const { error: wError } = await supabase.from('wallpapers').update(wallpaperData).eq('id', id);
         if (wError) throw wError;
 
-        // 2. Sync Images
+        // 2. Sync Images & Cleanup Orphans
         if (images) {
-            const { error: delImgError } = await supabase.from('wallpaper_images').delete().eq('wallpaper_id', id);
-            if (delImgError) throw delImgError;
+            const oldImageUrls = oldWallpaper?.images?.map(i => i.image_url) || [];
+            const removedImages = oldImageUrls.filter(url => !images.includes(url));
 
+            // Delete orphaned files from disk
+            for (const url of removedImages) {
+                await deleteAssetFromDisk(url);
+            }
+
+            await supabase.from('wallpaper_images').delete().eq('wallpaper_id', id);
             const imageInserts = images.map((url, index) => ({
                 wallpaper_id: id,
                 image_url: url,
                 position: index + 1
             }));
-            const { error: insImgError } = await supabase.from('wallpaper_images').insert(imageInserts);
-            if (insImgError) throw insImgError;
+            await supabase.from('wallpaper_images').insert(imageInserts);
         }
 
-        // 2.1 Sync Videos
+        // 2.1 Sync Videos & Cleanup Orphans
         if (videos) {
-            const { error: delVidError } = await supabase.from('wallpaper_videos').delete().eq('wallpaper_id', id);
-            if (delVidError) throw delVidError;
+            const oldVideoUrls = oldWallpaper?.videos?.map(v => v.video_url) || [];
+            const removedVideos = oldVideoUrls.filter(url => !videos.includes(url));
 
+            for (const url of removedVideos) {
+                await deleteAssetFromDisk(url);
+            }
+
+            await supabase.from('wallpaper_videos').delete().eq('wallpaper_id', id);
             const videoInserts = videos.map((url, index) => ({
                 wallpaper_id: id,
                 video_url: url,
                 position: index + 1
             }));
-            const { error: insVidError } = await supabase.from('wallpaper_videos').insert(videoInserts);
-            if (insVidError) throw insVidError;
+            await supabase.from('wallpaper_videos').insert(videoInserts);
+        }
+
+        // 2.2 Cleanup Old Swatch if changed
+        if (wallpaperData.swatch && oldWallpaper?.swatch !== wallpaperData.swatch) {
+            await deleteAssetFromDisk(oldWallpaper?.swatch);
         }
 
         // 3. Sync Categories
@@ -285,6 +333,16 @@ export const updateWallpaper = async (req, res) => {
             await supabase.from('wallpaper_groups').insert(groupInserts);
         }
 
+        // 5. Sync Books
+        if (book_ids) {
+            await supabase.from('book_wallpapers').delete().eq('wallpaper_id', id);
+            const bookInserts = book_ids.map(bid => ({
+                wallpaper_id: id,
+                book_id: bid
+            }));
+            await supabase.from('book_wallpapers').insert(bookInserts);
+        }
+
         res.status(200).json({ message: 'Wallpaper updated successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -294,10 +352,34 @@ export const updateWallpaper = async (req, res) => {
 export const deleteWallpaper = async (req, res) => {
     const { id } = req.params;
     try {
-        // Cascade delete should handle wallpaper_images and wallpaper_categories automatically due to schema
+        // 1. Fetch info for disk cleanup before deleting from DB
+        const { data: wallpaper } = await supabase
+            .from('wallpapers')
+            .select('design_code')
+            .eq('id', id)
+            .single();
+
+        // 2. Cascade delete in DB
         const { error } = await supabase.from('wallpapers').delete().eq('id', id);
         if (error) throw error;
-        res.status(200).json({ message: 'Wallpaper deleted successfully' });
+
+        // 3. Delete entire directory from VPS disk
+        if (wallpaper?.design_code) {
+            const uploadRootEnv = process.env.UPLOAD_ROOT || '/var/www/stenna/public/wallpaper';
+
+            let uploadRoot = uploadRootEnv;
+            if (!fs.existsSync(path.parse(uploadRootEnv).root) && process.env.NODE_ENV === 'development') {
+                uploadRoot = path.resolve(process.cwd(), 'public', 'wallpaper');
+            }
+
+            const targetDir = path.resolve(uploadRoot, wallpaper.design_code);
+            if (fs.existsSync(targetDir)) {
+                fs.rmSync(targetDir, { recursive: true, force: true });
+                console.log(`Self-Cleaning: Deleted entire directory for ${wallpaper.design_code}: ${targetDir}`);
+            }
+        }
+
+        res.status(200).json({ message: 'Wallpaper and all associated files deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -404,7 +486,7 @@ export const bulkCreateWallpapers = async (req, res) => {
 
                 // 2. Resolve Group IDs
                 const group_ids = (group_names || []).map(name => groupMap[name.toLowerCase().trim()]).filter(Boolean);
-                
+
                 // 3. Resolve Category IDs
                 const category_ids = (category_names || []).map(name => categoryMap[name.toLowerCase().trim()]).filter(Boolean);
 
@@ -469,6 +551,131 @@ export const bulkCreateWallpapers = async (req, res) => {
     } catch (error) {
         console.error('Bulk Create Error:', error);
         res.status(500).json({ message: error.message });
+    }
+};
+
+export const getRecommendations = async (req, res) => {
+    try {
+        const currentId = req.params.id;
+
+        // 1. Fetch current wallpaper's categories with group names
+        const { data: currentCatRows, error: e1 } = await supabase
+            .from('wallpaper_categories')
+            .select(`
+                category_id,
+                category:categories (
+                    id,
+                    slug,
+                    group:category_groups ( name )
+                )
+            `)
+            .eq('wallpaper_id', currentId);
+
+        if (e1) throw e1;
+
+        if (!currentCatRows?.length) {
+            return res.json({ recommendations: [] });
+        }
+
+        // 2. Map categories by group: { style: uuid, color: uuid, room: uuid }
+        const currentCats = {};
+        const categoryIds = [];
+
+        for (const row of currentCatRows) {
+            const groupName = row.category?.group?.name?.toLowerCase();
+            const catId = row.category_id;
+            if (groupName) currentCats[groupName] = catId;
+            categoryIds.push(catId);
+        }
+
+        // 3. Fetch all wallpaper IDs sharing at least one category
+        const { data: candidateRows, error: e2 } = await supabase
+            .from('wallpaper_categories')
+            .select('wallpaper_id, category_id')
+            .in('category_id', categoryIds)
+            .neq('wallpaper_id', currentId);
+
+        if (e2) throw e2;
+        if (!candidateRows?.length) return res.json({ recommendations: [] });
+
+        // 4. Group candidate categories by wallpaper_id
+        const candidateMap = {};
+        for (const row of candidateRows) {
+            if (!candidateMap[row.wallpaper_id]) candidateMap[row.wallpaper_id] = [];
+            candidateMap[row.wallpaper_id].push(row.category_id);
+        }
+
+        // 5. Fetch full category details for all candidate category IDs to get group names
+        const allCandidateCatIds = [...new Set(candidateRows.map(r => r.category_id))];
+        const { data: catDetails, error: e3 } = await supabase
+            .from('categories')
+            .select('id, group:category_groups ( name )')
+            .in('id', allCandidateCatIds);
+
+        if (e3) throw e3;
+
+        // category_id -> group_name lookup
+        const catGroupMap = {};
+        for (const cat of catDetails) {
+            catGroupMap[cat.id] = cat.group?.name?.toLowerCase();
+        }
+
+        // 6. Build { style, color, room } map per candidate wallpaper
+        const candidateCatsMap = {};
+        for (const [wallpaperId, catIds] of Object.entries(candidateMap)) {
+            candidateCatsMap[wallpaperId] = {};
+            for (const catId of catIds) {
+                const groupName = catGroupMap[catId];
+                if (groupName) candidateCatsMap[wallpaperId][groupName] = catId;
+            }
+        }
+
+        // 7. Score, filter, sort, slice top 8
+        const scored = Object.entries(candidateCatsMap)
+            .map(([wallpaperId, cats]) => ({
+                wallpaper_id: wallpaperId,
+                score: scoreWallpaper(currentCats, cats),
+            }))
+            .filter(w => w.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 8);
+
+        if (scored.length === 0) return res.json({ recommendations: [] });
+
+        // 8. Fetch full wallpaper details for top results
+        const topIds = scored.map(s => s.wallpaper_id);
+        const { data: wallpapers, error: e4 } = await supabase
+            .from('wallpapers')
+            .select(`
+                *,
+                images:wallpaper_images(*)
+            `)
+            .in('id', topIds);
+
+        if (e4) throw e4;
+
+        // 9. Merge score back, preserve ranked order, and RANDOMIZE within same scores
+        // Actually, the user wants variety, so let's just shuffle the final 8 for now as they asked.
+        const scoreById = Object.fromEntries(scored.map(s => [s.wallpaper_id, s.score]));
+        const recommendations = wallpapers
+            .map(w => ({
+                ...w,
+                score: scoreById[w.id],
+                images: w.images?.sort((a, b) => a.position - b.position) || []
+            }))
+            .sort((a, b) => b.score - a.score);
+
+        // Simple Fisher-Yates shuffle for the final list to satisfy user's variety request
+        for (let i = recommendations.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [recommendations[i], recommendations[j]] = [recommendations[j], recommendations[i]];
+        }
+
+        res.json(recommendations);
+
+    } catch (err) {
+        console.error('Recommendations Error:', err);
+        res.status(500).json({ error: err.message });
     }
 };
 

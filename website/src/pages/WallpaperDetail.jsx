@@ -17,7 +17,7 @@ import {
     Sparkles, Layout, Search, User, CheckCircle, XCircle,
     Home, Heart, Star, Smile, Coffee, Feather, Zap,
     Camera, Book, Brush, Sun,
-    ShieldCheck, Clock
+    ShieldCheck, Clock, ChevronDown
 } from 'lucide-react';
 import '../styles/App.css';
 import '../styles/CatalogLayout.css';
@@ -34,7 +34,7 @@ const shuffleArray = (array) => {
 
 // --- Storytelling Helpers ---
 const getIconForItem = (item) => {
-    const text = item.toLowerCase();
+    const text = (item || '').toLowerCase();
     if (text.includes('living')) return <Home size={14} />;
     if (text.includes('bedroom')) return <Star size={14} />;
     if (text.includes('office')) return <Book size={14} />;
@@ -73,13 +73,20 @@ const WallpaperDetail = () => {
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('ABOUT');
     const [bookCode, setBookCode] = useState('');
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
     const [activeImage, setActiveImage] = useState(0);
     const [isZoomed, setIsZoomed] = useState(false);
     const [timeLapseProduct, setTimeLapseProduct] = useState(null);
     const [isTimeLapsing, setIsTimeLapsing] = useState(false);
     const [isScrollingManual, setIsScrollingManual] = useState(false);
     const [dynamicPadding, setDynamicPadding] = useState(80); // Starts at 5rem (80px)
+
+    // Scroll active thumbnail into view
+    useEffect(() => {
+        if (isGalleryOpen) {
+            document.getElementById(`thumb-dot-${activeImage}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+    }, [activeImage, isGalleryOpen]);
 
     // Scroll-linked thumbnail tracking
     useEffect(() => {
@@ -101,26 +108,112 @@ const WallpaperDetail = () => {
             { threshold: 0.6 }
         );
 
-        const items = document.querySelectorAll('.gallery-stack-item');
+        const items = document.querySelectorAll('.gallery-stack-img');
         items.forEach((item) => observer.observe(item));
 
         return () => observer.disconnect();
     }, [isGalleryOpen, isZoomed, isScrollingManual]);
 
     const [productList, setProductList] = useState([]);
+    const [navList, setNavList] = useState([]); // ordered collection list for swipe navigation
     const [listLoading, setListLoading] = useState(false);
     const [touchStart, setTouchStart] = useState(null);
     const prevSlugRef = useRef(slug);
     const mainContentRef = useRef(null);
+    const loadMoreRef = useRef(null);
+    const heroInnerRef = useRef(null); // ref for non-passive touchmove
+
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [swipeDirection, setSwipeDirection] = useState(0); // -1 for left, 1 for right
-    const [visibleCount, setVisibleCount] = useState(isMobile ? 4 : 6); // Default 2 rows for both mobile & desktop
+
+    // Hero swipe state (mobile/tablet only)
+    const [heroDragX, setHeroDragX] = useState(0);
+    const [heroSwiping, setHeroSwiping] = useState(false);
+    const heroTouchStartXRef = useRef(null);  // refs avoid stale closure in native listener
+    const heroTouchStartYRef = useRef(null);
+    const heroSwipingRef = useRef(false);
+    const HERO_SWIPE_THRESHOLD = 60;
+    const HERO_DRAG_MAX = 120;
+    const [visibleCount, setVisibleCount] = useState(12); // Always start with 12 items (unlimitedrows)
+
+    // Aggressive Preload of Adjacent Images for Zero-Latency Swiping
+    useEffect(() => {
+        const list = navList.length > 1 ? navList : productList;
+        if (!list || list.length === 0) return;
+
+        const currentIndex = list.findIndex(p => p.slug === slug);
+        if (currentIndex === -1) return;
+
+        const nextIndex = (currentIndex + 1) % list.length;
+        const prevIndex = (currentIndex - 1 + list.length) % list.length;
+
+        const nextImageUrl = list[nextIndex]?.images?.[0]?.image_url;
+        const prevImageUrl = list[prevIndex]?.images?.[0]?.image_url;
+
+        if (nextImageUrl) {
+            const imgNext = new Image();
+            imgNext.src = nextImageUrl;
+        }
+        if (prevImageUrl) {
+            const imgPrev = new Image();
+            imgPrev.src = prevImageUrl;
+        }
+    }, [slug, navList, productList]);
+
+    // Failsafe & Robust Infinite Scroll Logic
+    useEffect(() => {
+        // --- 1. Standard IntersectionObserver (Efficient) ---
+        // Always use null (viewport) as root to ensure consistent behavior across devices
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && productList.length > visibleCount) {
+                    setVisibleCount(prev => prev + 12);
+                }
+            },
+            {
+                root: null, // Viewport
+                threshold: 0,
+                rootMargin: '1000px' // High margin for smoother loading
+            }
+        );
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current);
+        }
+
+        // --- 2. Failsafe Polling (100% Reliable for all devices) ---
+        const failsafe = setInterval(() => {
+            if (loadMoreRef.current) {
+                const rect = loadMoreRef.current.getBoundingClientRect();
+
+                // On mobile, the scroller is the window. On desktop, it's mainContentRef.
+                // rect.top <= window.innerHeight covers both cases when mainContentRef handles scroll naturally
+                if (rect.top <= window.innerHeight + 1000) {
+                    if (productList.length > visibleCount) {
+                        setVisibleCount(prev => prev + 12);
+                    }
+                }
+            }
+        }, 1500);
+
+        return () => {
+            observer.disconnect();
+            clearInterval(failsafe);
+        };
+    }, [productList.length, visibleCount]);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
-        const handleOpenVisualizer = () => setIsVisualizerOpen(true);
+        const handleResize = () => setIsMobile(window.innerWidth <= 1024);
+        const handleOpenVisualizer = () => {
+            if (!user) {
+                // Save current URL to redirect back after login
+                navigate('/login', { state: { from: { pathname: window.location.pathname } } });
+                return;
+            }
+            setIsVisualizerOpen(true);
+        };
 
         window.addEventListener('resize', handleResize);
         window.addEventListener('open-visualizer', handleOpenVisualizer);
@@ -129,7 +222,7 @@ const WallpaperDetail = () => {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('open-visualizer', handleOpenVisualizer);
         };
-    }, []);
+    }, [user, navigate]);
 
     useEffect(() => {
         const mainDiv = mainContentRef.current;
@@ -244,22 +337,22 @@ const WallpaperDetail = () => {
                 // Sequential Tiered Fetching
                 const [tier1, tier2, tier3] = await Promise.all([
                     // Tier 1: Collection match
-                    currentCollectionIds.length > 0 
-                        ? fetchWallpapers({ groupIds: currentCollectionIds }) 
+                    currentCollectionIds.length > 0
+                        ? fetchWallpapers({ groupIds: currentCollectionIds })
                         : Promise.resolve([]),
                     // Tier 2: Color match
-                    currentColCats.length > 0 
-                        ? fetchWallpapers({ categoryIds: currentColCats }) 
+                    currentColCats.length > 0
+                        ? fetchWallpapers({ categoryIds: currentColCats })
                         : Promise.resolve([]),
                     // Tier 3: Style match
-                    currentStyleCats.length > 0 
-                        ? fetchWallpapers({ categoryIds: currentStyleCats }) 
+                    currentStyleCats.length > 0
+                        ? fetchWallpapers({ categoryIds: currentStyleCats })
                         : Promise.resolve([])
                 ]);
 
                 // Combine, prioritize and deduplicate using ID as key
                 const uniqueRelated = new Map();
-                
+
                 // Tier 1: Collections (Highest priority)
                 tier1.forEach(item => { if (item.slug !== slug) uniqueRelated.set(item.id, item); });
                 // Tier 2: Color
@@ -274,8 +367,15 @@ const WallpaperDetail = () => {
                 }
 
                 // Final list (No slice(0, 50) as per user request for "unlimited")
-                setProductList(Array.from(uniqueRelated.values()));
+                const randomizedList = shuffleArray(Array.from(uniqueRelated.values()));
+                setProductList(randomizedList);
                 setListLoading(false);
+
+                // Build ordered navigation list (INCLUDES current wallpaper) from same-collection peers
+                // Sorted by design_code so swipe order is predictable
+                const navItems = [data, ...tier1.filter(item => item.slug !== data.slug)];
+                navItems.sort((a, b) => (a.design_code || '').localeCompare(b.design_code || '', undefined, { numeric: true }));
+                setNavList(navItems);
 
                 // Set initial selection based on current wallpaper
                 if (data.groups?.[0]?.id) setSelectedGroupIds([data.groups[0].id.toString()]);
@@ -334,43 +434,87 @@ const WallpaperDetail = () => {
         }
     };
 
+    // Global touch handlers — no gallery swipe (gallery uses native vertical scroll)
     const handleTouchStart = (e) => {
         setTouchStart(e.targetTouches[0].clientX);
     };
 
     const handleTouchEnd = (e) => {
-        if (touchStart === null) return;
-        const touchEnd = e.changedTouches[0].clientX;
-        const diff = touchStart - touchEnd;
-        const threshold = 80;
+        // Gallery handles its own scroll — no horizontal swipe here
+        setTouchStart(null);
+    };
 
-        if (Math.abs(diff) > threshold) {
-            if (isGalleryOpen) {
-                if (diff > 0) {
-                    setActiveImage(prev => (prev + 1) % wallpaper.images.length);
-                } else {
-                    setActiveImage(prev => (prev - 1 + wallpaper.images.length) % wallpaper.images.length);
-                }
-                setIsZoomed(false);
-            } else {
-                const currentIndex = productList.findIndex(p => p.slug === slug);
-                if (currentIndex === -1) return;
+    // ── Hero-image-only swipe handlers (mobile/tablet) ──────────────────────
+    // touchmove is handled via imperative listener (passive: false) in useEffect below
+    const handleHeroTouchStart = (e) => {
+        if (!isMobile) return;
+        const touch = e.targetTouches[0];
+        heroTouchStartXRef.current = touch.clientX;
+        heroTouchStartYRef.current = touch.clientY;
+        heroSwipingRef.current = false;
+        setHeroDragX(0);
+        setHeroSwiping(false);
+    };
 
-                if (diff > 0) {
-                    // Swipe Left (Diff > 0) -> Next Product
-                    const nextIndex = (currentIndex + 1) % productList.length;
+    const handleHeroTouchEnd = (e) => {
+        if (!isMobile || heroTouchStartXRef.current === null) return;
+        const dx = e.changedTouches[0].clientX - heroTouchStartXRef.current;
+
+        if (Math.abs(dx) > HERO_SWIPE_THRESHOLD) {
+            const list = navList.length > 1 ? navList : productList;
+            const currentIndex = list.findIndex(p => p.slug === slug);
+            if (currentIndex !== -1) {
+                if (dx < 0) {
+                    // Swipe Left → Next product
+                    const nextIndex = (currentIndex + 1) % list.length;
                     setSwipeDirection(1);
-                    navigate(`/wallpaper/${productList[nextIndex].slug}`);
+                    navigate(`/wallpaper/${list[nextIndex].slug}`);
                 } else {
-                    // Swipe Right (Diff < 0) -> Prev Product
-                    const prevIndex = (currentIndex - 1 + productList.length) % productList.length;
+                    // Swipe Right → Prev product
+                    const prevIndex = (currentIndex - 1 + list.length) % list.length;
                     setSwipeDirection(-1);
-                    navigate(`/wallpaper/${productList[prevIndex].slug}`);
+                    navigate(`/wallpaper/${list[prevIndex].slug}`);
                 }
             }
         }
-        setTouchStart(null);
+
+        // Reset drag state
+        heroTouchStartXRef.current = null;
+        heroTouchStartYRef.current = null;
+        heroSwipingRef.current = false;
+        setHeroDragX(0);
+        setHeroSwiping(false);
     };
+
+    // Non-passive touchmove listener on hero div (required for e.preventDefault())
+    useEffect(() => {
+        const el = heroInnerRef.current;
+        if (!el || !isMobile) return;
+
+        const onTouchMove = (e) => {
+            if (heroTouchStartXRef.current === null) return;
+            const touch = e.targetTouches[0];
+            const dx = touch.clientX - heroTouchStartXRef.current;
+            const dy = touch.clientY - heroTouchStartYRef.current;
+
+            // Let vertical scrolls pass through unless we've already confirmed horizontal
+            if (Math.abs(dy) > Math.abs(dx) && !heroSwipingRef.current) return;
+
+            if (Math.abs(dx) > 10) {
+                e.preventDefault(); // works because listener is non-passive
+                if (!heroSwipingRef.current) {
+                    heroSwipingRef.current = true;
+                    setHeroSwiping(true);
+                }
+            }
+
+            const capped = Math.sign(dx) * Math.min(Math.abs(dx) * 0.6, HERO_DRAG_MAX);
+            setHeroDragX(capped);
+        };
+
+        el.addEventListener('touchmove', onTouchMove, { passive: false });
+        return () => el.removeEventListener('touchmove', onTouchMove);
+    }, [isMobile]);
 
     if (loading) return <div className="loading" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '2px', padding: '10rem 0', textAlign: 'center' }}>LOADING...</div>;
     if (error) return <div className="error" style={{ textAlign: 'center', padding: '10rem 0', fontSize: '0.7rem', textTransform: 'uppercase' }}>{error}</div>;
@@ -442,7 +586,7 @@ const WallpaperDetail = () => {
                         style={{
                             touchAction: 'pan-y',
                             paddingTop: `${dynamicPadding}px`,
-                            transition: 'padding-top 0.05s linear' /* Smooth out scroll events */
+                            transition: 'padding-top 0.05s linear'
                         }}
                     >
                         <VisualizerModal
@@ -456,78 +600,50 @@ const WallpaperDetail = () => {
                             wallpaper={wallpaper}
                         />
 
-                        {/* Premium Full-Screen Gallery Modal */}
+                        {/* Gallery Modal — vertical scroll only, no pinch/zoom/drag */}
                         <AnimatePresence>
                             {isGalleryOpen && (
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
                                     className="gallery-modal"
                                 >
                                     <button className="gallery-close" onClick={() => setIsGalleryOpen(false)}>&times;</button>
-                                    <div className="gallery-layout">
-                                        <div className="gallery-sidebar">
-                                            {wallpaper.images?.map((img, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className={`gallery-thumb ${activeImage === idx ? 'active' : ''}`}
-                                                    onClick={() => {
-                                                        setIsScrollingManual(true);
-                                                        setActiveImage(idx);
-                                                        document.getElementById(`gallery-img-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
-                                                        // Reset manual flag after scroll animation finishes
-                                                        setTimeout(() => setIsScrollingManual(false), 800);
-                                                    }}
-                                                >
-                                                    <img src={img.image_url} alt="Gallery Thumb" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div
-                                            className="gallery-main"
-                                            style={{
-                                                overflow: isZoomed ? 'hidden' : 'auto',
-                                                cursor: isZoomed ? 'grab' : 'zoom-in'
-                                            }}
-                                        >
-                                            {wallpaper.images?.map((img, idx) => (
-                                                <div key={idx} id={`gallery-img-${idx}`} className="gallery-stack-item">
-                                                    <motion.img
-                                                        src={img.image_url}
-                                                        initial={{ opacity: 1, scale: 1 }}
-                                                        whileInView={{ opacity: 1, scale: 1 }}
-                                                        viewport={{ once: true }}
-                                                        animate={{
-                                                            scale: isZoomed ? (isMobile ? 3 : 2.5) : 1,
-                                                            x: isZoomed ? undefined : 0,
-                                                            y: isZoomed ? undefined : 0
-                                                        }}
-                                                        drag={isZoomed}
-                                                        dragListener={isZoomed}
-                                                        dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
-                                                        dragElastic={0.1}
-                                                        onTap={() => setIsZoomed(!isZoomed)}
-                                                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                                        className="gallery-main-img"
-                                                        style={{ touchAction: isZoomed ? 'none' : 'pan-y' }}
-                                                    />
-                                                </div>
-                                            ))}
 
-                                            {isZoomed && (
-                                                <button
-                                                    className="zoom-close-btn"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setIsZoomed(false);
-                                                    }}
-                                                >
-                                                    &times;
-                                                </button>
-                                            )}
-                                        </div>
+                                    {/* Left-side vertical thumbnail strip (old position) */}
+                                    <div className="gallery-sidebar">
+                                        {wallpaper.images?.map((img, idx) => (
+                                            <div
+                                                key={idx}
+                                                id={`thumb-dot-${idx}`}
+                                                className={`gallery-thumb ${activeImage === idx ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setIsScrollingManual(true);
+                                                    document.getElementById(`gallery-img-${idx}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                    setActiveImage(idx);
+                                                    setTimeout(() => setIsScrollingManual(false), 800);
+                                                }}
+                                            >
+                                                <img src={img.image_url} alt="" />
+                                            </div>
+                                        ))}
                                     </div>
+
+                                    {/* Scrollable vertical image stack — touch-action:pan-y blocks horizontal swipe & pinch */}
+                                    <div className="gallery-scroll-stack">
+                                        {wallpaper.images?.map((img, idx) => (
+                                            <img
+                                                key={idx}
+                                                id={`gallery-img-${idx}`}
+                                                src={img.image_url}
+                                                alt={`${wallpaper.name} — view ${idx + 1}`}
+                                                className="gallery-stack-img"
+                                            />
+                                        ))}
+                                    </div>
+
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -555,19 +671,35 @@ const WallpaperDetail = () => {
                             )}
                         </AnimatePresence>
 
-                        <AnimatePresence mode="wait">
+                        <AnimatePresence mode="popLayout" custom={swipeDirection}>
                             <motion.div
                                 key={slug}
-                                initial={{ opacity: 0, x: swipeDirection > 0 ? 50 : swipeDirection < 0 ? -50 : 0 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: swipeDirection > 0 ? -50 : swipeDirection < 0 ? 50 : 0 }}
-                                transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                                className="detail-layout-container fade-in-up"
+                                custom={swipeDirection}
+                                initial={{ x: swipeDirection > 0 ? "100%" : swipeDirection < 0 ? "-100%" : 0 }}
+                                animate={{ x: 0 }}
+                                exit={{ x: swipeDirection > 0 ? "-100%" : swipeDirection < 0 ? "100%" : 0 }}
+                                transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+                                className="detail-layout-container"
+                                style={{ width: '100%', backgroundColor: '#fff', willChange: 'transform' }}
                             >
-                                {/* Part 1: Hero Section */}
+                                {/* Part 1: Hero Section — swipe enabled on mobile/tablet only */}
                                 <div className="detail-hero-section">
                                     {wallpaper.images?.[0] && (
-                                        <div className="detail-hero-inner">
+                                        <div
+                                            ref={heroInnerRef}
+                                            className="detail-hero-inner"
+                                            onTouchStart={handleHeroTouchStart}
+                                            onTouchEnd={handleHeroTouchEnd}
+                                            style={{
+                                                transform: isMobile ? `translateX(${heroDragX}px)` : 'none',
+                                                transition: heroDragX === 0 ? 'transform 0.35s cubic-bezier(0.32,0.72,0,1)' : 'none',
+                                                willChange: 'transform',
+                                                touchAction: 'pan-y',
+                                                cursor: isMobile ? 'grab' : 'zoom-in',
+                                                position: 'relative',
+                                                overflow: 'hidden',
+                                            }}
+                                        >
                                             <img
                                                 src={wallpaper.images[0].image_url}
                                                 alt={wallpaper.name}
@@ -576,7 +708,12 @@ const WallpaperDetail = () => {
                                                     setActiveImage(0);
                                                     setIsGalleryOpen(true);
                                                 }}
+                                                style={{ pointerEvents: heroSwiping ? 'none' : 'auto' }}
                                             />
+                                            {wallpaper.groups?.some(g => g.name?.toLowerCase() === 'new') && (
+                                                <span className="new-arrival-badge">NEW</span>
+                                            )}
+
                                         </div>
                                     )}
                                 </div>
@@ -590,24 +727,32 @@ const WallpaperDetail = () => {
 
                                     {/* 2. Design Code + Book Name */}
                                     <div className="str-header-block">
-                                        <div className="str-header-left">
-                                            <h1 className="str-title">
-                                                {wallpaper.design_code} 
+                                        <div className="str-header-left" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                            <h1 className="str-title" style={{ display: 'flex', alignItems: 'center' }}>
+                                                {wallpaper.design_code}
+                                                {bookCode && (
+                                                    <span className="zara-book-inline">
+                                                        {bookCode}
+                                                    </span>
+                                                )}
                                             </h1>
-                                            {bookCode && <p className="str-subtitle">{bookCode}</p>}
+                                            <div className="str-price-gst-row">
+                                                <div className="str-price">Rs. {wallpaper.price || '0.00'}</div>
+                                                <div className="zara-vat-info">inclusive of GST</div>
+                                            </div>
                                         </div>
-                                        {wallpaper.swatch && (
+                                        {/* {wallpaper.swatch && (
                                             <div className="str-header-swatch">
                                                 <img src={wallpaper.swatch} alt="Texture Preview" />
                                             </div>
-                                        )}
+                                        )} */}
                                     </div>
 
                                     {/* 2.1 Mobile Tab Navigation */}
                                     {isMobile && (
                                         <div className="str-mobile-tabs">
                                             {['ABOUT', 'SPECS', 'GUIDE'].map((tab) => (
-                                                <button 
+                                                <button
                                                     key={tab}
                                                     className={`str-tab-btn ${activeTab === tab ? 'active' : ''}`}
                                                     onClick={() => setActiveTab(tab)}
@@ -721,18 +866,18 @@ const WallpaperDetail = () => {
                                             </div>
                                             <hr className="str-divider" />
 
-                                            {wallpaper.avoid_if && (
+                                            {wallpaper.ideal_for && (
                                                 <>
                                                     <div className="str-section">
-                                                        <h4 className="str-label">AVOID IF_</h4>
-                                                        <ul className="str-list str-avoid-list">
-                                                            {(wallpaper.avoid_if ? wallpaper.avoid_if.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
-                                                                "The wall surface has significant unaddressed dampness",
-                                                                "You prefer extremely smooth, non-textured surfaces",
-                                                                "The room receives constant direct abrasive contact"
+                                                        <h4 className="str-label">IDEAL FOR_</h4>
+                                                        <ul className="str-list">
+                                                            {(wallpaper.ideal_for ? wallpaper.ideal_for.split(/[|;]|\.(?=\s*[A-Z])|,\s*/) : [
+                                                                "A sophisticated, high-end atmosphere",
+                                                                "Intricate textures and premium finishes",
+                                                                "Modern and contemporary furniture styles"
                                                             ]).filter(v => v && v.trim()).map((v, i) => (
                                                                 <li key={i}>
-                                                                    <XCircle size={18} strokeWidth={2} className="str-icon-cross" />
+                                                                    <Sparkles size={18} strokeWidth={2} className="str-icon-check" />
                                                                     <span>{v.trim()}</span>
                                                                 </li>
                                                             ))}
@@ -788,31 +933,46 @@ const WallpaperDetail = () => {
                         {/* RELATED PRODUCTS SECTION */}
                         {!listLoading && productList.length > 0 && (
                             <section className="related-wallpapers-section">
-                                <h2 className="related-title">SIMILAR WALLPAPERS YOU MAY LIKE</h2>
+                                <h2 className="related-title">SIMILAR WALLPAPERS YOU MAY LIKE {productList.length > 0 && `(${productList.filter(p => p.slug !== slug).length})`}</h2>
                                 <div className="related-zara-grid">
-                                    {productList.filter(p => p.slug !== slug).slice(0, visibleCount).map((item) => (
-                                        <Link key={item.id} to={`/wallpaper/${item.slug}`} className="related-item">
-                                            <div className="related-img-container">
-                                                <img
-                                                    src={item.images?.[0]?.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
-                                                    alt={item.name}
-                                                    loading="lazy"
-                                                />
-                                            </div>
-                                            <div className="related-info">
-                                                <span className="related-name">{item.name}</span>
-                                                <span className="related-price">₹ {item.price || '4,350.00'}</span>
-                                            </div>
-                                        </Link>
+                                    {productList.filter(p => p.slug !== slug).slice(0, visibleCount).map((item, index) => (
+                                        <motion.div
+                                            key={item.id}
+                                            initial={{ opacity: 0, y: 30 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true, margin: "-50px" }}
+                                            transition={{ duration: 0.6, delay: (index % 12) * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+                                        >
+                                            <Link to={`/wallpaper/${item.slug}`} className="related-item" style={{ display: 'block', height: '100%' }}>
+                                                <div className="related-img-container">
+                                                    <img
+                                                        src={item.images?.[0]?.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
+                                                        alt={item.name}
+                                                        loading="lazy"
+                                                    />
+                                                    {(item.groups?.some(g => g.name?.toLowerCase() === 'new') ||
+                                                        item.categories?.some(c => c.name?.toLowerCase() === 'new')) && (
+                                                            <span className="new-arrival-badge">NEW</span>
+                                                        )}
+                                                </div>
+                                                <div className="related-info">
+                                                    <span className="related-name">{item.name}</span>
+                                                    <span className="related-price">Rs. {item.price || '0.00'}</span>
+                                                </div>
+                                            </Link>
+                                        </motion.div>
                                     ))}
                                 </div>
 
                                 {productList.length > visibleCount && (
-                                    <div className="related-view-more">
-                                        <button className="view-more-btn" onClick={() => setVisibleCount(prev => prev + 12)}>
-                                            <span className="plus-icon">+</span>
-                                            VIEW MORE
-                                        </button>
+                                    <div className="related-view-more" ref={loadMoreRef} style={{ textAlign: 'center', padding: '2rem 0', opacity: 0.6 }}>
+                                        <motion.div
+                                            animate={{ y: [0, 10, 0] }}
+                                            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                                        >
+                                            <ChevronDown size={28} style={{ margin: '0 auto' }} />
+                                        </motion.div>
+                                        <span style={{ fontSize: '0.75rem', letterSpacing: '1px', display: 'block', marginTop: '0.5rem' }}>SCROLL FOR MORE</span>
                                     </div>
                                 )}
                             </section>

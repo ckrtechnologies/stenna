@@ -21,6 +21,10 @@ const RelatedProductCarousel = ({ wallpapers, title }) => {
                                 src={item.images?.[0]?.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
                                 alt={item.name}
                             />
+                            {(item.groups?.some(g => g.name?.toLowerCase() === 'new') || 
+                              item.categories?.some(c => c.name?.toLowerCase() === 'new')) && (
+                                <span className="new-arrival-badge">NEW</span>
+                            )}
                         </div>
                         <div className="card-content">
                             <h4 style={{ fontSize: '0.9rem' }}>{item.name}</h4>

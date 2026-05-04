@@ -489,8 +489,8 @@
     }
 
     .techniques-grid-v2 {
-        grid-template-columns: 1fr;
-        gap: 4rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2.5rem;
     }
 
     .tech-image-wrapper {
@@ -498,11 +498,11 @@
     }
 
     .technique-card-v2 {
-        text-align: center;
+        text-align: left;
     }
 
     .technique-card-v2 p {
-        margin: 0 auto;
+        margin: 0;
     }
 
     .archive-header h2,

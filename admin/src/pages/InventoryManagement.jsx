@@ -168,7 +168,7 @@ const InventoryManagement = () => {
                 </div>
             </div>
 
-            <style jsx>{`
+            <style>{`
                 .inventory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
                 .glass-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1.5rem; padding: 2rem; box-shadow: var(--shadow-premium); }
                 .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }

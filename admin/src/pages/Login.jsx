@@ -81,7 +81,7 @@ const Login = () => {
                 </div>
             </div>
 
-            <style jsx>{`
+            <style>{`
                 .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; padding: 1.5rem; }
                 .login-card { width: 100%; max-width: 440px; background: #1e293b; border: 1px solid #334155; border-radius: 1.5rem; padding: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
                 .login-header { text-align: center; margin-bottom: 2.5rem; }

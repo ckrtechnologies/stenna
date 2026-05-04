@@ -106,7 +106,7 @@ const Dashboard = () => {
                 /> */}
             </div>
 
-            <style jsx>{`
+            <style>{`
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
             `}</style>

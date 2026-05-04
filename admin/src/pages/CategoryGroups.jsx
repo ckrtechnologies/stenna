@@ -179,7 +179,7 @@ const CategoryGroups = () => {
                 </div>
             )}
 
-            <style jsx>{`
+            <style>{`
                 .loading, .empty { padding: 4rem; text-align: center; color: #64748b; }
                 .mt-4 { margin-top: 1.5rem; }
             `}</style>

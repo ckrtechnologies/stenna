@@ -43,120 +43,300 @@ const BookModal = ({ isOpen, onClose, onSave, book }) => {
         onSave(formData);
     };
 
+    // ← KEY FIX: don't render anything when closed
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
+        <div className="bm-overlay" onClick={onClose}>
+            <div className="bm-modal" onClick={e => e.stopPropagation()}>
+
+                {/* Header */}
+                <div className="bm-header">
                     <h2>{book ? 'Edit Book' : 'Add New Book'}</h2>
-                    <button className="close-btn" onClick={onClose}>
-                        <X size={24} />
+                    <button className="bm-close" type="button" onClick={onClose}>
+                        <X size={20} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="modal-form">
-                    <div className="form-group">
-                        <label>Book Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required
-                            placeholder="e.g. Royal Collection 2026"
-                        />
-                    </div>
+                {/* Form */}
+                <form onSubmit={handleSubmit}>
+                    <div className="bm-body">
 
-                    <div className="form-group">
-                        <label>Book Code</label>
-                        <input
-                            type="text"
-                            name="code"
-                            value={formData.code}
-                            onChange={handleChange}
-                            required
-                            placeholder="e.g. RC-2026"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Description</label>
-                        <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            rows="3"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Cover Image URL</label>
-                        <input
-                            type="text"
-                            name="image_url"
-                            value={formData.image_url}
-                            onChange={handleChange}
-                            placeholder="https://..."
-                        />
-                        {formData.image_url && (
-                            <div className="image-preview-box">
-                                <img src={formData.image_url} alt="Preview" onError={(e) => e.target.style.display = 'none'} />
-                            </div>
-                        )}
-
-                    </div>
-
-                    <div className="form-group checkbox-group">
-                        <label className="checkbox-label">
+                        <div className="bm-field">
+                            <label>Book Name</label>
                             <input
-                                type="checkbox"
-                                name="is_active"
-                                checked={formData.is_active}
+                                type="text"
+                                name="name"
+                                value={formData.name}
                                 onChange={handleChange}
+                                required
+                                placeholder="e.g. Royal Collection 2026"
                             />
-                            <span>Active Status</span>
-                        </label>
+                        </div>
+
+                        <div className="bm-field">
+                            <label>Book Code</label>
+                            <input
+                                type="text"
+                                name="code"
+                                value={formData.code}
+                                onChange={handleChange}
+                                required
+                                placeholder="e.g. RC-2026"
+                            />
+                        </div>
+
+                        <div className="bm-field">
+                            <label>Description</label>
+                            <textarea
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                rows="3"
+                                placeholder="Brief description of the collection..."
+                            />
+                        </div>
+
+                        <div className="bm-field">
+                            <label>Cover Image URL</label>
+                            <input
+                                type="text"
+                                name="image_url"
+                                value={formData.image_url}
+                                onChange={handleChange}
+                                placeholder="https://..."
+                            />
+                            {formData.image_url && (
+                                <div className="bm-preview">
+                                    <img
+                                        src={formData.image_url}
+                                        alt="Preview"
+                                        onError={e => e.target.style.display = 'none'}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="bm-field">
+                            <label className="bm-checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="is_active"
+                                    checked={formData.is_active}
+                                    onChange={handleChange}
+                                />
+                                <span>Active Status (Visible in catalog)</span>
+                            </label>
+                        </div>
+
                     </div>
 
-                    <div className="modal-actions">
-                        <button type="button" className="btn btn-secondary" onClick={onClose}>
+                    {/* Footer */}
+                    <div className="bm-footer">
+                        <button type="button" className="bm-btn-secondary" onClick={onClose}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary">
-                            <Save size={18} />
+                        <button type="submit" className="bm-btn-primary">
+                            <Save size={17} />
                             <span>{book ? 'Update Book' : 'Create Book'}</span>
                         </button>
                     </div>
                 </form>
             </div>
 
-            <style jsx>{`
-                .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s ease-out; }
-                .modal-content { background: var(--bg-card); border-radius: 1rem; border: 1px solid var(--border-color); width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: scaleIn 0.2s ease-out; }
-                .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.5rem; border-bottom: 1px solid var(--border-color); }
-                .modal-header h2 { font-size: 1.25rem; font-weight: 600; color: var(--text-main); margin: 0; }
-                .close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.5rem; border-radius: 0.5rem; transition: all 0.2s; }
-                .close-btn:hover { background: var(--bg-hover); color: var(--text-main); }
-                
-                .modal-form { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
-                .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-                .form-group label { font-size: 0.875rem; font-weight: 500; color: var(--text-main); }
-                .form-group input, .form-group textarea { background: var(--bg-input); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 0.5rem; color: var(--text-main); font-size: 0.9375rem; transition: border-color 0.2s; outline: none; }
-                .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
-                
-                .checkbox-group { margin-top: 0.5rem; }
-                .checkbox-label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
-                .checkbox-label input[type="checkbox"] { width: 1.25rem; height: 1.25rem; border-radius: 0.25rem; accent-color: var(--primary); }
-                .checkbox-label span { font-size: 0.9375rem; color: var(--text-main); }
-                
-                .image-preview-box { margin-top: 0.5rem; width: 100px; height: 140px; border-radius: 0.5rem; overflow: hidden; background: var(--bg-dark); }
-                .image-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+            <style>{`
+                .bm-overlay {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.65);
+                    backdrop-filter: blur(6px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    padding: 1.5rem;
+                    animation: bmFadeIn 0.2s ease;
+                }
+                @keyframes bmFadeIn {
+                    from { opacity: 0; }
+                    to   { opacity: 1; }
+                }
 
-                .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
-                
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+                .bm-modal {
+                    background: var(--bg-card, #fff);
+                    border: 1px solid var(--border-color, #e2e8f0);
+                    border-radius: 1.25rem;
+                    width: 100%;
+                    max-width: 540px;
+                    max-height: 90vh;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+                    animation: bmSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                @keyframes bmSlideIn {
+                    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+                    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+                }
+
+                /* Header */
+                .bm-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 1.25rem 1.75rem;
+                    border-bottom: 1px solid var(--border-color, #e2e8f0);
+                    flex-shrink: 0;
+                }
+                .bm-header h2 {
+                    font-size: 1.125rem;
+                    font-weight: 700;
+                    color: var(--text-main, #0f172a);
+                    margin: 0;
+                }
+                .bm-close {
+                    background: none;
+                    border: none;
+                    color: var(--text-muted, #64748b);
+                    cursor: pointer;
+                    padding: 0.4rem;
+                    border-radius: 0.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s;
+                }
+                .bm-close:hover {
+                    background: rgba(239,68,68,0.1);
+                    color: #ef4444;
+                }
+
+                /* Body */
+                .bm-body {
+                    padding: 1.75rem;
+                    overflow-y: auto;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1.25rem;
+                }
+
+                /* Fields */
+                .bm-field {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+                .bm-field label {
+                    font-size: 0.8125rem;
+                    font-weight: 600;
+                    color: var(--text-dim, #475569);
+                    text-transform: uppercase;
+                    letter-spacing: 0.04em;
+                }
+                .bm-field input,
+                .bm-field textarea {
+                    background: var(--bg-input, #f8fafc);
+                    border: 1px solid var(--border-color, #e2e8f0);
+                    border-radius: 0.75rem;
+                    padding: 0.75rem 1rem;
+                    color: var(--text-main, #0f172a);
+                    font-size: 0.9375rem;
+                    outline: none;
+                    transition: border-color 0.2s, box-shadow 0.2s;
+                    font-family: inherit;
+                    resize: vertical;
+                }
+                .bm-field input:focus,
+                .bm-field textarea:focus {
+                    border-color: var(--primary, #3b82f6);
+                    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+                }
+                .bm-field input::placeholder,
+                .bm-field textarea::placeholder {
+                    color: var(--text-dim, #94a3b8);
+                }
+
+                /* Image preview */
+                .bm-preview {
+                    width: 120px;
+                    height: 160px;
+                    border-radius: 0.75rem;
+                    overflow: hidden;
+                    border: 1px solid var(--border-color, #e2e8f0);
+                    background: var(--bg-input, #f8fafc);
+                }
+                .bm-preview img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+
+                /* Checkbox */
+                .bm-checkbox-label {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    cursor: pointer;
+                    font-size: 0.9375rem;
+                    font-weight: 500;
+                    color: var(--text-main, #0f172a);
+                    user-select: none;
+                    text-transform: none;
+                    letter-spacing: 0;
+                }
+                .bm-checkbox-label input[type="checkbox"] {
+                    width: 1.15rem;
+                    height: 1.15rem;
+                    border-radius: 0.35rem;
+                    accent-color: var(--primary, #3b82f6);
+                    cursor: pointer;
+                }
+
+                /* Footer */
+                .bm-footer {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 0.75rem;
+                    padding: 1.25rem 1.75rem;
+                    border-top: 1px solid var(--border-color, #e2e8f0);
+                    background: var(--bg-hover, #f8fafc);
+                    flex-shrink: 0;
+                }
+                .bm-btn-primary {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    background: linear-gradient(135deg, var(--primary, #3b82f6), var(--primary-dark, #2563eb));
+                    color: white;
+                    border: none;
+                    border-radius: 0.75rem;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    padding: 0.625rem 1.25rem;
+                    transition: all 0.2s;
+                    box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+                }
+                .bm-btn-primary:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 18px rgba(37,99,235,0.4);
+                }
+                .bm-btn-secondary {
+                    background: transparent;
+                    border: 1px solid var(--border-color, #e2e8f0);
+                    color: var(--text-muted, #64748b);
+                    border-radius: 0.75rem;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    padding: 0.625rem 1.25rem;
+                    transition: all 0.2s;
+                }
+                .bm-btn-secondary:hover {
+                    border-color: var(--primary, #3b82f6);
+                    color: var(--primary, #3b82f6);
+                }
             `}</style>
         </div>
     );

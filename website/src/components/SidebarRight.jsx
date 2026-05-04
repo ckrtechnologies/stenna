@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, LayoutGrid, Sparkles, CircleDot } from 'lucide-react';
 
 const SidebarRight = ({
     searchQuery = '',
@@ -55,19 +55,28 @@ const SidebarRight = ({
             {/* Discovery */}
             <div className="tool-section">
                 <h3>DISCOVERY</h3>
-                <Link to="/try-it-on" className="tool-link">TRY IT ON YOUR WALL</Link>
-                <Link to="/ai-recommendations" className="tool-link">AI RECOMMENDATIONS</Link>
-                <Link to="/catalog" className="tool-link">BROWSE CATALOG</Link>
+                <Link to="/try-it-on" className="tool-link">
+                    TRY IT ON YOUR WALL <LayoutGrid size={12} strokeWidth={1.5} opacity={0.6} />
+                </Link>
+                <Link to="/ai-recommendations" className="tool-link">
+                    AI RECOMMENDATIONS <Sparkles size={12} strokeWidth={1.5} opacity={0.6} />
+                </Link>
+                <Link to="/catalog" className="tool-link">
+                    BROWSE CATALOG <LayoutGrid size={12} strokeWidth={1.5} opacity={0.6} />
+                </Link>
             </div>
 
             {/* Account */}
             <div className="tool-section">
                 <h3>ACCOUNT</h3>
-                <span style={{ fontSize: '0.65rem', fontWeight: 400, color: '#888', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                    {user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : 'GUEST'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end', marginBottom: '0.4rem' }}>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 400, color: '#888', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                        {user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : 'GUEST'}
+                    </span>
+                    <CircleDot size={12} strokeWidth={1.5} opacity={0.6} />
+                </div>
                 {user && (
-                    <Link to="/profile" className="tool-link" style={{ marginTop: '0.4rem' }}>
+                    <Link to="/profile" className="tool-link">
                         VIEW PROFILE
                     </Link>
                 )}

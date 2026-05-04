@@ -46,7 +46,10 @@ export const getBookById = async (req, res) => {
             .select(`
                 *,
                 wallpapers:book_wallpapers(
-                    wallpaper:wallpapers(*)
+                    wallpaper:wallpapers(
+                        *,
+                        images:wallpaper_images(*)
+                    )
                 )
             `)
             .eq('id', id)
@@ -54,14 +57,19 @@ export const getBookById = async (req, res) => {
 
         if (error) throw error;
 
-        // Flatten the structure for easier frontend consumption
-        // The result from Supabase will look like: 
-        // { ...book, wallpapers: [ { wallpaper: { ...wallpaperData } }, ... ] }
-        // We want: { ...book, wallpapers: [ { ...wallpaperData }, ... ] }
+        // Flatten the structure:
+        // { ...book, wallpapers: [ { wallpaper: { ...wallpaperData, images: [...] } }, ... ] }
+        // → { ...book, wallpapers: [ { ...wallpaperData, images: [...sorted] }, ... ] }
 
         const formattedData = {
             ...data,
-            wallpapers: data.wallpapers.map(w => w.wallpaper).filter(Boolean) // Filter out nulls if any join failed
+            wallpapers: data.wallpapers
+                .map(w => w.wallpaper)
+                .filter(Boolean)
+                .map(w => ({
+                    ...w,
+                    images: (w.images || []).sort((a, b) => a.position - b.position)
+                }))
         };
 
         res.status(200).json(formattedData);
@@ -122,6 +130,40 @@ export const addWallpaperToBook = async (req, res) => {
         }
 
         res.status(201).json({ message: 'Wallpaper added to book successfully', data });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const bulkAddWallpapersToBook = async (req, res) => {
+    const { id } = req.params;
+    const { wallpaperIds, bookIds } = req.body;
+
+    const targetBookIds = bookIds || (id ? [id] : []);
+
+    if (!Array.isArray(wallpaperIds) || wallpaperIds.length === 0) {
+        return res.status(400).json({ message: 'wallpaperIds must be a non-empty array' });
+    }
+    if (targetBookIds.length === 0) {
+        return res.status(400).json({ message: 'No book IDs provided' });
+    }
+
+    try {
+        const rows = [];
+        targetBookIds.forEach(bookId => {
+            wallpaperIds.forEach(wallpaperId => {
+                rows.push({ book_id: bookId, wallpaper_id: wallpaperId });
+            });
+        });
+
+        const { data, error } = await supabase
+            .from('book_wallpapers')
+            .upsert(rows, { onConflict: 'book_id,wallpaper_id', ignoreDuplicates: true })
+            .select();
+
+        if (error) throw error;
+
+        res.status(201).json({ message: `${wallpaperIds.length} wallpaper(s) added to ${targetBookIds.length} book(s)`, data });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

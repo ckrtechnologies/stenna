@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Sparkles, Layout, Search, User } from 'lucide-react';
+import { Sparkles, Layout, Search, User, ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
 import '../styles/App.css';
 import '../styles/CatalogLayout.css';
 import { fetchGroups, fetchCategories, fetchWallpapers, fetchBooks } from '../services/api';
@@ -40,12 +41,67 @@ const Catalog = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     const [allCategories, setAllCategories] = useState([]);
+    const [selectedTag, setSelectedTag] = useState(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
+    const [visibleCount, setVisibleCount] = useState(isMobile ? 12 : 24);
+    const mainContentRef = useRef(null);
+    const loadMoreRef = useRef(null);
+
+    // Failsafe & Robust Infinite Scroll Logic
+    useEffect(() => {
+        // --- 1. Standard IntersectionObserver (Efficient) ---
+        const root = isMobile ? null : mainContentRef.current;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && wallpapers.length > visibleCount) {
+                    setVisibleCount(prev => prev + 24);
+                }
+            },
+            { 
+                root: root,
+                threshold: 0,
+                rootMargin: isMobile ? '400px' : '1000px'
+            }
+        );
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current);
+        }
+
+        // --- 2. Failsafe Polling for Desktop (100% Reliable) ---
+        let failsafe;
+        if (!isMobile) {
+            failsafe = setInterval(() => {
+                if (loadMoreRef.current && mainContentRef.current) {
+                    const rect = loadMoreRef.current.getBoundingClientRect();
+                    const containerRect = mainContentRef.current.getBoundingClientRect();
+                    // If sentinel is near or inside container view
+                    if (rect.top <= containerRect.bottom + 800) {
+                        if (wallpapers.length > visibleCount) {
+                            setVisibleCount(prev => prev + 24);
+                        }
+                    }
+                }
+            }, 1500);
+        }
+
+        return () => {
+            observer.disconnect();
+            if (failsafe) clearInterval(failsafe);
+        };
+    }, [wallpapers.length, visibleCount, isMobile]);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Initial load for groups, categories, and URL sync
     useEffect(() => {
         document.title = 'Catalog | Stenna';
-        
+
         const initializeCatalog = async () => {
             try {
                 // 1. Fetch metadata first (fast)
@@ -54,7 +110,7 @@ const Catalog = () => {
                     fetchCategories(),
                     fetchBooks()
                 ]);
-                
+
                 setGroups(groupsData);
                 setAllCategories(catsData);
                 setBooks(booksData);
@@ -64,11 +120,23 @@ const Catalog = () => {
                 const groupParam = searchParams.get('group');
                 const catParam = searchParams.get('category');
                 const bookParam = searchParams.get('book');
+                const tagParam = searchParams.get('tag');
                 const searchParam = searchParams.get('search');
 
-                if (groupParam) setSelectedGroupIds([groupParam]);
+                // Determine effective Group IDs from URL (ID or Slug)
+                let initialGroupIds = [];
+                if (groupParam) {
+                    const matchedGroup = groupsData.find(g => g.id.toString() === groupParam || g.slug === groupParam);
+                    initialGroupIds = matchedGroup ? [matchedGroup.id.toString()] : [groupParam];
+                } else if (catParam) {
+                    const cat = catsData.find(c => c.id.toString() === catParam);
+                    if (cat?.group_id) initialGroupIds = [cat.group_id.toString()];
+                }
+                setSelectedGroupIds(initialGroupIds);
+
                 if (catParam) setSelectedCategoryIds([catParam]);
                 if (bookParam) setSelectedBookIds([bookParam]);
+                if (tagParam) setSelectedTag(tagParam);
 
                 if (searchParam || searchParams.get('search-open')) {
                     setSearchQuery(searchParam || '');
@@ -78,10 +146,10 @@ const Catalog = () => {
                     }
                 }
 
-                // 3. Mark as initialized so the main wallpaper fetch can start once
+                // 3. Mark as initialized
                 setIsInitialized(true);
             } catch (error) {
-                console.error("Error initializing catalog:", error);
+                console.error("Initialization error:", error);
                 setLoading(false);
             }
         };
@@ -98,6 +166,55 @@ const Catalog = () => {
             window.removeEventListener('toggle-catalog-search', handleToggleSearch);
         };
     }, []); // Only run ONCE on mount
+
+    // --- NEW: COMPREHENSIVE URL SYNC ---
+    // This effect ensures that all menu navigations (which change the URL) 
+    // correctly reflect in the catalog state and SidebarLeft.
+    useEffect(() => {
+        if (!isInitialized) return;
+
+        const tagParam = searchParams.get('tag');
+        const groupParam = searchParams.get('group');
+        const catParam = searchParams.get('category');
+        const bookParam = searchParams.get('book');
+
+        // Update Tag
+        setSelectedTag(tagParam);
+
+        // --- IMPROVED: GROUP RESOLUTION (BY ID OR SLUG) ---
+        let effectiveGroupIds = [];
+        if (groupParam) {
+            // 1. Try to find a group that matches the ID or the Slug
+            const matchedGroup = groups.find(g => 
+                g.id.toString() === groupParam || 
+                g.slug === groupParam
+            );
+            
+            if (matchedGroup) {
+                effectiveGroupIds = [matchedGroup.id.toString()];
+            } else {
+                // Fallback for direct IDs if no match found in list
+                effectiveGroupIds = [groupParam];
+            }
+        } 
+        // If we have a category, find its parent group to filter the sidebar
+        else if (catParam) {
+            const cat = allCategories.find(c => c.id.toString() === catParam);
+            if (cat?.group_id) {
+                effectiveGroupIds = [cat.group_id.toString()];
+            }
+        }
+        setSelectedGroupIds(effectiveGroupIds);
+
+        // Update Category (Room/Style)
+        setSelectedCategoryIds(catParam ? [catParam] : []);
+
+        // Update Book
+        setSelectedBookIds(bookParam ? [bookParam] : []);
+
+        // Reset pagination when any navigation happens
+        setVisibleCount(isMobile ? 12 : 24);
+    }, [searchParams, isInitialized, allCategories, groups, isMobile]);
 
     // Handle search debounce
     useEffect(() => {
@@ -129,10 +246,18 @@ const Catalog = () => {
                     groupIds: selectedGroupIds,
                     categoryIds: selectedCategoryIds,
                     bookIds: selectedBookIds,
-                    search: debouncedSearch
+                    search: debouncedSearch,
+                    tag: selectedTag
                 });
-                // Randomize for fresh experience
-                setWallpapers(shuffleArray(walls));
+
+                // Randomize for fresh experience ONLY if no specific sorting tag is applied
+                // This preserves 'new_arrival' chronological order and 'limited_stock' urgency.
+                if (selectedTag) {
+                    setWallpapers(walls);
+                } else {
+                    setWallpapers(shuffleArray(walls));
+                }
+                setVisibleCount(isMobile ? 12 : 24); // Reset pagination on filter change
             } catch (error) {
                 console.error("Error loading filtered data:", error);
             } finally {
@@ -140,7 +265,7 @@ const Catalog = () => {
             }
         };
         loadFilteredData();
-    }, [selectedGroupIds, selectedCategoryIds, debouncedSearch, allCategories, isInitialized]);
+    }, [selectedGroupIds, selectedCategoryIds, debouncedSearch, allCategories, isInitialized, selectedTag]);
 
     const handleToggleGroup = (groupId) => {
         if (groupId === null) {
@@ -232,12 +357,25 @@ const Catalog = () => {
                 />
 
                 {/* COLUMN 2: SCROLLABLE GRID */}
-                <div className="col-main-content">
+                <div ref={mainContentRef} className="col-main-content">
                     {loading && wallpapers.length === 0 ? (
                         <div className="loading" style={{ padding: '10rem 0' }}>LOADING...</div>
                     ) : (
                         <>
-                            <WallpaperList wallpapers={wallpapers} isAlternating={false} />
+                            <WallpaperList wallpapers={wallpapers.slice(0, visibleCount)} isAlternating={false} />
+
+                            {wallpapers.length > visibleCount && (
+                                <div className="related-view-more" ref={loadMoreRef} style={{ textAlign: 'center', padding: '4rem 0', opacity: 0.6 }}>
+                                    <motion.div
+                                        animate={{ y: [0, 10, 0] }}
+                                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                                    >
+                                        <ChevronDown size={28} style={{ margin: '0 auto' }} />
+                                    </motion.div>
+                                    <span style={{ fontSize: '0.75rem', letterSpacing: '1px', display: 'block', marginTop: '0.5rem' }}>SCROLL FOR MORE</span>
+                                </div>
+                            )}
+
                             <Footer style={{ marginTop: '2rem' }} />
                         </>
                     )}

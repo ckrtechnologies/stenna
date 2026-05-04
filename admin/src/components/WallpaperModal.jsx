@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, Loader2, Image as ImageIcon, Trash2, Plus, Download, RefreshCw } from 'lucide-react';
+import { X, Upload, Loader2, Image as ImageIcon, Trash2, Plus, Download, RefreshCw, Settings2, Layers, Sparkles, BookOpen } from 'lucide-react';
 import api from '../utils/api';
 
-const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups = [] }) => {
+const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups = [], books = [] }) => {
     const initialState = {
         name: '',
         slug: '',
@@ -23,26 +23,49 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
         videos: [], // Array of URLs
         category_ids: [], // Array of UUIDs
         group_ids: [], // Array of UUIDs
+        book_ids: [], // Array of UUIDs
         tagline: '',
         vibe: '',
         choose_if: '',
-        avoid_if: '',
-        ideal_for: '',
-        swatch: ''
+        ideal_for: ''
     };
 
     const [formData, setFormData] = useState(initialState);
     const [uploading, setUploading] = useState(false);
+    const [activeTab, setActiveTab] = useState('GENERAL');
+    const [categorySearch, setCategorySearch] = useState('');
+    const [bookSearch, setBookSearch] = useState('');
 
     useEffect(() => {
         if (wallpaper && isOpen) {
             setFormData({
                 ...initialState,
                 ...wallpaper,
+                // Ensure null strings from DB become empty strings for controlled inputs
+                name: wallpaper.name || '',
+                slug: wallpaper.slug || '',
+                design_code: wallpaper.design_code || '',
+                description: wallpaper.description || '',
+                price: wallpaper.price || '',
+                roll_width: wallpaper.roll_width || '',
+                roll_height: wallpaper.roll_height || '',
+                material: wallpaper.material || '',
+                finish: wallpaper.finish || '',
+                washability: wallpaper.washability || '',
+                durability: wallpaper.durability || '',
+                brand: wallpaper.brand || '',
+                country: wallpaper.country || '',
+                tagline: wallpaper.tagline || '',
+                vibe: wallpaper.vibe || '',
+                choose_if: wallpaper.choose_if || '',
+                ideal_for: wallpaper.ideal_for || '',
+                is_active: wallpaper.is_active ?? true,
+                quantity: wallpaper.quantity ?? 0,
                 images: wallpaper.images?.map(img => ({ url: img.image_url })) || [],
                 videos: wallpaper.videos?.map(vid => ({ url: vid.video_url })) || [],
                 category_ids: wallpaper.categories?.map(c => c.id) || [],
-                group_ids: wallpaper.groups?.map(g => g.id) || []
+                group_ids: wallpaper.groups?.map(g => g.id) || [],
+                book_ids: wallpaper.books?.map(b => b.id) || []
             });
         } else if (isOpen) {
             setFormData(initialState);
@@ -82,17 +105,33 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
                 : [...prev.group_ids, id]
         }));
     };
+    
+    const handleBookToggle = (id) => {
+        setFormData(prev => ({
+            ...prev,
+            book_ids: prev.book_ids.includes(id)
+                ? prev.book_ids.filter(bookId => bookId !== id)
+                : [...prev.book_ids, id]
+        }));
+    };
 
     const handleSpecificImageUpload = async (e, index) => {
         const file = e.target.files[0];
         if (!file) return;
 
+        if (!formData.design_code) {
+            alert('Please enter a Design Code first to organize the upload on the VPS.');
+            return;
+        }
+
         setUploading(true);
         try {
             const data = new FormData();
             data.append('image', file);
+            data.append('design_code', formData.design_code);
+            // data.append('filename', file.name);
             const res = await api.post('/upload/wallpaper', data);
-            
+
             setFormData(prev => {
                 const newImages = [...prev.images];
                 newImages[index] = { url: res.data.url, public_id: res.data.public_id };
@@ -105,37 +144,23 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
         }
     };
 
-    const handleSwatchUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setUploading(true);
-        try {
-            const data = new FormData();
-            data.append('image', file);
-            const res = await api.post('/upload/wallpaper', data);
-            
-            setFormData(prev => ({
-                ...prev,
-                swatch: res.data.url
-            }));
-        } catch (error) {
-            alert('Failed to upload swatch');
-        } finally {
-            setUploading(false);
-        }
-    };
 
     const handleSpecificVideoUpload = async (e, index) => {
         const file = e.target.files[0];
         if (!file) return;
 
+        if (!formData.design_code) {
+            alert('Please enter a Design Code first to organize the video on the VPS.');
+            return;
+        }
+
         setUploading(true);
         try {
             const data = new FormData();
             data.append('image', file);
+            data.append('design_code', formData.design_code);
             const res = await api.post('/upload/wallpaper', data);
-            
+
             setFormData(prev => {
                 const newVideos = [...prev.videos];
                 newVideos[index] = { url: res.data.url, public_id: res.data.public_id };
@@ -166,8 +191,9 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        const { swatch, ...restOfData } = formData;
         onSave({
-            ...formData,
+            ...restOfData,
             images: formData.images.filter(img => img && img.url).map(img => img.url),
             videos: formData.videos.filter(vid => vid && vid.url).map(vid => vid.url),
             price: formData.price ? parseFloat(formData.price) : null,
@@ -180,270 +206,353 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content wide" onClick={e => e.stopPropagation()}>
-                <header className="modal-header">
+        <div className="admin-modal-overlay bottom-sheet" onClick={onClose}>
+            <div className="admin-modal-content admin-modal-sheet" onClick={e => e.stopPropagation()}>
+                <header className="admin-modal-header">
                     <h2>{wallpaper ? 'Edit Wallpaper' : 'Add New Wallpaper'}</h2>
-                    <button className="close-btn" onClick={onClose}><X size={20} /></button>
+                    <button className="admin-close-btn" onClick={onClose}><X size={20} /></button>
                 </header>
 
-                <form onSubmit={handleSubmit} className="modal-form">
-                    <div className="modal-body-grid">
-                        {/* Left Column: Basic Info & Specs */}
-                        <div className="form-section">
-                            <h3 className="section-title">Product Details</h3>
-                            <div className="form-grid">
-                                <div className="field full">
-                                    <label>Wallpaper Name</label>
-                                    <input name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. Royal Silk Texture" />
-                                </div>
-                                <div className="field">
-                                    <label>Design Code</label>
-                                    <input name="design_code" value={formData.design_code} onChange={handleChange} placeholder="e.g. RS-102" />
-                                </div>
-                                <div className="field">
-                                    <label>Price ($)</label>
-                                    <input name="price" type="number" step="0.01" value={formData.price} onChange={handleChange} placeholder="0.00" />
-                                </div>
-                                <div className="field">
-                                    <label>Roll Width (cm)</label>
-                                    <input name="roll_width" type="number" value={formData.roll_width} onChange={handleChange} placeholder="53" />
-                                </div>
-                                <div className="field">
-                                    <label>Roll Height (m)</label>
-                                    <input name="roll_height" type="number" value={formData.roll_height} onChange={handleChange} placeholder="10" />
-                                </div>
-                                <div className="field">
-                                    <label>Stock Quantity</label>
-                                    <input name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder="0" />
-                                </div>
-                            </div>
+                <form onSubmit={handleSubmit} className="admin-modal-form tabbed-modal">
+                    {/* MODAL TABS NAVIGATION */}
+                    <div className="admin-modal-tabs">
+                        <button type="button" className={`admin-tab-item ${activeTab === 'GENERAL' ? 'active' : ''}`} onClick={() => setActiveTab('GENERAL')}>
+                            <Settings2 size={16} /> <span>General</span>
+                        </button>
+                        <button type="button" className={`admin-tab-item ${activeTab === 'MEDIA' ? 'active' : ''}`} onClick={() => setActiveTab('MEDIA')}>
+                            <ImageIcon size={16} /> <span>Media</span>
+                        </button>
+                        <button type="button" className={`admin-tab-item ${activeTab === 'CLASSIFICATION' ? 'active' : ''}`} onClick={() => setActiveTab('CLASSIFICATION')}>
+                            <Layers size={16} /> <span>Classification</span>
+                        </button>
+                        <button type="button" className={`admin-tab-item ${activeTab === 'STORY' ? 'active' : ''}`} onClick={() => setActiveTab('STORY')}>
+                            <Sparkles size={16} /> <span>Storytelling</span>
+                        </button>
+                        <button type="button" className={`admin-tab-item ${activeTab === 'BOOKS' ? 'active' : ''}`} onClick={() => setActiveTab('BOOKS')}>
+                            <BookOpen size={16} /> <span>Books</span>
+                        </button>
+                    </div>
 
-                            <h3 className="section-title mt-4">Technical Specifications</h3>
-                            <div className="form-grid">
-                                <div className="field">
-                                    <label>Material</label>
-                                    <input name="material" value={formData.material} onChange={handleChange} placeholder="Non-woven" />
-                                </div>
-                                <div className="field">
-                                    <label>Finish</label>
-                                    <input name="finish" value={formData.finish} onChange={handleChange} placeholder="Matte" />
-                                </div>
-                                <div className="field">
-                                    <label>Washability</label>
-                                    <input name="washability" value={formData.washability} onChange={handleChange} placeholder="Washable" />
-                                </div>
-                                <div className="field">
-                                    <label>Durability</label>
-                                    <input name="durability" value={formData.durability} onChange={handleChange} placeholder="High" />
-                                </div>
-                                <div className="field">
-                                    <label>Brand</label>
-                                    <input name="brand" value={formData.brand} onChange={handleChange} placeholder="Luxe Walls" />
-                                </div>
-                                <div className="field">
-                                    <label>Country</label>
-                                    <input name="country" value={formData.country} onChange={handleChange} placeholder="Italy" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Column: Images & Categories */}
-                        <div className="form-section">
-                            <h3 className="section-title">Color Swatch</h3>
-                            <div className="gallery-manager mb-6">
-                                <div className="gallery-slot-item" style={{ maxWidth: '120px' }}>
-                                    <div className="slot-card">
-                                        {formData.swatch ? (
-                                            <>
-                                                <img src={formData.swatch} alt="Swatch" />
-                                                <div className="slot-actions">
-                                                    <a href={formData.swatch} target="_blank" rel="noopener noreferrer" className="action-btn" title="Download">
-                                                        <Download size={14} />
-                                                    </a>
-                                                    <label className="action-btn" title="Replace">
-                                                        <RefreshCw size={14} />
-                                                        <input type="file" onChange={handleSwatchUpload} hidden accept="image/*" disabled={uploading} />
-                                                    </label>
-                                                    <button type="button" className="action-btn delete" onClick={() => setFormData(prev => ({ ...prev, swatch: '' }))}>
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <label className="add-slot-card">
-                                                {uploading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={20} />}
-                                                <input 
-                                                    type="file" 
-                                                    onChange={handleSwatchUpload} 
-                                                    hidden 
-                                                    accept="image/*" 
-                                                    disabled={uploading} 
-                                                />
+                    <div className="admin-modal-body">
+                        {activeTab === 'GENERAL' && (
+                            <div className="admin-tab-pane">
+                                <section className="admin-form-section">
+                                    <h3 className="admin-section-title">Product Details</h3>
+                                    <div className="admin-form-grid">
+                                        <div className="admin-field full">
+                                            <label>Wallpaper Name</label>
+                                            <input name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. Royal Silk Texture" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Design Code</label>
+                                            <input name="design_code" value={formData.design_code} onChange={handleChange} placeholder="e.g. RS-102" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Price (Rs.)</label>
+                                            <input name="price" type="number" step="0.01" value={formData.price} onChange={handleChange} placeholder="0.00" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Roll Width (cm)</label>
+                                            <input name="roll_width" type="number" value={formData.roll_width} onChange={handleChange} placeholder="53" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Roll Height (m)</label>
+                                            <input name="roll_height" type="number" value={formData.roll_height} onChange={handleChange} placeholder="10" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Stock Quantity</label>
+                                            <input name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder="0" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label className="admin-checkbox-field mt-6">
+                                                <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} />
+                                                <span>Product is Active</span>
                                             </label>
-                                        )}
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+                                </section>
 
-                            <h3 className="section-title">Product Gallery (6 Images)</h3>
-                            <div className="gallery-manager">
-                                <div className="gallery-slots-grid">
-                                    {[
-                                        'Hand Image',
-                                        'Medium Short',
-                                        'Far Short',
-                                        'Warm Family',
-                                        'Modal with Book',
-                                        'Rustic'
-                                    ].map((label, idx) => {
-                                        const img = formData.images[idx];
-                                        return (
-                                            <div key={idx} className="gallery-slot-item">
-                                                <label className="slot-label">{idx + 1}. {label}</label>
-                                                <div className="slot-card">
-                                                    {img ? (
-                                                        <>
-                                                            <img src={img.url} alt={label} />
-                                                            <div className="slot-actions">
-                                                                <a href={img.url} target="_blank" rel="noopener noreferrer" className="action-btn" title="Download">
-                                                                    <Download size={14} />
-                                                                </a>
-                                                                <label className="action-btn" title="Replace">
-                                                                    <RefreshCw size={14} />
-                                                                    <input type="file" onChange={(e) => handleSpecificImageUpload(e, idx)} hidden accept="image/*" disabled={uploading} />
-                                                                </label>
-                                                                <button type="button" className="action-btn delete" onClick={() => removeImage(idx)}>
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <label className="add-slot-card">
-                                                            {uploading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={20} />}
-                                                            <input 
-                                                                type="file" 
-                                                                onChange={(e) => handleSpecificImageUpload(e, idx)} 
-                                                                hidden 
-                                                                accept="image/*" 
-                                                                disabled={uploading} 
-                                                            />
-                                                        </label>
-                                                    )}
+                                <section className="admin-form-section mt-8">
+                                    <h3 className="admin-section-title">Technical Specifications</h3>
+                                    <div className="admin-form-grid">
+                                        <div className="admin-field">
+                                            <label>Material</label>
+                                            <input name="material" value={formData.material} onChange={handleChange} placeholder="Non-woven" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Finish</label>
+                                            <input name="finish" value={formData.finish} onChange={handleChange} placeholder="Matte" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Washability</label>
+                                            <input name="washability" value={formData.washability} onChange={handleChange} placeholder="Washable" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Durability</label>
+                                            <input name="durability" value={formData.durability} onChange={handleChange} placeholder="High" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Brand</label>
+                                            <input name="brand" value={formData.brand} onChange={handleChange} placeholder="Luxe Walls" />
+                                        </div>
+                                        <div className="admin-field">
+                                            <label>Country</label>
+                                            <input name="country" value={formData.country} onChange={handleChange} placeholder="Italy" />
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+
+                        {/* TAB 2: MEDIA GALLERY */}
+                        {activeTab === 'MEDIA' && (
+                            <div className="admin-tab-pane">
+                                <section className="admin-form-section">
+                                    <h3 className="admin-section-title">Product Gallery (6 Images)</h3>
+                                    <div className="admin-gallery-grid">
+                                        {[
+                                            'Hand Image',
+                                            'Medium Short',
+                                            'Far Short',
+                                            'Warm Family',
+                                            'Modal with Book',
+                                            'Rustic'
+                                        ].map((label, idx) => {
+                                            const img = formData.images[idx];
+                                            return (
+                                                <div key={idx} className="admin-slot-item">
+                                                    <label className="admin-slot-label">{idx + 1}. {label}</label>
+                                                    <div className="admin-slot-card">
+                                                        {img ? (
+                                                            <>
+                                                                <img src={img.url} alt={label} />
+                                                                <div className="admin-slot-actions">
+                                                                    <a href={img.url} target="_blank" rel="noopener noreferrer" className="admin-action-btn" title="Download">
+                                                                        <Download size={14} />
+                                                                    </a>
+                                                                    <label className="admin-action-btn" title="Replace">
+                                                                        <RefreshCw size={14} />
+                                                                        <input type="file" onChange={(e) => handleSpecificImageUpload(e, idx)} hidden accept="image/*" disabled={uploading} />
+                                                                    </label>
+                                                                    <button type="button" className="admin-action-btn" onClick={() => removeImage(idx)}>
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <label className="admin-add-slot">
+                                                                {uploading ? <Loader2 className="admin-spin" size={16} /> : <Plus size={20} />}
+                                                                <input type="file" onChange={(e) => handleSpecificImageUpload(e, idx)} hidden accept="image/*" disabled={uploading} />
+                                                            </label>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                                            );
+                                        })}
+                                    </div>
 
-                            <h3 className="section-title mt-4">Product Video</h3>
-                            <div className="gallery-manager">
-                                <div className="gallery-slot-item">
-                                    <label className="slot-label">1. Sponge Wash Video</label>
-                                    <div className="slot-card video-slot">
-                                        {formData.videos[0] ? (
-                                            <>
-                                                <video src={formData.videos[0].url} className="w-full h-full object-cover" />
-                                                <div className="slot-actions">
-                                                    <a href={formData.videos[0].url} target="_blank" rel="noopener noreferrer" className="action-btn" title="Download">
-                                                        <Download size={14} />
-                                                    </a>
-                                                    <label className="action-btn" title="Replace">
-                                                        <RefreshCw size={14} />
+                                    <h3 className="admin-section-title mt-8">Product Video</h3>
+                                    <div className="admin-video-upload-section">
+                                        <div className="admin-slot-item" style={{ maxWidth: '240px' }}>
+                                            <label className="admin-slot-label">1. Sponge Wash Video</label>
+                                            <div className="admin-slot-card video-slot">
+                                                {formData.videos[0] ? (
+                                                    <>
+                                                        <video src={formData.videos[0].url} className="w-full h-full object-cover" />
+                                                        <div className="admin-slot-actions">
+                                                            <a href={formData.videos[0].url} target="_blank" rel="noopener noreferrer" className="admin-action-btn" title="Download">
+                                                                <Download size={14} />
+                                                            </a>
+                                                            <label className="admin-action-btn" title="Replace">
+                                                                <RefreshCw size={14} />
+                                                                <input type="file" onChange={(e) => handleSpecificVideoUpload(e, 0)} hidden accept="video/*" disabled={uploading} />
+                                                            </label>
+                                                            <button type="button" className="admin-action-btn" onClick={() => removeVideo(0)}>
+                                                                    <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <label className="admin-add-slot">
+                                                        {uploading ? <Loader2 className="admin-spin" size={16} /> : <Plus size={20} />}
                                                         <input type="file" onChange={(e) => handleSpecificVideoUpload(e, 0)} hidden accept="video/*" disabled={uploading} />
                                                     </label>
-                                                    <button type="button" className="action-btn delete" onClick={() => removeVideo(0)}>
-                                                        <Trash2 size={14} />
-                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+
+                        {/* TAB 3: CLASSIFICATION (GROUPS & CATEGORIES) */}
+                        {activeTab === 'CLASSIFICATION' && (
+                            <div className="admin-tab-pane">
+                                <section className="admin-form-section">
+                                    <div className="admin-section-header">
+                                        <h3 className="admin-section-title">Collection Groups</h3>
+                                    </div>
+                                    <div className="admin-category-selector-compact mb-8">
+                                        {groups.map(group => (
+                                            <button
+                                                key={group.id}
+                                                type="button"
+                                                className={`admin-compact-chip ${formData.group_ids.includes(group.id) ? 'active' : ''}`}
+                                                onClick={() => handleGroupToggle(group.id)}
+                                            >
+                                                {group.name}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="admin-section-header">
+                                        <h3 className="admin-section-title">Product Categories</h3>
+                                        <div className="admin-search-field">
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search categories..." 
+                                                value={categorySearch}
+                                                onChange={(e) => setCategorySearch(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="admin-category-group-container">
+                                        {/* Grouping categories by their parent group */}
+                                        {groups.map(group => {
+                                            const groupCats = categories.filter(c => 
+                                                c.group_id === group.id && 
+                                                c.name.toLowerCase().includes(categorySearch.toLowerCase())
+                                            );
+                                            if (groupCats.length === 0) return null;
+
+                                            return (
+                                                <div key={group.id} className="admin-cat-group-box">
+                                                    <h4 className="admin-cat-group-title">{group.name}</h4>
+                                                    <div className="admin-cat-chips-grid">
+                                                        {groupCats.map(cat => (
+                                                            <button
+                                                                key={cat.id}
+                                                                type="button"
+                                                                className={`admin-cat-chip-small ${formData.category_ids.includes(cat.id) ? 'active' : ''}`}
+                                                                onClick={() => handleCategoryToggle(cat.id)}
+                                                            >
+                                                                {cat.name}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </>
-                                        ) : (
-                                            <label className="add-slot-card">
-                                                {uploading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={20} />}
-                                                <input 
-                                                    type="file" 
-                                                    onChange={(e) => handleSpecificVideoUpload(e, 0)} 
-                                                    hidden 
-                                                    accept="video/*" 
-                                                    disabled={uploading} 
-                                                />
-                                            </label>
+                                            );
+                                        })}
+                                        {/* Handle categories without a group or whose group isn't in 'groups' list */}
+                                        {categories.filter(c => 
+                                            !groups.find(g => g.id === c.group_id) && 
+                                            c.name.toLowerCase().includes(categorySearch.toLowerCase())
+                                        ).length > 0 && (
+                                            <div className="admin-cat-group-box">
+                                                <h4 className="admin-cat-group-title">Other Categories</h4>
+                                                <div className="admin-cat-chips-grid">
+                                                    {categories.filter(c => 
+                                                        !groups.find(g => g.id === c.group_id) && 
+                                                        c.name.toLowerCase().includes(categorySearch.toLowerCase())
+                                                    ).map(cat => (
+                                                        <button
+                                                            key={cat.id}
+                                                            type="button"
+                                                            className={`admin-cat-chip-small ${formData.category_ids.includes(cat.id) ? 'active' : ''}`}
+                                                            onClick={() => handleCategoryToggle(cat.id)}
+                                                        >
+                                                            {cat.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                </div>
+                                </section>
                             </div>
+                        )}
 
-                            <h3 className="section-title mt-4">Groups</h3>
-                            <div className="category-selector mb-4">
-                                {groups.map(group => (
-                                    <button
-                                        key={group.id}
-                                        type="button"
-                                        className={`cat-chip ${formData.group_ids.includes(group.id) ? 'active' : ''}`}
-                                        onClick={() => handleGroupToggle(group.id)}
-                                    >
-                                        {group.name}
-                                    </button>
-                                ))}
+                        {/* TAB 4: STORYTELLING */}
+                        {activeTab === 'STORY' && (
+                            <div className="admin-tab-pane">
+                                <section className="admin-form-section">
+                                    <h3 className="admin-section-title">Narrative & Product Story</h3>
+                                    <div className="admin-form-grid">
+                                        <div className="admin-field full">
+                                            <label>Tagline (The punchy one-liner)</label>
+                                            <input name="tagline" value={formData.tagline} onChange={handleChange} placeholder="e.g. For homes that want warmth..." />
+                                        </div>
+                                        <div className="admin-field full">
+                                            <label>Vibe (Mood, feel, and atmosphere)</label>
+                                            <textarea name="vibe" value={formData.vibe} onChange={handleChange} rows="3" placeholder="Describe the soul of this wallpaper..." />
+                                        </div>
+                                        <div className="admin-field full">
+                                            <label>Choose this design if…</label>
+                                            <textarea name="choose_if" value={formData.choose_if} onChange={handleChange} rows="3" placeholder="You want a warm, cosy living room..." />
+                                        </div>
+                                        <div className="admin-field full">
+                                            <label>Ideal For (The perfect rooms/usage)</label>
+                                            <input name="ideal_for" value={formData.ideal_for} onChange={handleChange} placeholder="Master Bedroom, Living Room, Feature Wall..." />
+                                        </div>
+                                        <div className="admin-field full mt-2">
+                                            <label>Detailed Description</label>
+                                            <textarea name="description" value={formData.description} onChange={handleChange} rows="4" placeholder="Full technical and aesthetic description..." />
+                                        </div>
+                                    </div>
+                                </section>
                             </div>
+                        )}
 
-                            <h3 className="section-title mt-4">Categories</h3>
-                            <div className="category-selector">
-                                {categories.map(cat => (
-                                    <button
-                                        key={cat.id}
-                                        type="button"
-                                        className={`cat-chip ${formData.category_ids.includes(cat.id) ? 'active' : ''}`}
-                                        onClick={() => handleCategoryToggle(cat.id)}
-                                    >
-                                        {cat.name}
-                                        <small>{cat.group?.name}</small>
-                                    </button>
-                                ))}
+                        {activeTab === 'BOOKS' && (
+                            <div className="admin-tab-pane">
+                                <section className="admin-form-section">
+                                    <div className="admin-section-header">
+                                        <h3 className="admin-section-title">Assign to Sample Books</h3>
+                                        <div className="admin-search-field">
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search books..." 
+                                                value={bookSearch}
+                                                onChange={(e) => setBookSearch(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="admin-category-group-container">
+                                        <div className="admin-cat-group-box">
+                                            <div className="admin-cat-chips-grid">
+                                                {books.filter(b => 
+                                                    b.name.toLowerCase().includes(bookSearch.toLowerCase()) ||
+                                                    b.code?.toLowerCase().includes(bookSearch.toLowerCase())
+                                                ).map(book => (
+                                                    <button
+                                                        key={book.id}
+                                                        type="button"
+                                                        className={`admin-cat-chip-small ${formData.book_ids.includes(book.id) ? 'active' : ''}`}
+                                                        onClick={() => handleBookToggle(book.id)}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                    >
+                                                        <BookOpen size={12} />
+                                                        <span>{book.name}</span>
+                                                        {book.code && <span style={{ opacity: 0.6, fontSize: '10px' }}>({book.code})</span>}
+                                                    </button>
+                                                ))}
+                                                {books.length === 0 && (
+                                                    <div className="admin-empty-state">No books available.</div>
+                                                )}
+                                                {books.length > 0 && books.filter(b => b.name.toLowerCase().includes(bookSearch.toLowerCase()) || b.code?.toLowerCase().includes(bookSearch.toLowerCase())).length === 0 && (
+                                                    <div className="admin-empty-state">No books match your search.</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
                             </div>
-
-                            <div className="field mt-4">
-                                <label className="checkbox-field">
-                                    <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} />
-                                    <span>Product is Active</span>
-                                </label>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
-                    <div className="field full mt-2">
-                        <label>Description (Optional)</label>
-                        <textarea name="description" value={formData.description} onChange={handleChange} rows="2" placeholder="Tell more about this wallpaper..." />
-                    </div>
-
-                    <div className="form-section full-width mt-4">
-                        <h3 className="section-title">Storytelling & Fit Information</h3>
-                        <div className="form-grid">
-                            <div className="field full">
-                                <label>Tagline (e.g. For homes that want warmth...)</label>
-                                <input name="tagline" value={formData.tagline} onChange={handleChange} placeholder="The punchy one-liner header" />
-                            </div>
-                            <div className="field full">
-                                <label>Vibe (Mood & feel of this wallpaper)</label>
-                                <textarea name="vibe" value={formData.vibe} onChange={handleChange} rows="3" placeholder="Describe the vibe, mood and feel of this wallpaper..." />
-                            </div>
-                            <div className="field full">
-                                <label>Choose this design if…</label>
-                                <textarea name="choose_if" value={formData.choose_if} onChange={handleChange} rows="3" placeholder="You want a warm, cosy living room with earthy tones..." />
-                            </div>
-                            <div className="field half">
-                                <label>Avoid if…</label>
-                                <input name="avoid_if" value={formData.avoid_if} onChange={handleChange} placeholder="Your room has very low ceilings..." />
-                            </div>
-                            <div className="field half">
-                                <label>Ideal For</label>
-                                <input name="ideal_for" value={formData.ideal_for} onChange={handleChange} placeholder="Master Bedroom, Living Room..." />
-                            </div>
-                        </div>
-                    </div>
-
-                    <footer className="modal-footer">
+                    <footer className="admin-modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
                         <button type="submit" className="btn btn-primary" disabled={uploading}>
                             {wallpaper ? 'Update Product' : 'Create Product'}
@@ -451,156 +560,6 @@ const WallpaperModal = ({ isOpen, onClose, onSave, wallpaper, categories, groups
                     </footer>
                 </form>
             </div>
-
-            <style jsx>{`
-                .modal-content.wide { max-width: 1000px; width: 95%; }
-                .modal-body-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2.5rem; }
-                .section-title { font-size: 0.8125rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-highlight); padding-bottom: 0.5rem; }
-                .mt-4 { margin-top: 2rem; }
-                
-                .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem; }
-                .gallery-item { aspect-ratio: 1; border-radius: 0.75rem; overflow: hidden; position: relative; border: 1px solid var(--border-color); background: var(--bg-dark); }
-                .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-                .slot-actions { 
-                    position: absolute; 
-                    top: 0.5rem; 
-                    right: 0.5rem; 
-                    display: flex; 
-                    gap: 0.25rem; 
-                    opacity: 0; 
-                    transition: opacity 0.2s; 
-                    z-index: 10;
-                }
-                .slot-card:hover .slot-actions { opacity: 1; }
-                .action-btn { 
-                    background: rgba(0, 0, 0, 0.7); 
-                    border: none; 
-                    color: white; 
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 0.4rem; 
-                    cursor: pointer; 
-                    display: flex; 
-                    align-items: center; 
-                    justify-content: center; 
-                    transition: all 0.2s;
-                }
-                .action-btn:hover { background: var(--primary); transform: scale(1.05); }
-                .action-btn.delete:hover { background: #ef4444; }
-                .main-tag { position: absolute; bottom: 0; left: 0; right: 0; background: var(--primary); color: white; font-size: 0.65rem; font-weight: 700; text-align: center; padding: 0.25rem; text-transform: uppercase; }
-                
-                .add-image-card { aspect-ratio: 1; border: 2px dashed var(--border-color); border-radius: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
-                .add-image-card:hover { border-color: var(--primary); color: var(--primary); background: rgba(59, 130, 246, 0.05); }
-                
-                .category-selector { 
-                    display: grid; 
-                    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
-                    gap: 0.75rem; 
-                    max-height: 240px; 
-                    overflow-y: auto; 
-                    padding: 1.25rem; 
-                    background: var(--bg-input); 
-                    border-radius: var(--radius-lg); 
-                    border: 1px solid var(--border-color); 
-                }
-                .cat-chip { 
-                    padding: 1rem; 
-                    border-radius: var(--radius-md); 
-                    background: var(--bg-card); 
-                    border: 1px solid var(--border-color); 
-                    color: var(--text-muted); 
-                    font-size: 0.8125rem; 
-                    cursor: pointer; 
-                    display: flex; 
-                    flex-direction: column; 
-                    align-items: flex-start; 
-                    text-align: left; 
-                    transition: all 0.2s; 
-                    gap: 0.25rem; 
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-                }
-                .cat-chip small { color: var(--text-dim); font-size: 0.65rem; font-weight: 500; }
-                .cat-chip:hover { border-color: var(--primary); background: var(--bg-hover); color: var(--text-main); }
-                .cat-chip.active { background: var(--primary); border-color: var(--primary); color: white !important; box-shadow: var(--shadow-glow); }
-                .cat-chip.active small { color: rgba(255,255,255,0.8); }
-                .mb-4 { margin-bottom: 2rem; }
-                
-                .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
-                .animate-spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-                @media (max-width: 900px) {
-                    .modal-body-grid { grid-template-columns: 1fr; }
-                    .modal-content.wide { max-width: 600px; }
-                }
-
-                .form-section.full-width {
-                    grid-column: span 1;
-                }
-                
-                .field.half {
-                    grid-column: span 1;
-                }
-
-                @media (min-width: 900px) {
-                    .form-section.full-width {
-                        grid-column: span 2;
-                    }
-                    .field.half {
-                        grid-column: span 1;
-                    }
-                }
-
-                .gallery-slots-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 1.5rem;
-                }
-                .gallery-slot-item {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.5rem;
-                }
-                .slot-label {
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                    color: var(--text-dim);
-                    white-space: nowrap;
-                }
-                .slot-card {
-                    aspect-ratio: 1;
-                    border: 1px solid var(--border-color);
-                    border-radius: 0.75rem;
-                    overflow: hidden;
-                    position: relative;
-                    background: var(--bg-dark);
-                }
-                .slot-card img, .slot-card video {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-                .add-slot-card {
-                    width: 100%;
-                    height: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border: 2px dashed var(--border-color);
-                    border-radius: 0.75rem;
-                    cursor: pointer;
-                    color: var(--text-muted);
-                    transition: all 0.2s;
-                }
-                .add-slot-card:hover {
-                    border-color: var(--primary);
-                    color: var(--primary);
-                    background: rgba(59, 130, 246, 0.05);
-                }
-                .video-slot {
-                    max-width: 200px;
-                }
-            `}</style>
 
         </div>
     );

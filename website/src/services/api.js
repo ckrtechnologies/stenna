@@ -23,7 +23,7 @@ export const fetchCategories = async (groupId) => {
     return response.json();
 };
 
-export const fetchWallpapers = async ({ groupIds, categoryIds, bookIds, search }) => {
+export const fetchWallpapers = async ({ groupIds, categoryIds, bookIds, search, tag }) => {
     const params = new URLSearchParams();
     if (groupIds && groupIds.length > 0) {
         params.append('group_id', groupIds.join(','));
@@ -35,6 +35,7 @@ export const fetchWallpapers = async ({ groupIds, categoryIds, bookIds, search }
         params.append('book_id', bookIds.join(','));
     }
     if (search) params.append('search', search);
+    if (tag) params.append('tag', tag);
     params.append('activeOnly', 'true');
 
     const response = await fetch(`${API_BASE_URL}/wallpapers?${params.toString()}`);
@@ -117,5 +118,10 @@ export const fetchAiRecommendations = async (answers) => {
     });
     if (!response.ok) throw new Error('Failed to fetch AI recommendations');
     return response.json();
+};
+
+export const fetchRecommendations = async (wallpaperId) => {
+    const response = await fetch(`${API_BASE_URL}/wallpapers/${wallpaperId}/recommendations`);
+    if (!response.ok) throw new Error('Failed to fetch recommendations');
     return response.json();
 };

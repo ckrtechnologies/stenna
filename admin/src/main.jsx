@@ -5,6 +5,7 @@ import './styles/variables.css';
 import './index.css';
 import './styles/admin.css';
 import './styles/components.css';
+import './styles/modals.css';
 
 // Apply stored theme immediately to prevent flashing
 const savedTheme = localStorage.getItem('theme') || 'light';

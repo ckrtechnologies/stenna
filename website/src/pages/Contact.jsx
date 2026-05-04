@@ -44,8 +44,11 @@ const Contact = () => {
 
                 <div className="col-main-content" style={{ paddingTop: 0, marginTop: 0 }}>
                     <div className="static-page fade-in-up" style={{ padding: '2rem 5%' }}>
+                        <nav className="breadcrumb-nav" style={{ marginBottom: '2rem', fontSize: '0.75rem', color: '#888' }}>
+                            <Link to="/" style={{ textTransform: 'none', letterSpacing: '0', color: '#888' }}>Home</Link> &rsaquo; <span style={{ color: '#888' }}>Contact Us</span>
+                        </nav>
                         <header className="static-page-header contact-header">
-                            <h3>Stay In Touch!</h3>
+                            <h3 style={{ textTransform: 'none', fontWeight: 700 }}>Stay In Touch!</h3>
                             <div className="header-line"></div>
                         </header>
 

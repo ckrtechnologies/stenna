@@ -7,6 +7,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [isGuest, setIsGuest] = useState(sessionStorage.getItem('stenna_is_guest') === 'true');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -14,6 +15,7 @@ export const AuthProvider = ({ children }) => {
         const getInitialSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             setUser(session?.user ?? null);
+            if (session?.user) setIsGuest(false);
             setLoading(false);
         };
 
@@ -22,16 +24,28 @@ export const AuthProvider = ({ children }) => {
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
+            if (session?.user) setIsGuest(false);
             setLoading(false);
         });
 
         return () => subscription.unsubscribe();
     }, []);
 
+    const continueAsGuest = () => {
+        setIsGuest(true);
+        sessionStorage.setItem('stenna_is_guest', 'true');
+    };
+
     const value = {
         user,
+        isGuest,
         loading,
-        signOut: () => supabase.auth.signOut(),
+        continueAsGuest,
+        signOut: () => {
+            setIsGuest(false);
+            sessionStorage.removeItem('stenna_is_guest');
+            return supabase.auth.signOut();
+        },
     };
 
     return (

@@ -11,13 +11,13 @@ const BulkUploadModal = ({ isOpen, onClose, onRefresh }) => {
     const [error, setError] = useState(null);
 
     const templateHeaders = [
-        'Name', 'Design Code', 'Slug', 'Description', 'Price', 
-        'Roll Width (cm)', 'Roll Height (m)', 'Stock Quantity', 
-        'Material', 'Finish', 'Washability', 'Durability', 
-        'Brand', 'Country', 'Tagline', 'Vibe', 'Choose If', 
+        'Name', 'Design Code', 'Slug', 'Description', 'Price',
+        'Roll Width (cm)', 'Roll Height (m)', 'Stock Quantity',
+        'Material', 'Finish', 'Washability', 'Durability',
+        'Brand', 'Country', 'Tagline', 'Vibe', 'Choose If',
         'Avoid If', 'Ideal For', 'Is Active', 'Swatch Image',
         'Hand Image', 'Medium Short', 'Far Short', 'Warm Family', 'Modal with Book', 'Rustic',
-        'Sponge Wash Video', 
+        'Sponge Wash Video',
         'Category Names', 'Group Names'
     ];
 
@@ -236,7 +236,7 @@ const BulkUploadModal = ({ isOpen, onClose, onRefresh }) => {
                                     <p>Your bulk upload process has finished.</p>
                                 </div>
                             </div>
-                            
+
                             <div className="results-summary">
                                 <div className="summary-card success">
                                     <span className="count">{results.success}</span>
@@ -291,7 +291,7 @@ const BulkUploadModal = ({ isOpen, onClose, onRefresh }) => {
                 </footer>
             </div>
 
-            <style jsx>{`
+            <style>{`
                 .bulk-upload-modal { max-width: 800px; }
                 .title-with-icon { display: flex; align-items: center; gap: 0.75rem; }
                 .title-with-icon h2 { margin: 0; }

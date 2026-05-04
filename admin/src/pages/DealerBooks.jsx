@@ -174,7 +174,7 @@ const DealerBooks = () => {
                 </div>
             )}
 
-            <style jsx>{`
+            <style>{`
                 .page-container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
                 .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; }
                 .back-btn { background: none; border: none; display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); cursor: pointer; margin-bottom: 1rem; font-size: 0.875rem; padding: 0; }

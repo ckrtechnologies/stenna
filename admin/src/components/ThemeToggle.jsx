@@ -22,7 +22,7 @@ const ThemeToggle = () => {
             {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
 
-            <style jsx>{`
+            <style>{`
                 .theme-toggle-btn {
                     width: 100%;
                     display: flex;

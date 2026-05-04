@@ -56,3 +56,41 @@ export const deleteCategory = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const bulkAddWallpapersToCategory = async (req, res) => {
+    const { id } = req.params;
+    const { wallpaperIds, categoryIds } = req.body;
+
+    const targetCategoryIds = categoryIds || (id ? [id] : []);
+
+    if (!Array.isArray(wallpaperIds) || wallpaperIds.length === 0) {
+        return res.status(400).json({ message: 'wallpaperIds must be a non-empty array' });
+    }
+    if (targetCategoryIds.length === 0) {
+        return res.status(400).json({ message: 'No category IDs provided' });
+    }
+
+    try {
+        const rows = [];
+        targetCategoryIds.forEach(categoryId => {
+            wallpaperIds.forEach(wallpaperId => {
+                rows.push({ category_id: categoryId, wallpaper_id: wallpaperId });
+            });
+        });
+
+        const { data, error } = await supabase
+            .from('wallpaper_categories')
+            .upsert(rows, { onConflict: 'category_id,wallpaper_id', ignoreDuplicates: true })
+            .select();
+
+        if (error) throw error;
+
+        res.status(201).json({ 
+            message: `${wallpaperIds.length} wallpaper(s) added to ${targetCategoryIds.length} category(ies)`, 
+            data 
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+

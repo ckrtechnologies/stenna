@@ -235,7 +235,7 @@ const Leads = () => {
                 </table>
             </div>
 
-            <style jsx>{`
+            <style>{`
                 .contact-cell { display: flex; flex-direction: column; gap: 0.25rem; }
                 .contact-cell strong { color: var(--text-main); }
                 .contact-info { display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.75rem; }

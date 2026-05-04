@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js';
 import kieAiService from '../services/kieAiService.js';
-import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs';
+import path from 'path';
 
 const formatTimestamp = () => {
     const now = new Date();
@@ -21,31 +22,26 @@ export const uploadRoom = async (req, res) => {
 
         const userId = req.user?.id || 'guest';
         const timestamp = formatTimestamp();
-        const publicId = `${userId}-room-${timestamp}`;
-        const folderPath = `visualizer/room`;
+        const filename = `${userId}-room-${timestamp}-${req.file.originalname.replace(/\s+/g, '_')}`;
 
-        const streamUpload = (buffer) => {
-            return new Promise((resolve, reject) => {
-                const stream = cloudinary.uploader.upload_stream(
-                    { folder: folderPath, public_id: publicId, resource_type: 'auto' },
-                    (error, result) => {
-                        if (result) {
-                            resolve(result);
-                        } else {
-                            reject(error);
-                        }
-                    }
-                );
-                stream.end(buffer);
-            });
-        };
+        // VPS Storage Settings
+        const WEB_ROOT = process.env.WEB_ROOT || '/var/www/stenna/public';
+        const VISUALIZER_BASE_URL = process.env.VISUALIZER_BASE_URL || 'https://assets.stenna.cloud/visualizer';
 
-        const result = await streamUpload(req.file.buffer);
+        const targetDir = path.resolve(WEB_ROOT, 'visualizer', 'uploads');
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true, mode: 0o755 });
+        }
+
+        const filePath = path.join(targetDir, filename);
+        fs.writeFileSync(filePath, req.file.buffer, { mode: 0o644 });
+
+        const publicUrl = `${VISUALIZER_BASE_URL}/uploads/${filename}`;
 
         res.status(200).json({
-            message: 'Room image uploaded to Cloudinary successfully',
-            url: result.secure_url,
-            public_id: result.public_id
+            message: 'Room image uploaded to VPS successfully',
+            url: publicUrl,
+            filename: filename
         });
     } catch (error) {
         console.error('Room Upload Error:', error);
@@ -100,24 +96,22 @@ export const generateVisualization = async (req, res) => {
             wpUrl = wp.image_url;
         }
 
-        // 2. If no room URL provided (file upload), upload to Cloudinary with custom naming
+        // 2. If no room URL provided (file upload), save to VPS
         if (!roomUrl) {
             if (!file) {
                 return res.status(400).json({ message: 'Room image file or URL is required' });
             }
 
-            const publicId = `${userId}-room-${timestamp}`;
-            const streamUpload = (buffer) => {
-                return new Promise((resolve, reject) => {
-                    const stream = cloudinary.uploader.upload_stream(
-                        { folder: 'visualizer/room', public_id: publicId, resource_type: 'auto' },
-                        (err, result) => result ? resolve(result) : reject(err)
-                    );
-                    stream.end(buffer);
-                });
-            };
-            const uploadResult = await streamUpload(file.buffer);
-            roomUrl = uploadResult.secure_url;
+            const WEB_ROOT = process.env.WEB_ROOT || '/var/www/stenna/public';
+            const VISUALIZER_BASE_URL = process.env.VISUALIZER_BASE_URL || 'https://assets.stenna.cloud/visualizer';
+
+            const roomFilename = `${userId}-room-${timestamp}-${file.originalname.replace(/\s+/g, '_')}`;
+            const roomDir = path.resolve(WEB_ROOT, 'visualizer', 'uploads');
+            if (!fs.existsSync(roomDir)) fs.mkdirSync(roomDir, { recursive: true, mode: 0o755 });
+
+            const roomPath = path.join(roomDir, roomFilename);
+            fs.writeFileSync(roomPath, file.buffer, { mode: 0o644 });
+            roomUrl = `${VISUALIZER_BASE_URL}/uploads/${roomFilename}`;
         }
 
         // 3. AI Transformation Flow
@@ -132,16 +126,24 @@ export const generateVisualization = async (req, res) => {
 
         if (!tempGeneratedUrl) throw new Error("AI generated an invalid or empty result URL.");
 
-        // 4. PERSISTENCE: Re-upload AI result to Cloudinary with custom naming
-        console.log("Stenna AI: Re-uploading AI result to Cloudinary for permanent storage...");
-        const outputPublicId = `${userId}-output-${timestamp}`;
-        const cloudinaryResult = await cloudinary.uploader.upload(tempGeneratedUrl, {
-            folder: 'visualizer/room',
-            public_id: outputPublicId,
-            resource_type: 'auto'
-        });
+        // 4. PERSISTENCE: Save AI result permanently to VPS
+        console.log("Stenna AI: Downloading and saving result to VPS for permanent storage...");
+        const WEB_ROOT = process.env.WEB_ROOT || '/var/www/stenna/public';
+        const VISUALIZER_BASE_URL = process.env.VISUALIZER_BASE_URL || 'https://assets.stenna.cloud/visualizer';
 
-        const finalGeneratedUrl = cloudinaryResult.secure_url;
+        const outputFilename = `${userId}-output-${timestamp}.jpg`;
+        const resultDir = path.resolve(WEB_ROOT, 'visualizer', 'results');
+        if (!fs.existsSync(resultDir)) fs.mkdirSync(resultDir, { recursive: true, mode: 0o755 });
+
+        const outputPath = path.join(resultDir, outputFilename);
+
+        const imageRes = await fetch(tempGeneratedUrl);
+        if (!imageRes.ok) throw new Error(`Failed to download AI result from ${tempGeneratedUrl}`);
+        const imageBuffer = Buffer.from(await imageRes.arrayBuffer());
+
+        fs.writeFileSync(outputPath, imageBuffer, { mode: 0o644 });
+
+        const finalGeneratedUrl = `${VISUALIZER_BASE_URL}/results/${outputFilename}`;
 
         // 5. Save to Database
         let savedVisualization = null;
@@ -153,7 +155,7 @@ export const generateVisualization = async (req, res) => {
                     wallpaper_id: wallpaperId,
                     room_image_url: roomUrl,
                     generated_image_url: finalGeneratedUrl,
-                    settings: { taskId, prompt: result.fullResponse?.input?.prompt, cloudinary_id: cloudinaryResult.public_id }
+                    settings: { taskId, prompt: result.fullResponse?.input?.prompt, vps_filename: outputFilename }
                 })
                 .select()
                 .single();
@@ -167,7 +169,7 @@ export const generateVisualization = async (req, res) => {
 
         // 6. Return Final Result
         res.status(200).json({
-            message: 'Visualization generated and stored successfully',
+            message: 'Visualization generated and stored successfully on VPS',
             generatedUrl: finalGeneratedUrl,
             originalUrl: roomUrl,
             visualizationId: savedVisualization?.id
