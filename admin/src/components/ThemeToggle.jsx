@@ -27,26 +27,25 @@ const ThemeToggle = () => {
                     width: 100%;
                     display: flex;
                     align-items: center;
-                    padding: 0.875rem 1.25rem;
+                    padding: 0.65rem 1rem;
                     color: var(--text-muted);
-                    background: var(--bg-card);
+                    background: var(--bg-input);
                     border: 1px solid var(--border-color);
-                    border-radius: var(--radius-md);
+                    border-radius: 6px;
                     cursor: pointer;
-                    transition: var(--transition-base);
-                    margin-bottom: 1rem;
+                    transition: all 0.2s ease;
+                    margin-bottom: 0.75rem;
                 }
 
                 .theme-toggle-btn span {
-                    margin-left: 1rem;
-                    font-weight: 600;
-                    font-size: 0.9375rem;
+                    margin-left: 0.75rem;
+                    font-weight: 500;
+                    font-size: 0.875rem;
                 }
 
                 .theme-toggle-btn:hover {
-                    background: var(--border-highlight);
+                    background: var(--bg-hover);
                     color: var(--text-main);
-                    border-color: var(--primary);
                 }
             `}</style>
         </button>

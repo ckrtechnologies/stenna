@@ -233,3 +233,56 @@ export const verifyVPS = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+/**
+ * Upload content for AI processing (Topaz, etc.)
+ * Saves to: /var/www/stenna/public/content/<module>
+ */
+export const uploadContentToVPS = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const { module = 'topaz' } = req.body; // Default to topaz
+        
+        // Base path setup
+        const webRoot = process.env.WEB_ROOT || '/var/www/stenna/public';
+        let uploadRoot = path.join(webRoot, 'content', module);
+
+        // Fallback for local development
+        if (!fs.existsSync(path.parse(webRoot).root) && process.env.NODE_ENV === 'development') {
+            uploadRoot = path.resolve(process.cwd(), 'public', 'content', module);
+        }
+
+        // Ensure directory exists
+        if (!fs.existsSync(uploadRoot)) {
+            fs.mkdirSync(uploadRoot, { recursive: true, mode: 0o755 });
+        }
+
+        // Generate filename
+        const filename = `content-${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
+        const filePath = path.join(uploadRoot, filename);
+
+        // Save file
+        fs.writeFileSync(filePath, req.file.buffer, { mode: 0o644 });
+
+        // Construct public URL 
+        // We assume assets.stenna.cloud maps to /var/www/stenna/public
+        const baseDomain = 'https://assets.stenna.cloud';
+        const publicUrl = `${baseDomain}/content/${module}/${filename}`;
+
+        console.log(`Content Upload: Successfully saved to ${filePath}`);
+
+        res.status(200).json({
+            message: 'Content uploaded successfully',
+            url: publicUrl,
+            module,
+            filename
+        });
+    } catch (error) {
+        console.error('Content Upload Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+

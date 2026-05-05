@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { generateVisualization } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const VisualizerModal = ({ isOpen, onClose, wallpaper }) => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+    
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -67,7 +73,22 @@ const VisualizerModal = ({ isOpen, onClose, wallpaper }) => {
                 </p>
 
                 <div className="visualizer-preview">
-                    {loading ? (
+                    {!user ? (
+                        <div className="upload-placeholder" style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✨</div>
+                            <h4 style={{ marginBottom: '0.5rem' }}>Experience this in your room</h4>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                                Please log in to your Stenna account to use our AI Room Visualizer.
+                            </p>
+                            <button 
+                                className="btn-glowing" 
+                                style={{ padding: '0.75rem 2rem' }}
+                                onClick={() => navigate('/login', { state: { from: location } })}
+                            >
+                                Log In to Try
+                            </button>
+                        </div>
+                    ) : loading ? (
                         <div className="upload-placeholder">
                             <div className="spinner" style={{ marginBottom: '1rem' }}></div>
                             <p>Stenna AI is transforming your room...</p>
@@ -90,11 +111,48 @@ const VisualizerModal = ({ isOpen, onClose, wallpaper }) => {
                         </div>
                     ) : (
                         <div className="upload-placeholder" style={{ border: '2px dashed #ddd', padding: '3rem 1rem' }}>
-                            <p>Upload a photo of your room to see how this wallpaper looks.</p>
-                            <label className="filter-btn active" style={{ marginTop: '1rem', cursor: 'pointer', display: 'inline-block' }}>
+                            <p style={{ marginBottom: '1.5rem' }}>Upload a photo of your room to see how this wallpaper looks.</p>
+                            <label className="filter-btn active" style={{ cursor: 'pointer', display: 'inline-block', padding: '0.8rem 2rem' }}>
                                 Select Room Photo
                                 <input type="file" onChange={handleFileChange} style={{ display: 'none' }} accept="image/*" />
                             </label>
+
+                            <div className="guidelines-box" style={{ 
+                                marginTop: '3rem', 
+                                padding: '1.5rem', 
+                                background: '#f9f9f9', 
+                                borderRadius: '8px',
+                                textAlign: 'left',
+                                border: '1px solid #eee'
+                            }}>
+                                <h4 style={{ 
+                                    fontSize: '0.65rem', 
+                                    letterSpacing: '0.2em', 
+                                    textTransform: 'uppercase', 
+                                    marginBottom: '1.2rem',
+                                    color: '#000',
+                                    fontWeight: '800',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}>
+                                    <span style={{ fontSize: '1rem' }}>💡</span> Tips for best results
+                                </h4>
+                                <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                                    <div style={{ fontSize: '0.75rem', color: '#555', lineHeight: '1.5' }}>
+                                        <strong style={{ display: 'block', color: '#000', marginBottom: '0.2rem', fontSize: '0.7rem', textTransform: 'uppercase' }}>Good Lighting</strong>
+                                        Take photos in bright, natural daylight for the most realistic AI textures and shadows.
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: '#555', lineHeight: '1.5' }}>
+                                        <strong style={{ display: 'block', color: '#000', marginBottom: '0.2rem', fontSize: '0.7rem', textTransform: 'uppercase' }}>Clear View</strong>
+                                        Ensure the wall is clearly visible and not heavily obstructed by large furniture or decor.
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: '#555', lineHeight: '1.5' }}>
+                                        <strong style={{ display: 'block', color: '#000', marginBottom: '0.2rem', fontSize: '0.7rem', textTransform: 'uppercase' }}>Straight Angle</strong>
+                                        Capture the wall from a straight-on perspective for perfect wallpaper alignment.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>

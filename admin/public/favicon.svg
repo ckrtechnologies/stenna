@@ -1,0 +1,12 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stenna Logo Icon - SVG Favicon -->
+  
+  <!-- Teal Background Block (Top Right focus) -->
+  <rect x="190" y="90" width="250" height="250" rx="8" fill="#40C1AC" />
+  
+  <!-- Grey Wallpaper Roll Shape -->
+  <path d="M70 240 c 0 -40 40 -40 40 -40 h 220 v 110 c 0 40 -40 40 -40 40 h -150 c -70 0 -70 -110 -70 -110 z" fill="#939598" />
+  
+  <!-- The 'Peel' Highlight (revealing space/white) -->
+  <path d="M330 350 c 45 0 45 -110 0 -110 v 110 z" fill="#fff" />
+</svg>

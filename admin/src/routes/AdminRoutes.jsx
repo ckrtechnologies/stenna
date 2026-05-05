@@ -13,6 +13,7 @@ import Books from '../pages/Books';
 import DealerBooks from '../pages/DealerBooks';
 import BookWallpapers from '../pages/BookWallpapers';
 import InventoryManagement from '../pages/InventoryManagement';
+import ImageEnhancer from '../pages/ContentCreation/ImageEnhancer';
 
 const AdminRoutes = () => {
     return (
@@ -26,6 +27,7 @@ const AdminRoutes = () => {
             <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><InventoryManagement /></ProtectedRoute>} />
             <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
+            <Route path="/content/image-enhancer" element={<ProtectedRoute><ImageEnhancer /></ProtectedRoute>} />
             <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
             <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
             <Route path="/dealers" element={<ProtectedRoute><Dealers /></ProtectedRoute>} />

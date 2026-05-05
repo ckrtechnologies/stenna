@@ -104,3 +104,35 @@ export const getRecommendations = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+/**
+ * Get available credits from KIE.AI account.
+ */
+export const getKieCredits = async (req, res) => {
+    try {
+        const apiKey = process.env.KIE_API_KEY;
+        
+        if (!apiKey || apiKey === 'your_actual_api_key_here') {
+            return res.status(500).json({ message: 'KIE AI API key is not configured' });
+        }
+
+        const response = await fetch("https://api.kie.ai/api/v1/chat/credit", {
+            method: 'GET',
+            headers: {
+                "Authorization": `Bearer ${apiKey}`
+            },
+            redirect: 'follow'
+        });
+
+        const data = await response.json();
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('KIE Credit Fetch Error:', error);
+        res.status(500).json({ message: 'Failed to fetch KIE credits' });
+    }
+};
+
+
+
+
+

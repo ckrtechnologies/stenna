@@ -119,7 +119,10 @@ const TryItOn = () => {
                                 <div className="step" style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>02</div>
                                     <h4 style={{ marginBottom: '0.75rem', fontSize: '0.8rem', letterSpacing: '0.1em' }}>UPLOAD ROOM</h4>
-                                    <p style={{ fontSize: '0.75rem', color: '#666', lineHeight: '1.6' }}>Take a photo of your room and upload it via the 'Try on Wall' button.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#666', lineHeight: '1.6', marginBottom: '1rem' }}>Take a clear, well-lit photo of your room from a straight angle.</p>
+                                    <div style={{ fontSize: '0.6rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', background: '#f5f5f5', padding: '0.5rem', borderRadius: '4px' }}>
+                                        💡 Tip: Avoid blurry or dark photos for best results.
+                                    </div>
                                 </div>
                                 <div className="step" style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>03</div>

@@ -35,7 +35,7 @@ const Login = () => {
         <div className="login-container">
             <div className="login-card">
                 <div className="login-header">
-                    <div className="brand-logo">M</div>
+                    <img src="/logo.png" alt="Stenna Logo" className="login-logo" />
                     <h1>Admin Portal</h1>
                     <p>Enter your credentials to access the dashboard</p>
                 </div>
@@ -84,8 +84,8 @@ const Login = () => {
             <style>{`
                 .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; padding: 1.5rem; }
                 .login-card { width: 100%; max-width: 440px; background: #1e293b; border: 1px solid #334155; border-radius: 1.5rem; padding: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-                .login-header { text-align: center; margin-bottom: 2.5rem; }
-                .brand-logo { width: 48px; height: 48px; background: #2563eb; color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; margin: 0 auto 1.5rem; }
+                .login-header { text-align: center; margin-bottom: 2.5rem; display: flex; flex-direction: column; align-items: center; }
+                .login-logo { height: 48px; width: auto; object-fit: contain; margin-bottom: 1.5rem; }
                 h1 { font-size: 1.5rem; color: white; font-weight: 700; margin-bottom: 0.5rem; }
                 p { color: #94a3b8; font-size: 0.875rem; }
                 .login-form { display: flex; flex-direction: column; gap: 1.5rem; }

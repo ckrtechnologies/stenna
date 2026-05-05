@@ -1,158 +1,129 @@
-import axios from 'axios';
-import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 
-dotenv.config();
-
-/**
- * Service to handle AI-powered room visualization using Kie AI (Nano Banana).
- */
 class KieAiService {
     constructor() {
-        this.apiKey = process.env.KIE_AI_API_KEY || '';
-        this.apiUrl = process.env.KIE_AI_API_URL || 'https://api.kie.ai/api/v1/jobs/createTask';
-        this.statusUrl = 'https://api.kie.ai/api/v1/jobs/recordInfo';
+        this.apiKey = process.env.KIE_API_KEY;
+        this.baseUrl = "https://api.kie.ai/api/v1/jobs";
     }
 
     /**
-     * Generates a visualization using the Nano Banana Edit model.
-     * @param {string} roomImageUrl - URL of the uploaded room image.
-     * @param {string} wallpaperUrl - URL of the wallpaper texture to apply.
-     * @param {string} prompt - Custom instructions for the AI.
+     * Create a task on KIE.AI
+     * @param {string} model - The model name (e.g., "topaz/image-upscale")
+     * @param {object} input - Input parameters for the model
+     * @param {object} options - Additional job options (e.g., callBackUrl)
      */
-
-
-    async generateEdit(roomImageUrl, wallpaperUrl, prompt = '') {
+    async createTask(model, input, options = {}) {
         try {
-            if (!this.apiKey) {
-                throw new Error("Stenna API Key is missing. Please add KIE_AI_API_KEY to your .env file.");
-            }
-            console.log("Stenna AI Service Request:", { wallpaperUrl, roomImageUrl });
-            const defaultPrompt = `You are a professional interior visualization AI. Take Image 1 (a photo of a room) ${wallpaperUrl} and apply Image 2 (a wallpaper design) ${roomImageUrl} realistically onto the walls of the room. Ensure the wallpaper aligns perfectly with the room’s perspective, lighting, and shadows. Maintain natural depth and textures, keeping all furniture, windows, and decor fully visible without incorrect overlaps. analyze the wall dimensions then put the wallpaper as tiles without borders of tiles.
-`;
-            const finalPrompt = prompt || defaultPrompt;
-            console.log("wallpaper url : ", wallpaperUrl)
-            console.log("room image url : ", roomImageUrl)
-            console.log("Stenna AI: Creating transformation task... prompt : ", finalPrompt);
-            const response = await axios.post(
-                this.apiUrl,
-                {
-                    model: "google/nano-banana-edit",
-                    input: {
-                        prompt: finalPrompt,
-                        image_urls: [wallpaperUrl, roomImageUrl],
-                        output_format: "png",
-                        image_size: "1:1"
-                    }
+            const response = await fetch(`${this.baseUrl}/createTask`, {
+                method: 'POST',
+                headers: {
+                    "Authorization": `Bearer ${this.apiKey}`,
+                    "Content-Type": "application/json"
                 },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${this.apiKey}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
+                body: JSON.stringify({
+                    model,
+                    callBackUrl: options.callBackUrl || "https://stenna.ai/api/callback",
+                    input,
+                    ...options
+                })
+            });
 
-            return response.data;
+            return await response.json();
         } catch (error) {
-            console.error("Stenna AI Task Creation Error:", error.response?.data || error.message);
-            throw new Error(`Stenna AI Task Creation failed: ${error.response?.data?.message || error.message}`);
+            console.error(`KIE Task Creation Error (${model}):`, error);
+            throw new Error(`Failed to create ${model} task`);
         }
     }
 
     /**
-     * Helper to poll until task is complete.
+     * Specialized method for Room Visualization (Try it on my wall)
+     * Uses Google Nano Banana Edit model
      */
-    async waitForTaskCompletion(taskId) {
-        const maxAttempts = 40; // Increased patience
-        const delay = 2000;
+    async generateEdit(roomImageUrl, wallpaperImageUrl) {
+        // According to documentation: https://docs.kie.ai/market/google/nano-banana-edit
+        // It requires image_urls as an array and a prompt.
+        return this.createTask("google/nano-banana-edit", {
+            prompt: `Apply the following wallpaper design to the walls in the room image. Wallpaper URL: ${wallpaperImageUrl}. Ensure natural lighting and perspective.`,
+            image_urls: [roomImageUrl, wallpaperImageUrl],
+            image_size: "auto",
+            output_format: "jpeg"
+        });
+    }
 
+    /**
+     * Poll for task completion
+     */
+    async waitForTaskCompletion(taskId, maxAttempts = 40, interval = 3000) {
         for (let i = 0; i < maxAttempts; i++) {
             const status = await this.getTaskStatus(taskId);
-            const state = status.data?.state || status.state;
+            
+            // Check based on KIE.AI actual response structure
+            if (status.code === 200) {
+                const record = status.data; // recordInfo is often flattened into data
+                const state = record?.state || record?.status;
+                
+                console.log(`Polling Task ${taskId}: State = ${state}`);
 
-            console.log(`Stenna Task ${taskId} [Attempt ${i + 1}]: ${state}`);
-
-            if (state === 'success') {
-                let results = status.data?.resultJson || status.resultJson;
-                console.log("Stenna AI Result Raw Data:", results);
-
-                // Handle stringified JSON inside status.data.resultJson
-                if (typeof results === 'string' && (results.startsWith('{') || results.startsWith('['))) {
-                    try {
-                        results = JSON.parse(results);
-                        console.log("Stenna AI Parsed Result Detail:", results);
-                    } catch (e) {
-                        console.warn("Stenna AI: Failed to parse resultJson string.", e.message);
+                if (state === 'success' || state === 'SUCCESS') {
+                    // Extract result URL
+                    const resultJsonStr = record.resultJson;
+                    if (!resultJsonStr) {
+                        console.error("Task success but resultJson is missing:", record);
+                        throw new Error("AI Result data missing");
                     }
+
+                    const result = JSON.parse(resultJsonStr);
+                    const url = result.resultUrls?.[0] || result.image?.url || result.url;
+                    
+                    return { status: 'SUCCESS', url, fullResponse: status.data };
                 }
-
-                // Robust Scavenger logic to find the URL
-                let url = null;
-
-                // 1. Check known keys (added 'resultUrls' for camelCase support)
-                const potentialKeys = ['resultUrls', 'resulturls', 'result_urls', 'images', 'output', 'url'];
-                for (const key of potentialKeys) {
-                    const val = results?.[key];
-                    if (val) {
-                        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'string') {
-                            url = val[0];
-                            break;
-                        } else if (typeof val === 'string' && !val.trim().startsWith('{')) {
-                            url = val;
-                            break;
-                        }
-                    }
+                
+                if (state === 'fail' || state === 'FAILED') {
+                    throw new Error(record.failMsg || record.failReason || 'AI Task Failed');
                 }
-
-                // 2. If still null, deep search for any string that looks like a clean URL
-                if (!url && results) {
-                    const searchForUrl = (obj) => {
-                        // Strictly match URLs and ignore JSON chunks
-                        if (typeof obj === 'string' &&
-                            obj.startsWith('http') &&
-                            !obj.includes('{"') &&
-                            !obj.startsWith('{')) return obj;
-
-                        if (typeof obj !== 'object' || obj === null) return null;
-                        for (const key in obj) {
-                            const result = searchForUrl(obj[key]);
-                            if (result) return result;
-                        }
-                        return null;
-                    };
-                    url = searchForUrl(results);
-                }
-
-                console.log("Stenna Extracted URL:", url);
-                return { url, fullResponse: status };
             }
-
-            if (state === 'fail') {
-                console.error("Stenna AI Failed:", status);
-                throw new Error("Stenna transformation failed.");
-            }
-
-            await new Promise(res => setTimeout(res, delay));
+            
+            await new Promise(resolve => setTimeout(resolve, interval));
         }
-
-        throw new Error("Stenna transformation timed out. Please try a clearer room photo.");
+        throw new Error('Task timed out');
     }
 
     /**
-     * Polls the status of a Kie AI task.
-     * @param {string} taskId - The ID of the task to check.
+     * Get task status/result
+     * @param {string} taskId - The unique task ID
      */
     async getTaskStatus(taskId) {
         try {
-            const response = await axios.get(`${this.statusUrl}?taskId=${taskId}`, {
+            const response = await fetch(`${this.baseUrl}/recordInfo?taskId=${taskId}`, {
+                method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${this.apiKey}`
+                    "Authorization": `Bearer ${this.apiKey}`
                 }
             });
-            return response.data;
+
+            return await response.json();
         } catch (error) {
-            console.error("Kie AI Status Error:", error.response?.data || error.message);
-            throw error;
+            console.error(`KIE Status Fetch Error (${taskId}):`, error);
+            throw new Error('Failed to fetch task status');
+        }
+    }
+
+    /**
+     * Get account credits
+     */
+    async getCredits() {
+        try {
+            const response = await fetch("https://api.kie.ai/api/v1/chat/credit", {
+                method: 'GET',
+                headers: {
+                    "Authorization": `Bearer ${this.apiKey}`
+                }
+            });
+
+            return await response.json();
+        } catch (error) {
+            console.error('KIE Credit Fetch Error:', error);
+            throw new Error('Failed to fetch KIE credits');
         }
     }
 }
