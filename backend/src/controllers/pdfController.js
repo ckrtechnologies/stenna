@@ -1,5 +1,16 @@
 import { supabase } from '../config/supabase.js';
 import puppeteer from 'puppeteer';
+import fs from 'fs';
+
+// Optimization: if it's the assets domain and we have the local VPS storage directory,
+// map it to file:/// so Puppeteer loads it instantly from local SSD in production!
+const optimizeImageURL = (url) => {
+    if (!url) return 'https://placehold.co/180x130/f1f5f9/94a3b8?text=No+Image';
+    if (url.startsWith('https://assets.stenna.cloud/wallpaper') && fs.existsSync('/var/www/stenna/public/wallpaper')) {
+        return url.replace('https://assets.stenna.cloud/wallpaper', 'file:///var/www/stenna/public/wallpaper');
+    }
+    return url;
+};
 
 // Helper to choose the best hero visualization image (prefer medium short or far short, fallback to first)
 const getHeroImage = (images) => {
@@ -13,7 +24,12 @@ const getHeroImage = (images) => {
 const renderPuppeteerPDF = async (htmlContent, wallpaperCount) => {
     const browser = await puppeteer.launch({
         headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--max-connections-per-host=30', // Maximizes parallel downloads
+            '--disk-cache-size=268435456'    // Enable 256MB disk cache
+        ]
     });
 
     try {
@@ -22,12 +38,31 @@ const renderPuppeteerPDF = async (htmlContent, wallpaperCount) => {
         // Emulate screen/media print so styles apply correctly
         await page.emulateMediaType('print');
         
-        // Set HTML content and wait for basic DOM layout (does not block on fetching all 1000+ remote images)
+        // Set HTML content and wait for basic DOM layout
         await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-        // Adaptive pre-load wait time: 1.5s base + 30ms per wallpaper, capped at 7 seconds maximum
-        const renderDelay = Math.min(1500 + (wallpaperCount * 30), 7000);
-        await new Promise(r => setTimeout(r, renderDelay));
+        // Bulletproof image load listener inside headless Chrome context
+        await page.evaluate(async () => {
+            const images = Array.from(document.querySelectorAll('img'));
+            const imagePromises = images.map(img => {
+                // If it is already loaded or is a broken image, resolve immediately
+                if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+                return new Promise((resolve) => {
+                    img.addEventListener('load', () => resolve());
+                    img.addEventListener('error', () => resolve()); // Proceed on broken/404 images to prevent hangs
+                });
+            });
+            // Race image loading against a generous 60-second safety timeout
+            // to ensure completely loaded high-res images on slower/throttled network paths
+            const safetyTimeout = new Promise(resolve => setTimeout(resolve, 60000));
+            await Promise.race([
+                Promise.all(imagePromises),
+                safetyTimeout
+            ]);
+        });
+
+        // Generous 1.5-second safety buffer for browser paint engine to decode and draw images
+        await new Promise(r => setTimeout(r, 1500));
 
         const pdfBuffer = await page.pdf({
             format: 'A4',
@@ -70,7 +105,7 @@ const generateHTML = (wallpapers, title, subtitle) => {
 
     // 2. Generate Grid overview
     const gridCards = wallpapers.map(w => {
-        const handImg = w.images?.[0]?.image_url || 'https://placehold.co/180x130/f1f5f9/94a3b8?text=?';
+        const handImg = optimizeImageURL(w.images?.[0]?.image_url);
         return `
             <a href="#wp-${w.id}" class="grid-card-link">
                 <div class="grid-card">
@@ -88,7 +123,7 @@ const generateHTML = (wallpapers, title, subtitle) => {
 
     // 3. Generate Details pages
     const detailsPages = wallpapers.map((w, idx) => {
-        const heroImg = getHeroImage(w.images);
+        const heroImg = optimizeImageURL(getHeroImage(w.images));
         
         // Spec fields
         const priceText = w.price ? `₹${parseFloat(w.price).toLocaleString('en-IN')}` : 'N/A';
@@ -104,7 +139,7 @@ const generateHTML = (wallpapers, title, subtitle) => {
         // Thumbnails list (All 6 images: Hand Image, Medium Short, Far Short, Warm Family, Modal with Book, Rustic)
         const thumbnailsHtml = w.images.map((img, i) => `
             <div class="detail-thumb">
-                <img src="${img.image_url}" alt="Slot ${i + 1}" />
+                <img src="${optimizeImageURL(img.image_url)}" alt="Slot ${i + 1}" />
                 <span class="thumb-lbl">${['Hand', 'Med', 'Far', 'Family', 'Book', 'Rustic'][i] || 'Alt'}</span>
             </div>
         `).join('');
@@ -120,9 +155,9 @@ const generateHTML = (wallpapers, title, subtitle) => {
                 </div>
 
                 <div class="details-nav-links">
-                    <a href="#cover-page" class="nav-anchor">← Cover Page</a>
-                    <a href="#toc-page" class="nav-anchor">← Index Page</a>
-                    <a href="#overview-page" class="nav-anchor">← Gallery Grid</a>
+                    <a href="#cover-page" class="nav-anchor">← Back to Cover Page</a>
+                    <a href="#toc-page" class="nav-anchor">← Back to Index Page</a>
+                    <a href="#overview-page" class="nav-anchor">← Back to Gallery Grid</a>
                 </div>
 
                 <div class="details-content">
@@ -528,17 +563,29 @@ const generateHTML = (wallpapers, title, subtitle) => {
                 }
                 
                 .details-nav-links {
-                    margin-bottom: 15px;
-                    font-size: 11px;
+                    font-size: 10.5px;
                     display: flex;
-                    gap: 15px;
-                }
-                .nav-anchor {
-                    color: #2563eb;
-                    text-decoration: none;
+                    justify-content: space-between; /* Stretch controls full content width */
+                    align-items: center;
+                    width: 100%;
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 8px 14px;
+                    margin-top: 5px;
+                    margin-bottom: 15px;
+                    letter-spacing: 0.5px;
+                    text-transform: uppercase;
                     font-weight: 600;
                 }
+                .nav-anchor {
+                    color: #b45309;
+                    text-decoration: none;
+                    font-weight: 700;
+                    transition: color 0.2s;
+                }
                 .nav-anchor:hover {
+                    color: #9a3412;
                     text-decoration: underline;
                 }
 
@@ -688,9 +735,8 @@ const generateHTML = (wallpapers, title, subtitle) => {
                 .narrative-box .desc-para {
                     font-size: 10px;
                     line-height: 1.3;
-                    max-height: 70px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    margin: 0;
+                    color: #475569;
                 }
 
                 .details-footer {
@@ -707,7 +753,8 @@ const generateHTML = (wallpapers, title, subtitle) => {
                 /* PRINT-SPECIFIC CSS RULES OVERRIDES */
                 @media print {
                     .details-nav-links {
-                        display: none !important;
+                        display: flex !important;
+                        opacity: 0.8;
                     }
                     body {
                         background: white;
