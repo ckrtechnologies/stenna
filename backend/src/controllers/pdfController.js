@@ -2,6 +2,19 @@ import { supabase } from '../config/supabase.js';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 
+// Memory cache for generated PDF documents
+const pdfCache = new Map();
+
+// Auto clean up expired cache entries (older than 10 minutes)
+setInterval(() => {
+    const now = Date.now();
+    for (const [token, item] of pdfCache.entries()) {
+        if (now > item.expires) {
+            pdfCache.delete(token);
+        }
+    }
+}, 60000);
+
 // Optimization: if it's the assets domain and we have the local VPS storage directory,
 // map it to file:/// so Puppeteer loads it instantly from local SSD in production!
 const optimizeImageURL = (url) => {
@@ -10,6 +23,15 @@ const optimizeImageURL = (url) => {
         return url.replace('https://assets.stenna.cloud/wallpaper', 'file:///var/www/stenna/public/wallpaper');
     }
     return url;
+};
+
+// Global helper to chunk array for dynamic paginations
+const chunkArray = (arr, size) => {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) {
+        chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
 };
 
 // Helper to choose the best hero visualization image (prefer medium short or far short, fallback to first)
@@ -21,9 +43,11 @@ const getHeroImage = (images) => {
 };
 
 // Render A4 PDF Buffer with Puppeteer
-const renderPuppeteerPDF = async (htmlContent, wallpaperCount) => {
+const renderPuppeteerPDF = async (htmlContent, wallpaperCount, sendProgress) => {
+    sendProgress('initializing_browser', 'Starting headless print engine...', 60);
     const browser = await puppeteer.launch({
         headless: 'new',
+        protocolTimeout: 600000, // 10 minutes to prevent CDP call timeouts on heavy page evaluates and prints
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
@@ -35,12 +59,19 @@ const renderPuppeteerPDF = async (htmlContent, wallpaperCount) => {
     try {
         const page = await browser.newPage();
         
+        // Remove or increase the default action and navigation timeouts to 10 minutes (600000ms)
+        // to handle massive PDF catalog rendering and compiling without timing out
+        page.setDefaultTimeout(600000);
+        page.setDefaultNavigationTimeout(600000);
+        
         // Emulate screen/media print so styles apply correctly
         await page.emulateMediaType('print');
         
-        // Set HTML content and wait for basic DOM layout
-        await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+        sendProgress('rendering_dom', 'Mounting A4 digital canvas...', 68);
+        // Set HTML content and wait for basic DOM layout (set generous 5-minute timeout)
+        await page.setContent(htmlContent, { waitUntil: 'domcontentloaded', timeout: 300000 });
 
+        sendProgress('loading_images', `Downloading and caching ${wallpaperCount * 7} high-res wallpaper assets...`, 78);
         // Bulletproof image load listener inside headless Chrome context
         await page.evaluate(async () => {
             const images = Array.from(document.querySelectorAll('img'));
@@ -52,18 +83,20 @@ const renderPuppeteerPDF = async (htmlContent, wallpaperCount) => {
                     img.addEventListener('error', () => resolve()); // Proceed on broken/404 images to prevent hangs
                 });
             });
-            // Race image loading against a generous 60-second safety timeout
+            // Race image loading against a 120-second (2-minute) safety timeout
             // to ensure completely loaded high-res images on slower/throttled network paths
-            const safetyTimeout = new Promise(resolve => setTimeout(resolve, 60000));
+            const safetyTimeout = new Promise(resolve => setTimeout(resolve, 120000));
             await Promise.race([
                 Promise.all(imagePromises),
                 safetyTimeout
             ]);
         });
 
+        sendProgress('painting_canvas', 'Rendering high-fidelity page paints...', 85);
         // Generous 1.5-second safety buffer for browser paint engine to decode and draw images
         await new Promise(r => setTimeout(r, 1500));
 
+        sendProgress('exporting_pdf', 'Formatting paginated sheet vectors to binary A4 stream...', 93);
         const pdfBuffer = await page.pdf({
             format: 'A4',
             printBackground: true,
@@ -89,41 +122,103 @@ const generateHTML = (wallpapers, title, subtitle) => {
         day: 'numeric'
     });
 
-    // 1. Generate Table of Contents
-    const tocRows = wallpapers.map((w, idx) => `
-        <div class="toc-item">
-            <div class="toc-title">
-                <span class="toc-code">${w.design_code || 'UNTITLED'}</span>
-                <span class="toc-name">${w.name || 'Unnamed Wallpaper'}</span>
-            </div>
-            <div class="toc-leader"></div>
-            <div class="toc-page-num">
-                <a href="#wp-${w.id}">Page ${idx + 4}</a>
-            </div>
-        </div>
-    `).join('');
+    const itemsPerTOCPage = 18; // Safely fits on A4 page without flowing into the absolute footer
+    const itemsPerGridPage = 12; // 4 rows of 3 columns, perfect grid layout without cropping
 
-    // 2. Generate Grid overview
-    const gridCards = wallpapers.map(w => {
-        const handImg = optimizeImageURL(w.images?.[0]?.image_url);
-        return `
-            <a href="#wp-${w.id}" class="grid-card-link">
-                <div class="grid-card">
-                    <div class="grid-thumb">
-                        <img src="${handImg}" alt="${w.name}" />
+    const numTOCPages = Math.max(1, Math.ceil(wallpapers.length / itemsPerTOCPage));
+    const numGridPages = Math.max(1, Math.ceil(wallpapers.length / itemsPerGridPage));
+    const detailsStartPage = 1 + numTOCPages + numGridPages + 1; // page 1: cover, then TOC, then Grid, then Details start
+
+    // 1. Generate Table of Contents pages
+    const tocChunks = chunkArray(wallpapers, itemsPerTOCPage);
+    const tocPagesHtml = tocChunks.map((chunk, pageIdx) => {
+        const rowsHtml = chunk.map((w, itemIdx) => {
+            const absoluteIdx = pageIdx * itemsPerTOCPage + itemIdx;
+            const pageNum = detailsStartPage + absoluteIdx;
+            const displayName = (w.name && w.name.trim().toLowerCase() !== (w.design_code || '').trim().toLowerCase()) 
+                ? w.name 
+                : '';
+            return `
+                <a href="#wp-${w.id}" class="toc-item-link">
+                    <div class="toc-item">
+                        <span class="toc-sno">${absoluteIdx + 1}</span>
+                        <div class="toc-title">
+                            <span class="toc-code">${w.design_code || 'UNTITLED'}</span>
+                            ${displayName ? `<span class="toc-name">${displayName}</span>` : ''}
+                        </div>
+                        <div class="toc-leader"></div>
+                        <div class="toc-page-num">Page ${pageNum}</div>
                     </div>
-                    <div class="grid-card-info">
-                        <span class="grid-card-code">${w.design_code || 'UNTITLED'}</span>
-                        <h4 class="grid-card-name">${w.name || 'Unnamed'}</h4>
+                </a>
+            `;
+        }).join('');
+
+        const currentPageNum = 2 + pageIdx;
+        return `
+            <div class="page-wrapper">
+                <div id="toc-page-${pageIdx}" class="pdf-page toc-page">
+                    <div class="toc-header">
+                        <h2>INDEX OF DESIGNS</h2>
+                        <p class="toc-sub-header">Page ${pageIdx + 1} of ${numTOCPages}</p>
+                        <div class="toc-header-line"></div>
+                    </div>
+                    <div class="toc-list">
+                        ${rowsHtml}
+                    </div>
+                    <div class="toc-footer">
+                        <span>TOC • STENNA LUXURY BRAND</span>
+                        <span>Page ${currentPageNum}</span>
                     </div>
                 </div>
-            </a>
+            </div>
+        `;
+    }).join('');
+
+    // 2. Generate Grid Overview pages
+    const gridChunks = chunkArray(wallpapers, itemsPerGridPage);
+    const gridPagesHtml = gridChunks.map((chunk, pageIdx) => {
+        const cardsHtml = chunk.map(w => {
+            const handImg = optimizeImageURL(w.images?.[0]?.image_url);
+            return `
+                <a href="#wp-${w.id}" class="grid-card-link">
+                    <div class="grid-card">
+                        <div class="grid-thumb">
+                            <img src="${handImg}" alt="${w.name}" />
+                        </div>
+                        <div class="grid-card-info">
+                            <span class="grid-card-code">${w.design_code || 'UNTITLED'}</span>
+                            <h4 class="grid-card-name">${w.name || 'Unnamed'}</h4>
+                        </div>
+                    </div>
+                </a>
+            `;
+        }).join('');
+
+        const currentPageNum = 1 + numTOCPages + pageIdx + 1;
+        return `
+            <div class="page-wrapper">
+                <div id="overview-page-${pageIdx}" class="pdf-page overview-page">
+                    <div class="overview-header">
+                        <h2>COLLECTION OVERVIEW</h2>
+                        <p class="overview-sub-header">Page ${pageIdx + 1} of ${numGridPages}</p>
+                        <div class="overview-header-line"></div>
+                    </div>
+                    <div class="overview-grid">
+                        ${cardsHtml}
+                    </div>
+                    <div class="overview-footer">
+                        <span>OVERVIEW • STENNA LUXURY BRAND</span>
+                        <span>Page ${currentPageNum}</span>
+                    </div>
+                </div>
+            </div>
         `;
     }).join('');
 
     // 3. Generate Details pages
     const detailsPages = wallpapers.map((w, idx) => {
         const heroImg = optimizeImageURL(getHeroImage(w.images));
+        const pageNum = detailsStartPage + idx;
         
         // Spec fields
         const priceText = w.price ? `₹${parseFloat(w.price).toLocaleString('en-IN')}` : 'N/A';
@@ -145,85 +240,87 @@ const generateHTML = (wallpapers, title, subtitle) => {
         `).join('');
 
         return `
-            <div id="wp-${w.id}" class="pdf-page details-page">
-                <div class="details-header">
-                    <div>
-                        <h2 class="details-code">${w.design_code || 'UNTITLED'}</h2>
-                        <p class="details-name">${w.name || 'Unnamed Wallpaper'}</p>
-                    </div>
-                    <div class="details-brand-tag">STENNA PREMIUM</div>
-                </div>
-
-                <div class="details-nav-links">
-                    <a href="#cover-page" class="nav-anchor">← Back to Cover Page</a>
-                    <a href="#toc-page" class="nav-anchor">← Back to Index Page</a>
-                    <a href="#overview-page" class="nav-anchor">← Back to Gallery Grid</a>
-                </div>
-
-                <div class="details-content">
-                    <!-- Left visual panel (55%) -->
-                    <div class="details-visuals">
-                        <div class="details-hero">
-                            <img src="${heroImg}" alt="Mockup" />
+            <div class="page-wrapper">
+                <div id="wp-${w.id}" class="pdf-page details-page">
+                    <div class="details-header">
+                        <div>
+                            <h2 class="details-code">${w.design_code || 'UNTITLED'}</h2>
+                            <p class="details-name">${w.name || 'Unnamed Wallpaper'}</p>
                         </div>
-                        <div class="details-thumbs-header">PRODUCT GALLERY</div>
-                        <div class="details-thumbs">
-                            ${thumbnailsHtml || '<p class="no-thumbs">No additional images uploaded.</p>'}
-                        </div>
+                        <div class="details-brand-tag">STENNA PREMIUM</div>
                     </div>
 
-                    <!-- Right specifications & narrative panel (41%) -->
-                    <div class="details-info">
-                        ${w.tagline ? `<p class="details-tagline">“${w.tagline}”</p>` : ''}
+                    <div class="details-nav-links">
+                        <a href="#cover-page" class="nav-anchor">← Back to Cover Page</a>
+                        <a href="#toc-page-0" class="nav-anchor">← Back to Index Page</a>
+                        <a href="#overview-page-0" class="nav-anchor">← Back to Gallery Grid</a>
+                    </div>
 
-                        <table class="specs-table">
-                            <tr><th>Specifications</th><th>Details</th></tr>
-                            <tr><td>Suggested Retail Price</td><td class="price-val">${priceText}</td></tr>
-                            <tr><td>Roll Dimension</td><td>${sizeText}</td></tr>
-                            <tr><td>Material</td><td>${materialText}</td></tr>
-                            <tr><td>Finish / Texture</td><td>${finishText}</td></tr>
-                            <tr><td>Washability</td><td>${washText}</td></tr>
-                            <tr><td>Durability / Care</td><td>${durText}</td></tr>
-                            <tr><td>Collection Brand</td><td>${brandText}</td></tr>
-                            <tr><td>Country of Origin</td><td>${originText}</td></tr>
-                            <tr><td>Current Stock</td><td>${stockText}</td></tr>
-                        </table>
+                    <div class="details-content">
+                        <!-- Left visual panel (55%) -->
+                        <div class="details-visuals">
+                            <div class="details-hero">
+                                <img src="${heroImg}" alt="Mockup" />
+                            </div>
+                            <div class="details-thumbs-header">PRODUCT GALLERY</div>
+                            <div class="details-thumbs">
+                                ${thumbnailsHtml || '<p class="no-thumbs">No additional images uploaded.</p>'}
+                            </div>
+                        </div>
 
-                        <div class="narrative-section">
-                            ${w.vibe ? `
-                                <div class="narrative-box">
-                                    <h5>THE VIBE & ATMOSPHERE</h5>
-                                    <p>${w.vibe}</p>
-                                </div>
-                            ` : ''}
+                        <!-- Right specifications & narrative panel (41%) -->
+                        <div class="details-info">
+                            ${w.tagline ? `<p class="details-tagline">“${w.tagline}”</p>` : ''}
 
-                            ${w.choose_if ? `
-                                <div class="narrative-box">
-                                    <h5>CHOOSE THIS DESIGN IF</h5>
-                                    <p>${w.choose_if}</p>
-                                </div>
-                            ` : ''}
+                            <table class="specs-table">
+                                <tr><th>Specifications</th><th>Details</th></tr>
+                                <tr><td>Suggested Retail Price</td><td class="price-val">${priceText}</td></tr>
+                                <tr><td>Roll Dimension</td><td>${sizeText}</td></tr>
+                                <tr><td>Material</td><td>${materialText}</td></tr>
+                                <tr><td>Finish / Texture</td><td>${finishText}</td></tr>
+                                <tr><td>Washability</td><td>${washText}</td></tr>
+                                <tr><td>Durability / Care</td><td>${durText}</td></tr>
+                                <tr><td>Collection Brand</td><td>${brandText}</td></tr>
+                                <tr><td>Country of Origin</td><td>${originText}</td></tr>
+                                <tr><td>Current Stock</td><td>${stockText}</td></tr>
+                            </table>
 
-                            ${w.ideal_for ? `
-                                <div class="narrative-box">
-                                    <h5>IDEAL ROOM SETTING</h5>
-                                    <p>${w.ideal_for}</p>
-                                </div>
-                            ` : ''}
+                            <div class="narrative-section">
+                                ${w.vibe ? `
+                                    <div class="narrative-box">
+                                        <h5>THE VIBE & ATMOSPHERE</h5>
+                                        <p>${w.vibe}</p>
+                                    </div>
+                                ` : ''}
 
-                            ${w.description ? `
-                                <div class="narrative-box">
-                                    <h5>DESIGN DESCRIPTION</h5>
-                                    <p class="desc-para">${w.description}</p>
-                                </div>
-                            ` : ''}
+                                ${w.choose_if ? `
+                                    <div class="narrative-box">
+                                        <h5>CHOOSE THIS DESIGN IF</h5>
+                                        <p>${w.choose_if}</p>
+                                    </div>
+                                ` : ''}
+
+                                ${w.ideal_for ? `
+                                    <div class="narrative-box">
+                                        <h5>IDEAL ROOM SETTING</h5>
+                                        <p>${w.ideal_for}</p>
+                                    </div>
+                                ` : ''}
+
+                                ${w.description ? `
+                                    <div class="narrative-box">
+                                        <h5>DESIGN DESCRIPTION</h5>
+                                        <p class="desc-para">${w.description}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="details-footer">
-                    <span>STENNA DESIGN CATALOG • ${w.design_code}</span>
-                    <span>Page ${idx + 4}</span>
+                    <div class="details-footer">
+                        <span>STENNA DESIGN CATALOG • ${w.design_code}</span>
+                        <span>Page ${pageNum}</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -258,12 +355,17 @@ const generateHTML = (wallpapers, title, subtitle) => {
                 }
 
                 /* A4 Layout Pages */
+                /* A4 Layout Page Wrappers to safely separate flex layouts from print pagination */
+                .page-wrapper {
+                    display: block;
+                    page-break-after: always;
+                    break-after: page;
+                }
+
                 .pdf-page {
                     width: 210mm;
                     height: 297mm;
                     padding: 20mm 18mm;
-                    page-break-after: always;
-                    break-after: page;
                     position: relative;
                     overflow: hidden;
                     background: #ffffff;
@@ -376,18 +478,34 @@ const generateHTML = (wallpapers, title, subtitle) => {
                     font-weight: 700;
                     letter-spacing: 5px;
                     color: #0f172a;
-                    margin: 0 0 10px 0;
+                    margin: 0;
+                }
+                .toc-sub-header, .overview-sub-header {
+                    font-size: 11px;
+                    color: #b45309;
+                    margin: 6px 0 0 0;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
+                    font-weight: 600;
+                    font-family: 'Inter', sans-serif;
                 }
                 .toc-header-line {
                     width: 60px;
                     height: 2px;
                     background: #b45309;
-                    margin: 0 auto;
+                    margin: 15px auto 0 auto;
                 }
                 .toc-list {
                     margin-top: 10mm;
-                    max-height: 200mm;
-                    overflow: hidden;
+                }
+                .toc-item-link {
+                    text-decoration: none;
+                    color: inherit;
+                    display: block;
+                    width: 100%;
+                }
+                .toc-item-link:hover {
+                    opacity: 0.85;
                 }
                 .toc-item {
                     display: flex;
@@ -395,6 +513,14 @@ const generateHTML = (wallpapers, title, subtitle) => {
                     align-items: flex-end;
                     margin-bottom: 18px;
                     font-size: 14px;
+                }
+                .toc-sno {
+                    font-family: 'Inter', sans-serif;
+                    font-weight: 600;
+                    color: #64748b;
+                    width: 35px;
+                    flex-shrink: 0;
+                    text-align: left;
                 }
                 .toc-title {
                     display: flex;
@@ -421,11 +547,11 @@ const generateHTML = (wallpapers, title, subtitle) => {
                     border-bottom: 1.5px dotted #cbd5e1;
                     margin: 0 10px 4px 10px;
                 }
-                .toc-page-num a {
+                .toc-page-num {
                     color: #2563eb;
-                    text-decoration: none;
                     font-weight: 600;
                     font-size: 14px;
+                    flex-shrink: 0;
                 }
                 .toc-footer {
                     position: absolute;
@@ -455,14 +581,14 @@ const generateHTML = (wallpapers, title, subtitle) => {
                     font-weight: 700;
                     letter-spacing: 4px;
                     color: #0f172a;
-                    margin: 0 0 10px 0;
+                    margin: 0;
                     text-transform: uppercase;
                 }
                 .overview-header-line {
                     width: 60px;
                     height: 2px;
                     background: #b45309;
-                    margin: 0 auto;
+                    margin: 15px auto 0 auto;
                 }
                 .overview-grid {
                     display: grid;
@@ -604,13 +730,13 @@ const generateHTML = (wallpapers, title, subtitle) => {
                     flex-direction: column;
                 }
                 .details-hero {
-                    height: 280px;
+                    height: 380px; /* Increased from 280px to maximize visual canvas */
                     width: 100%;
                     border-radius: 8px;
                     overflow: hidden;
                     background: #cbd5e1;
                     border: 1px solid #e2e8f0;
-                    margin-bottom: 15px;
+                    margin-bottom: 20px;
                 }
                 .details-hero img {
                     width: 100%;
@@ -627,8 +753,7 @@ const generateHTML = (wallpapers, title, subtitle) => {
                 .details-thumbs {
                     display: grid;
                     grid-template-columns: repeat(3, 1fr);
-                    gap: 10px;
-                    max-height: 180px;
+                    gap: 12px;
                 }
                 .detail-thumb {
                     background: #f8fafc;
@@ -639,10 +764,10 @@ const generateHTML = (wallpapers, title, subtitle) => {
                     position: relative;
                 }
                 .detail-thumb img {
-                    height: 52px;
+                    height: 75px; /* Increased from 52px to details of alternative views */
                     width: 100%;
                     object-fit: cover;
-                    border-radius: 4px;
+                    border-radius: 6px;
                 }
                 .detail-thumb .thumb-lbl {
                     font-size: 8px;
@@ -673,22 +798,22 @@ const generateHTML = (wallpapers, title, subtitle) => {
                 .specs-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 15px;
+                    margin-bottom: 20px;
                 }
                 .specs-table th {
                     text-align: left;
                     font-family: 'Cinzel', serif;
-                    font-size: 11px;
+                    font-size: 12.5px; /* Increased from 11px */
                     font-weight: 700;
                     color: #78350f;
-                    padding: 6px 0;
+                    padding: 8px 0; /* Spaced out */
                     border-bottom: 1.5px solid #b45309;
                     text-transform: uppercase;
                     letter-spacing: 1px;
                 }
                 .specs-table td {
-                    font-size: 11px;
-                    padding: 5px 0;
+                    font-size: 12px; /* Increased from 11px */
+                    padding: 7px 0; /* Spaced out */
                     border-bottom: 1px solid #f1f5f9;
                     color: #334155;
                 }
@@ -708,33 +833,32 @@ const generateHTML = (wallpapers, title, subtitle) => {
                 .narrative-section {
                     display: flex;
                     flex-direction: column;
-                    gap: 10px;
+                    gap: 14px; /* Increased box spacing */
                     flex: 1;
-                    overflow: hidden;
                 }
                 .narrative-box {
                     background: #f8fafc;
                     border: 1px solid #cbd5e1;
                     border-radius: 6px;
-                    padding: 8px 10px;
+                    padding: 10px 14px; /* Increased padding */
                 }
                 .narrative-box h5 {
-                    margin: 0 0 4px 0;
+                    margin: 0 0 6px 0;
                     font-family: 'Cinzel', serif;
-                    font-size: 9px;
+                    font-size: 10px; /* Increased header size */
                     font-weight: 700;
                     color: #78350f;
                     letter-spacing: 1px;
                 }
                 .narrative-box p {
                     margin: 0;
-                    font-size: 10.5px;
+                    font-size: 11.5px; /* Increased text size */
                     color: #475569;
-                    line-height: 1.35;
+                    line-height: 1.45; /* Increased spacing */
                 }
                 .narrative-box .desc-para {
-                    font-size: 10px;
-                    line-height: 1.3;
+                    font-size: 11px; /* Increased text size */
+                    line-height: 1.4;
                     margin: 0;
                     color: #475569;
                 }
@@ -764,52 +888,30 @@ const generateHTML = (wallpapers, title, subtitle) => {
         </head>
         <body>
             <!-- PAGE 1: COVER PAGE -->
-            <div id="cover-page" class="pdf-page cover-page">
-                <div class="cover-border-inner">
-                    <span class="cover-top-tag">ARTISAN WALLCOVERINGS</span>
-                    <div class="cover-title-group">
-                        <div class="cover-logo-monogram">S</div>
-                        <h1 class="cover-main-brand">STENNA</h1>
-                        <div class="cover-divider"></div>
-                        <h2 class="cover-title">${title}</h2>
-                        <h3 class="cover-subtitle">${subtitle}</h3>
-                    </div>
-                    <div class="cover-bottom-group">
-                        <p class="cover-metadata">EXCLUSIVE CATALOGUE COLLECTION</p>
-                        <span class="cover-date">${date}</span>
+            <div class="page-wrapper">
+                <div id="cover-page" class="pdf-page cover-page">
+                    <div class="cover-border-inner">
+                        <span class="cover-top-tag">ARTISAN WALLCOVERINGS</span>
+                        <div class="cover-title-group">
+                            <div class="cover-logo-monogram">S</div>
+                            <h1 class="cover-main-brand">STENNA</h1>
+                            <div class="cover-divider"></div>
+                            <h2 class="cover-title">${title}</h2>
+                            <h3 class="cover-subtitle">${subtitle}</h3>
+                        </div>
+                        <div class="cover-bottom-group">
+                            <p class="cover-metadata">EXCLUSIVE CATALOGUE COLLECTION</p>
+                            <span class="cover-date">${date}</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- PAGE 2: TABLE OF CONTENTS (INDEX) -->
-            <div id="toc-page" class="pdf-page toc-page">
-                <div class="toc-header">
-                    <h2>INDEX OF DESIGNS</h2>
-                    <div class="toc-header-line"></div>
-                </div>
-                <div class="toc-list">
-                    ${tocRows}
-                </div>
-                <div class="toc-footer">
-                    <span>TOC • STENNA LUXURY BRAND</span>
-                    <span>Page 2</span>
-                </div>
-            </div>
+            <!-- PORTFOLIO TABLE OF CONTENTS (INDEX) PAGES -->
+            ${tocPagesHtml}
 
-            <!-- PAGE 3: PORTFOLIO GALLERY OVERVIEW -->
-            <div id="overview-page" class="pdf-page overview-page">
-                <div class="overview-header">
-                    <h2>COLLECTION OVERVIEW</h2>
-                    <div class="overview-header-line"></div>
-                </div>
-                <div class="overview-grid">
-                    ${gridCards}
-                </div>
-                <div class="overview-footer">
-                    <span>OVERVIEW • STENNA LUXURY BRAND</span>
-                    <span>Page 3</span>
-                </div>
-            </div>
+            <!-- PORTFOLIO GALLERY OVERVIEW PAGES -->
+            ${gridPagesHtml}
 
             <!-- PAGE 4+: WALLPAPER DETAILS PAGES -->
             ${detailsPages}
@@ -818,23 +920,27 @@ const generateHTML = (wallpapers, title, subtitle) => {
     `;
 };
 
-// Main Route Request Handler
+// Main Route Request Handler (Streaming Progress updates)
 export const generatePDF = async (req, res) => {
+    // Establish Server-Sent Events headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const sendProgress = (status, message, progress, extraData = {}) => {
+        res.write(`data: ${JSON.stringify({ status, message, progress, ...extraData })}\n\n`);
+    };
+
     try {
         const { wallpaperIds, title = 'Stenna Wallpaper Catalog', subtitle = 'Premium Collection' } = req.body;
 
         if (!wallpaperIds || !Array.isArray(wallpaperIds) || wallpaperIds.length === 0) {
-            return res.status(400).json({ message: 'No wallpapers selected. Please choose some wallpapers or collections.' });
+            sendProgress('error', 'No wallpapers selected. Please choose some wallpapers or collections.', 0);
+            return res.end();
         }
 
-        // Chunk queries to avoid HTTP URL/header size limits on self-hosted Nginx gateways
-        const chunkArray = (arr, size) => {
-            const chunks = [];
-            for (let i = 0; i < arr.length; i += size) {
-                chunks.push(arr.slice(i, i + size));
-            }
-            return chunks;
-        };
+        sendProgress('fetching_db', 'Connecting to database and resolving collections...', 5);
 
         const idChunks = chunkArray(wallpaperIds, 30);
         let allWallpapers = [];
@@ -843,7 +949,14 @@ export const generatePDF = async (req, res) => {
         let allGroups = [];
         let allBooks = [];
 
-        for (const chunk of idChunks) {
+        const totalChunks = idChunks.length;
+        for (let i = 0; i < totalChunks; i++) {
+            const chunk = idChunks[i];
+            
+            // Calculate progress between 5% and 30%
+            const chunkProgress = 5 + Math.round((i / totalChunks) * 25);
+            sendProgress('fetching_db', `Retrieving collection metadata (batch ${i + 1} of ${totalChunks})...`, chunkProgress);
+
             const [wps, imgs, cats, grps, bks] = await Promise.all([
                 supabase.from('wallpapers').select('*').in('id', chunk),
                 supabase.from('wallpaper_images').select('*').in('wallpaper_id', chunk),
@@ -866,8 +979,11 @@ export const generatePDF = async (req, res) => {
         }
 
         if (allWallpapers.length === 0) {
-            return res.status(404).json({ message: 'No wallpapers found for the selected IDs.' });
+            sendProgress('error', 'No wallpapers found for the selected IDs.', 0);
+            return res.end();
         }
+
+        sendProgress('structuring_data', 'Reconstructing product relationships in memory...', 35);
 
         // Flatten and map relationships in memory
         const wallpapers = allWallpapers.map(w => {
@@ -885,16 +1001,47 @@ export const generatePDF = async (req, res) => {
             };
         });
 
-        // Compile HTML and render A4 PDF
+        sendProgress('compiling_html', 'Compiling A4 luxury paginated layouts...', 45);
         const htmlContent = generateHTML(wallpapers, title, subtitle);
-        const pdfBuffer = await renderPuppeteerPDF(htmlContent, wallpapers.length);
 
-        // Send PDF back to client for dynamic download
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=stenna_catalog_${Date.now()}.pdf`);
-        res.send(pdfBuffer);
+        // Render PDF in Puppeteer with progress notifications
+        const pdfBuffer = await renderPuppeteerPDF(htmlContent, wallpapers.length, sendProgress);
+
+        sendProgress('caching_pdf', 'Caching catalog buffer in memory...', 97);
+        const token = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        pdfCache.set(token, {
+            buffer: pdfBuffer,
+            title: `stenna_catalog_${Date.now()}.pdf`,
+            expires: Date.now() + 600000 // 10 minutes cache
+        });
+
+        sendProgress('completed', 'Catalog compiled successfully! Initializing download...', 100, { token });
+        res.end();
     } catch (err) {
         console.error('Puppeteer PDF Generation Error:', err);
-        res.status(500).json({ message: err.message || 'An error occurred during Puppeteer PDF generation.' });
+        sendProgress('error', err.message || 'An error occurred during Puppeteer PDF generation.', 0);
+        res.end();
+    }
+};
+
+// Download Cached PDF Request Handler
+export const downloadPDF = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const cached = pdfCache.get(token);
+        
+        if (!cached) {
+            return res.status(404).json({ message: 'Download link has expired or is invalid. Please try curating the catalog again.' });
+        }
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${cached.title}`);
+        res.send(cached.buffer);
+
+        // Delete from cache to free memory immediately after successful download
+        pdfCache.delete(token);
+    } catch (err) {
+        console.error('PDF Download Error:', err);
+        res.status(500).json({ message: 'Failed to retrieve PDF catalog.' });
     }
 };

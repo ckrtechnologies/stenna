@@ -38,6 +38,8 @@ const GeneratePDF = () => {
     const [catalogTitle, setCatalogTitle] = useState('Stenna Wallpaper Catalog');
     const [catalogSubtitle, setCatalogSubtitle] = useState('Premium Artisan Collection');
     const [generating, setGenerating] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [progressMessage, setProgressMessage] = useState('');
 
     useEffect(() => {
         fetchData();
@@ -126,7 +128,7 @@ const GeneratePDF = () => {
 
     const resolvedWallpapers = getResolvedWallpapers();
 
-    // Trigger PDF generation API
+    // Trigger PDF generation API with real-time progress stream
     const handleGenerate = async () => {
         const resolvedWps = getResolvedWallpapers();
         if (resolvedWps.length === 0) {
@@ -136,33 +138,97 @@ const GeneratePDF = () => {
 
         const ids = resolvedWps.map(w => w.id);
         setGenerating(true);
+        setProgress(0);
+        setProgressMessage('Initializing request...');
 
         try {
-            const res = await api.post('/pdf/generate', {
-                wallpaperIds: ids,
-                title: catalogTitle,
-                subtitle: catalogSubtitle
-            }, {
-                responseType: 'blob' // Essential for receiving binary PDF data
+            // Retrieve authorization token from local storage
+            const tokenString = localStorage.getItem('token');
+            let token = '';
+            if (tokenString) {
+                try {
+                    token = JSON.parse(tokenString);
+                } catch (e) {
+                    token = tokenString;
+                }
+            }
+
+            const baseURL = api.defaults.baseURL || 'http://localhost:5010/api/v1';
+            
+            // Call modern fetch streaming reader
+            const response = await fetch(`${baseURL}/pdf/generate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    wallpaperIds: ids,
+                    title: catalogTitle,
+                    subtitle: catalogSubtitle
+                })
             });
 
-            // Create download link for PDF Blob
-            const blob = new Blob([res.data], { type: 'application/pdf' });
-            const downloadUrl = window.URL.createObjectURL(blob);
-            
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = `stenna_catalog_${Date.now()}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(downloadUrl);
+            if (!response.ok) {
+                throw new Error(`Server returned error status ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n\n');
+                
+                // Retain incomplete last line in chunk buffer
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.trim().startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.trim().substring(6));
+                            
+                            if (data.progress !== undefined) {
+                                setProgress(data.progress);
+                            }
+                            if (data.message) {
+                                setProgressMessage(data.message);
+                            }
+
+                            if (data.status === 'error') {
+                                throw new Error(data.message || 'PDF Generation failed.');
+                            }
+
+                            if (data.status === 'completed' && data.token) {
+                                setProgressMessage('Downloading catalog...');
+                                
+                                // Perform file download securely using the randomized token
+                                const downloadUrl = `${baseURL}/pdf/download/${data.token}`;
+                                const downloadLink = document.createElement('a');
+                                downloadLink.href = downloadUrl;
+                                downloadLink.setAttribute('download', '');
+                                document.body.appendChild(downloadLink);
+                                downloadLink.click();
+                                document.body.removeChild(downloadLink);
+                            }
+                        } catch (e) {
+                            console.error('Error parsing stream chunk:', e);
+                        }
+                    }
+                }
+            }
 
         } catch (error) {
             console.error('Failed to generate PDF:', error);
-            alert('An error occurred during PDF generation. Please ensure backend dev server is active and Puppeteer dependency is installed.');
+            alert(`PDF Generation Failed: ${error.message || 'An error occurred during PDF generation.'}`);
         } finally {
             setGenerating(false);
+            setProgress(0);
+            setProgressMessage('');
         }
     };
 
@@ -468,6 +534,30 @@ const GeneratePDF = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Real-time Streaming Generation Progress Modal */}
+            {generating && (
+                <div className="pdf-generation-overlay">
+                    <div className="pdf-progress-modal">
+                        <div className="pdf-progress-monogram">S</div>
+                        <h2>Compiling Luxury Catalog</h2>
+                        <p className="pdf-progress-subtitle">Please wait while the server compiles your custom catalog.</p>
+                        
+                        <div className="pdf-progress-bar-container">
+                            <div 
+                                className="pdf-progress-bar-fill" 
+                                style={{ width: `${progress}%` }}
+                            ></div>
+                            <span className="pdf-progress-percentage">{progress}%</span>
+                        </div>
+                        
+                        <div className="pdf-progress-message">
+                            <Loader2 className="pdf-spin" size={16} />
+                            <span>{progressMessage}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
