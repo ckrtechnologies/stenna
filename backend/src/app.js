@@ -19,6 +19,7 @@ import dealerRoutes from './routes/dealerRoutes.js';
 import bookRoutes from './routes/bookRoutes.js';
 import queriesRoutes from './routes/queriesRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import pdfRoutes from './routes/pdfRoutes.js';
 
 const app = express();
 
@@ -65,6 +66,7 @@ apiV1.use('/dealers', dealerRoutes);
 apiV1.use('/books', bookRoutes);
 apiV1.use('/queries', queriesRoutes);
 apiV1.use('/ai', aiRoutes);
+apiV1.use('/pdf', pdfRoutes);
 
 app.use('/api/v1', apiV1);
 

@@ -16,7 +16,8 @@ import {
   Megaphone,
   Wand2,
   Cpu,
-  Sparkles
+  Sparkles,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
@@ -61,6 +62,7 @@ const Sidebar = () => {
       items: [
         { title: 'Dealers', icon: <Users size={20} />, path: '/dealers', slug: 'dealers' },
         { title: 'Books', icon: <BookOpen size={20} />, path: '/books', slug: 'books' },
+        { title: 'Generate PDF', icon: <FileText size={20} />, path: '/generate-pdf', slug: 'generate-pdf' },
         { title: 'Leads', icon: <Mail size={20} />, path: '/leads', slug: 'leads' },
       ]
     },

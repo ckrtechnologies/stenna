@@ -14,6 +14,7 @@ import DealerBooks from '../pages/DealerBooks';
 import BookWallpapers from '../pages/BookWallpapers';
 import InventoryManagement from '../pages/InventoryManagement';
 import ImageEnhancer from '../pages/ContentCreation/ImageEnhancer';
+import GeneratePDF from '../pages/GeneratePDF';
 
 const AdminRoutes = () => {
     return (
@@ -34,6 +35,7 @@ const AdminRoutes = () => {
             <Route path="/dealers/:id/books" element={<ProtectedRoute><DealerBooks /></ProtectedRoute>} />
             <Route path="/books" element={<ProtectedRoute><Books /></ProtectedRoute>} />
             <Route path="/books/:id/wallpapers" element={<ProtectedRoute><BookWallpapers /></ProtectedRoute>} />
+            <Route path="/generate-pdf" element={<ProtectedRoute><GeneratePDF /></ProtectedRoute>} />
         </Routes>
     );
 };
