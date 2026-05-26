@@ -24,12 +24,19 @@ import pdfRoutes from './routes/pdfRoutes.js';
 const app = express();
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: false // Allows loading assets (images/PDFs) cross-origin
+}));
 
 
 app.use(cors({
-    origin: true, // Allows all origins with credentials
-    credentials: true
+    origin: (origin, callback) => {
+        // Allows all origins dynamically (acts as wildcard while supporting credentials/cookies)
+        callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cookie']
 }));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
