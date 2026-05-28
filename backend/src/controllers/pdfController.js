@@ -15,13 +15,11 @@ setInterval(() => {
     }
 }, 60000);
 
-// Optimization: if it's the assets domain and we have the local VPS storage directory,
-// map it to file:/// so Puppeteer loads it instantly from local SSD in production!
+// Normalize image URL — return HTTPS URLs as-is for Puppeteer to fetch.
+// Note: file:// protocol is blocked by headless Chromium's security sandbox,
+// so we always use HTTPS URLs which the VPS fetches quickly anyway.
 const optimizeImageURL = (url) => {
     if (!url) return 'https://placehold.co/180x130/f1f5f9/94a3b8?text=No+Image';
-    if (url.startsWith('https://assets.stenna.cloud/wallpaper') && fs.existsSync('/var/www/stenna/public/wallpaper')) {
-        return url.replace('https://assets.stenna.cloud/wallpaper', 'file:///var/www/stenna/public/wallpaper');
-    }
     return url;
 };
 
@@ -45,12 +43,30 @@ const getHeroImage = (images) => {
 // Render A4 PDF Buffer with Puppeteer
 const renderPuppeteerPDF = async (htmlContent, wallpaperCount, sendProgress) => {
     sendProgress('initializing_browser', 'Starting headless print engine...', 60);
+    // On Linux VPS, prefer system-installed Chromium to avoid bundled Chrome download issues
+    const findSystemChromium = () => {
+        if (process.platform !== 'linux') return undefined;
+        const candidates = [
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium',
+            '/snap/bin/chromium',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/google-chrome',
+        ];
+        for (const p of candidates) {
+            if (fs.existsSync(p)) return p;
+        }
+        return undefined; // fall back to Puppeteer's bundled browser
+    };
+
     const browser = await puppeteer.launch({
         headless: 'new',
+        executablePath: findSystemChromium(),
         protocolTimeout: 600000, // 10 minutes to prevent CDP call timeouts on heavy page evaluates and prints
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',      // Prevents /dev/shm crashes on low-memory VPS
             '--max-connections-per-host=30', // Maximizes parallel downloads
             '--disk-cache-size=268435456'    // Enable 256MB disk cache
         ]
@@ -68,24 +84,25 @@ const renderPuppeteerPDF = async (htmlContent, wallpaperCount, sendProgress) => 
         await page.emulateMediaType('print');
         
         sendProgress('rendering_dom', 'Mounting A4 digital canvas...', 68);
-        // Set HTML content and wait for basic DOM layout (set generous 5-minute timeout)
-        await page.setContent(htmlContent, { waitUntil: 'domcontentloaded', timeout: 300000 });
+        // Set HTML content and wait for network idle (all images fetched) with a 5-minute timeout.
+        // networkidle0 waits until there are 0 network connections for 500ms, meaning all
+        // images have finished downloading — this replaces the old manual image polling loop.
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 300000 });
 
-        sendProgress('loading_images', `Downloading and caching ${wallpaperCount * 7} high-res wallpaper assets...`, 78);
-        // Bulletproof image load listener inside headless Chrome context
+        sendProgress('loading_images', `Verifying ${wallpaperCount * 7} high-res wallpaper assets loaded...`, 78);
+        // Quick verification pass: check if any images are still pending and give them a short grace period
         await page.evaluate(async () => {
             const images = Array.from(document.querySelectorAll('img'));
-            const imagePromises = images.map(img => {
-                // If it is already loaded or is a broken image, resolve immediately
-                if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            const pending = images.filter(img => !img.complete || img.naturalWidth === 0);
+            if (pending.length === 0) return;
+            const imagePromises = pending.map(img => {
                 return new Promise((resolve) => {
                     img.addEventListener('load', () => resolve());
-                    img.addEventListener('error', () => resolve()); // Proceed on broken/404 images to prevent hangs
+                    img.addEventListener('error', () => resolve());
                 });
             });
-            // Race image loading against a 120-second (2-minute) safety timeout
-            // to ensure completely loaded high-res images on slower/throttled network paths
-            const safetyTimeout = new Promise(resolve => setTimeout(resolve, 120000));
+            // Short 15-second grace period for any stragglers (networkidle0 already waited)
+            const safetyTimeout = new Promise(resolve => setTimeout(resolve, 15000));
             await Promise.race([
                 Promise.all(imagePromises),
                 safetyTimeout
@@ -924,8 +941,11 @@ const generateHTML = (wallpapers, title, subtitle) => {
 export const generatePDF = async (req, res) => {
     // Establish Server-Sent Events headers
     res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
+    // Critical for Nginx reverse proxy: disable response buffering so SSE events
+    // are flushed to the client in real-time instead of being batched at the end
+    res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
     const sendProgress = (status, message, progress, extraData = {}) => {
