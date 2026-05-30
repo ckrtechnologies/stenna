@@ -20,19 +20,20 @@ class OpenAiService {
             }
 
             const prompt = `You are a professional interior designer and wallpaper expert. 
-            A customer provided these preferences:
-            - Room: ${answers.roomType}
-            - Mood: ${answers.mood}
-            - Desired Aesthetic: ${answers.style}
-            - Preferred Colors: ${answers.colors}
-            - Room Lighting: ${answers.lighting}
+            A customer provided these preferences for their space:
+            - Room Type: ${answers.roomType}
+            - Natural Light: ${answers.lighting}
+            - Existing Decor/Furniture Color: ${answers.furnitureColor}
+            - Desired Vibe: ${answers.vibe}
+            - Color Adventurousness: ${answers.adventureLevel}
 
-            Analyze their "vibe" and return a JSON object with:
+            Analyze their selections and return a JSON object with:
             1. "tags": A list of 4-6 specific design keywords in lowercase (e.g. "warm", "textured", "classic", "minimalist").
             2. "category": One main category name that fits best (e.g. "Modern", "Classic", "Nature").
             3. "summary": A brief, premium 1-sentence headline for the recommended look.
-            4. "description": A 2-3 sentence professional interior design explanation of why this specific vibe resonates with their room type, lighting, and preferred aesthetic.
-            5. "roomTypeMatch": The lowercase version of their room preference (${answers.roomType.toLowerCase()}) to filter the "ideal_for" column.
+            4. "description": A 2-3 sentence professional interior design explanation of why this specific vibe resonates with their room type, lighting, furniture colors, and color risk level.
+            5. "roomTypeMatch": The lowercase version of their room preference to filter the "ideal_for" column.
+            6. "avoidanceTags": A list of 2-3 lowercase keywords representing what style they want to avoid based on their selections (e.g. if safe, avoid "bold" or "vibrant").
 
             Return ONLY valid JSON. No markdown formatting.`;
 
@@ -60,13 +61,18 @@ class OpenAiService {
      * Rule-based fallback if AI fails or key is missing.
      */
     getFallbackRecommendation(answers) {
-        let tags = [answers.mood.toLowerCase(), answers.style.toLowerCase()];
-        if (answers.style === 'Modern Minimalist') tags = ['clean', 'simple', 'minimal', 'geometric'];
-        if (answers.style === 'Classic Elegance') tags = ['floral', 'intricate', 'vintage', 'luxury'];
+        let tags = [
+            (answers.vibe || '').toLowerCase(),
+            (answers.roomType || '').toLowerCase()
+        ].filter(Boolean);
 
         return {
             tags: tags,
-            summary: `Looking for a ${answers.mood.toLowerCase()} and ${answers.style.toLowerCase()} touch for your ${answers.roomType.toLowerCase()}.`
+            category: "Modern",
+            summary: `Tailored wallpapers matching your ${answers.vibe || 'stylish'} vibes.`,
+            description: `We curated a selection of designs that fit a ${answers.roomType || 'room'} with a ${answers.vibe || 'classic'} aesthetic, matching your preferences.`,
+            roomTypeMatch: (answers.roomType || '').toLowerCase(),
+            avoidanceTags: []
         };
     }
 }

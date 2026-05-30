@@ -814,11 +814,11 @@ const WallpaperDetail = () => {
                                                 <div className="str-specs">
                                                     <div className="str-spec">
                                                         <div className="str-spec-label">ROLL WIDTH</div>
-                                                        <div className="str-spec-value">{wallpaper.roll_width || '53 CM'}</div>
+                                                        <div className="str-spec-value">{wallpaper.roll_width + ' CM' || ' 106 CM'}</div>
                                                     </div>
                                                     <div className="str-spec">
                                                         <div className="str-spec-label">ROLL HEIGHT</div>
-                                                        <div className="str-spec-value">{wallpaper.roll_height || '10 MT'}</div>
+                                                        <div className="str-spec-value">{wallpaper.roll_height + ' MT' || '5 MT'}</div>
                                                     </div>
                                                 </div>
                                             </div>

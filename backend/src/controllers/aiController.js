@@ -15,88 +15,80 @@ export const getRecommendations = async (req, res) => {
         // 1. Get Dynamic AI Analysis from OpenAI
         console.log("Stenna AI: Analyzing preferences with OpenAI...");
         const aiAnalysis = await openaiService.recommendWallpaper(answers);
-        const { tags, summary, category, description } = aiAnalysis;
+        const { tags, summary, category, description, roomTypeMatch, avoidanceTags } = aiAnalysis;
 
-        console.log("Stenna AI Calculated Vibe:", { tags, summary, category });
+        console.log("Stenna AI Calculated Vibe:", { tags, summary, category, roomTypeMatch, avoidanceTags });
 
-        // 3. Query the database for matching wallpapers
-        let query = supabase.from('wallpapers').select(`
+        // 2. Fetch all active wallpapers with images and category details
+        const { data: allWallpapers, error } = await supabase.from('wallpapers').select(`
             *,
             images:wallpaper_images(*),
             categories:wallpaper_categories(category:categories(*))
         `).eq('is_active', true);
 
-        // --- MATCH STRATEGY ---
-
-        // Apply Mood Tags filter
-        let products = [];
-        let error = null;
-
-        if (tags && tags.length > 0 || aiAnalysis.roomTypeMatch) {
-            try {
-                // Normalize for database (everything lowercase)
-                const normalizedRoom = aiAnalysis.roomTypeMatch?.toLowerCase();
-                const normalizedTags = (tags || []).map(t => t.toLowerCase());
-
-                // Try precision matching first
-                let precisionQuery = supabase.from('wallpapers').select(`
-                    *,
-                    images:wallpaper_images(*),
-                    categories:wallpaper_categories(category:categories(*))
-                `).eq('is_active', true);
-
-                // Room Type Filter (check both original and lowercase to be safe)
-                if (normalizedRoom) {
-                    const roomFilter = `ideal_for.cs.["${normalizedRoom}"],ideal_for.cs.["${aiAnalysis.roomTypeMatch}"]`;
-                    precisionQuery = precisionQuery.or(roomFilter);
-                }
-
-                // Mood Tags Filter
-                if (normalizedTags.length > 0) {
-                    const moodFilters = normalizedTags.map(tag => `mood_tags.cs.["${tag}"]`).join(',');
-                    precisionQuery = precisionQuery.or(moodFilters);
-                }
-
-                const result = await precisionQuery.limit(6);
-                products = result.data || [];
-                error = result.error;
-            } catch (err) {
-                console.warn("Stenna AI: Precision match failed, falling back...", err.message);
-            }
-        }
-
-        // --- FALLBACK SEARCH ---
-        // If no products found or precision failed, do a broad keyword search
-        if (!products.length) {
-            console.log("Stenna AI: Broadening search to keywords...");
-            let fallbackQuery = supabase.from('wallpapers').select(`
-                *,
-                images:wallpaper_images(*),
-                categories:wallpaper_categories(category:categories(*))
-            `).eq('is_active', true);
-
-            // Broaden the search set
-            const searchTags = [...new Set([...(tags || []), category, answers.roomType])].filter(Boolean);
-            if (searchTags.length > 0) {
-                const filterParts = searchTags.map(tag =>
-                    `name.ilike.%${tag}%,description.ilike.%${tag}%,design_code.ilike.%${tag}%`
-                );
-                fallbackQuery = fallbackQuery.or(filterParts.join(','));
-            }
-
-            const fallbackResult = await fallbackQuery.limit(6);
-            products = fallbackResult.data || [];
-            error = fallbackResult.error;
-        }
-
         if (error) throw error;
+
+        // 3. Match & Score wallpapers in memory
+        const scoredWallpapers = allWallpapers.map(w => {
+            let score = 0;
+            
+            // Check Room Type Match (ideal_for contains roomTypeMatch)
+            const roomMatch = roomTypeMatch?.toLowerCase();
+            const idealForStr = (w.ideal_for || '').toLowerCase();
+            if (roomMatch && idealForStr.includes(roomMatch)) {
+                score += 15; // Strong room-type alignment
+            }
+
+            // Check category match
+            const mainCategory = category?.toLowerCase();
+            const categoriesList = w.categories?.map(c => c.category?.name?.toLowerCase()).filter(Boolean) || [];
+            if (mainCategory && categoriesList.includes(mainCategory)) {
+                score += 10;
+            }
+
+            // Match Mood/Design tags against vibe, description, and ideal_for
+            const normalizedTags = (tags || []).map(t => t.toLowerCase());
+            const vibeStr = (w.vibe || '').toLowerCase();
+            const descStr = (w.description || '').toLowerCase();
+            const chooseIfStr = (w.choose_if || '').toLowerCase();
+
+            for (const tag of normalizedTags) {
+                if (vibeStr.includes(tag) || descStr.includes(tag) || chooseIfStr.includes(tag)) {
+                    score += 5;
+                }
+            }
+
+            // Avoidance penalty (if wallpaper contains avoidance tags)
+            const avoidStr = (w.avoid_if || '').toLowerCase();
+            const normalizedAvoidTags = (avoidanceTags || []).map(t => t.toLowerCase());
+            for (const avoidTag of normalizedAvoidTags) {
+                if (avoidStr.includes(avoidTag) || vibeStr.includes(avoidTag)) {
+                    score -= 20; // Heavy penalty for avoidance match
+                }
+            }
+
+            return {
+                ...w,
+                score
+            };
+        });
+
+        // 4. Filter, sort, and format results (no limit!)
+        const recommendations = scoredWallpapers
+            .filter(w => w.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .map(({ score, ...w }) => ({
+                ...w,
+                categories: w.categories?.map(c => c.category).filter(Boolean) || [],
+                images: w.images?.sort((a, b) => a.position - b.position) || []
+            }));
 
         res.status(200).json({
             summary: summary,
-            description: products.length > 0 ? (description || '') : "We couldn't find an exact match for your specific preferences, but here are some popular designs you might love.",
+            description: recommendations.length > 0 ? (description || '') : "We couldn't find an exact match for your specific preferences, but here are some popular designs you might love.",
             tags: tags,
-            recommendations: products,
-            is_fallback: products.length === 0 || !aiAnalysis.roomTypeMatch
+            recommendations: recommendations,
+            is_fallback: recommendations.length === 0 || !roomTypeMatch
         });
 
     } catch (error) {

@@ -1,6 +1,8 @@
 import { supabase } from '../config/supabase.js';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
 
 // Memory cache for generated PDF documents
 const pdfCache = new Map();
@@ -21,6 +23,16 @@ setInterval(() => {
 const optimizeImageURL = (url) => {
     if (!url) return 'https://placehold.co/180x130/f1f5f9/94a3b8?text=No+Image';
     return url;
+};
+
+// Helper to get resized PDF image URL pointing to local resizing endpoint
+const getResizedPdfImageUrl = (url, width = 800) => {
+    if (!url) return 'https://placehold.co/180x130/f1f5f9/94a3b8?text=No+Image';
+    if (url.startsWith('data:') || url.includes('placehold')) {
+        return url;
+    }
+    const port = process.env.PORT || 5010;
+    return `http://localhost:${port}/api/v1/pdf/image?url=${encodeURIComponent(url)}&width=${width}`;
 };
 
 // Global helper to chunk array for dynamic paginations
@@ -146,12 +158,20 @@ const generateHTML = (wallpapers, title, subtitle) => {
     const numGridPages = Math.max(1, Math.ceil(wallpapers.length / itemsPerGridPage));
     const detailsStartPage = 1 + numTOCPages + numGridPages + 1; // page 1: cover, then TOC, then Grid, then Details start
 
+    // Pre-calculate starting page numbers for each wallpaper
+    const startPages = [];
+    let currentStart = detailsStartPage;
+    for (let i = 0; i < wallpapers.length; i++) {
+        startPages.push(currentStart);
+        currentStart += 1 + (wallpapers[i].images?.length || 0);
+    }
+
     // 1. Generate Table of Contents pages
     const tocChunks = chunkArray(wallpapers, itemsPerTOCPage);
     const tocPagesHtml = tocChunks.map((chunk, pageIdx) => {
         const rowsHtml = chunk.map((w, itemIdx) => {
             const absoluteIdx = pageIdx * itemsPerTOCPage + itemIdx;
-            const pageNum = detailsStartPage + absoluteIdx;
+            const pageNum = startPages[absoluteIdx];
             const displayName = (w.name && w.name.trim().toLowerCase() !== (w.design_code || '').trim().toLowerCase()) 
                 ? w.name 
                 : '';
@@ -195,7 +215,7 @@ const generateHTML = (wallpapers, title, subtitle) => {
     const gridChunks = chunkArray(wallpapers, itemsPerGridPage);
     const gridPagesHtml = gridChunks.map((chunk, pageIdx) => {
         const cardsHtml = chunk.map(w => {
-            const handImg = optimizeImageURL(w.images?.[0]?.image_url);
+            const handImg = getResizedPdfImageUrl(w.images?.[0]?.image_url, 300);
             return `
                 <a href="#wp-${w.id}" class="grid-card-link">
                     <div class="grid-card">
@@ -234,27 +254,63 @@ const generateHTML = (wallpapers, title, subtitle) => {
 
     // 3. Generate Details pages
     const detailsPages = wallpapers.map((w, idx) => {
-        const heroImg = optimizeImageURL(getHeroImage(w.images));
-        const pageNum = detailsStartPage + idx;
+        const heroImg = getResizedPdfImageUrl(getHeroImage(w.images), 600);
+        const pageNum = startPages[idx];
         
         // Spec fields
         const priceText = w.price ? `₹${parseFloat(w.price).toLocaleString('en-IN')}` : 'N/A';
         const sizeText = w.roll_width && w.roll_height ? `${w.roll_width} cm x ${w.roll_height} m` : 'Standard Roll';
-        const materialText = w.material || 'Premium Non-woven';
+        const materialText = w.material || 'Premium PVC Coated';
         const finishText = w.finish || 'Textured Matte';
         const washText = w.washability || 'Highly Washable / Spongeable';
         const durText = w.durability || 'Extra Durable / High Grade';
-        const brandText = w.brand || 'Stenna Cloud';
-        const originText = w.country || 'Italy';
-        const stockText = w.quantity > 0 ? `${w.quantity} Rolls` : 'Out of Stock';
 
-        // Thumbnails list (All 6 images: Hand Image, Medium Short, Far Short, Warm Family, Modal with Book, Rustic)
-        const thumbnailsHtml = w.images.map((img, i) => `
-            <div class="detail-thumb">
-                <img src="${optimizeImageURL(img.image_url)}" alt="Slot ${i + 1}" />
-                <span class="thumb-lbl">${['Hand', 'Med', 'Far', 'Family', 'Book', 'Rustic'][i] || 'Alt'}</span>
-            </div>
-        `).join('');
+        // Descriptive views labels mapping
+        const labelMap = {
+            'Hand': 'Hand View',
+            'Med': 'Medium Shot',
+            'Far': 'Far Shot',
+            'Family': 'Family Room',
+            'Book': 'Sample Book',
+            'Rustic': 'Rustic Setting'
+        };
+        const labelsList = ['Hand', 'Med', 'Far', 'Family', 'Book', 'Rustic'];
+
+        // Generate full-page visual blocks for each gallery image
+        const galleryPagesHtml = w.images.map((img, i) => {
+            const rawLabel = labelsList[i] || 'Alt';
+            const label = labelMap[rawLabel] || rawLabel;
+            const galleryPageNum = pageNum + 1 + i;
+            return `
+                <div class="page-wrapper">
+                    <div class="pdf-page gallery-single-page">
+                        <div class="details-header">
+                            <div>
+                                <h2 class="details-code">${w.design_code || 'UNTITLED'}</h2>
+                                <p class="details-name">${w.name || 'Unnamed Wallpaper'} — ${label.toUpperCase()}</p>
+                            </div>
+                            <div class="details-brand-tag">STENNA PREMIUM</div>
+                        </div>
+
+                        <div class="details-nav-links">
+                            <a href="#wp-${w.id}" class="nav-anchor">← Back to Specifications</a>
+                            <a href="#cover-page" class="nav-anchor">← Cover Page</a>
+                            <a href="#toc-page-0" class="nav-anchor">← Index Page</a>
+                            <a href="#overview-page-0" class="nav-anchor">← Gallery Grid</a>
+                        </div>
+
+                        <div class="gallery-single-content">
+                            <img src="${getResizedPdfImageUrl(img.image_url, 1000)}" alt="${label}" />
+                        </div>
+
+                        <div class="details-footer">
+                            <span>STENNA DESIGN CATALOG • ${w.design_code}</span>
+                            <span>Page ${galleryPageNum}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
 
         return `
             <div class="page-wrapper">
@@ -279,10 +335,6 @@ const generateHTML = (wallpapers, title, subtitle) => {
                             <div class="details-hero">
                                 <img src="${heroImg}" alt="Mockup" />
                             </div>
-                            <div class="details-thumbs-header">PRODUCT GALLERY</div>
-                            <div class="details-thumbs">
-                                ${thumbnailsHtml || '<p class="no-thumbs">No additional images uploaded.</p>'}
-                            </div>
                         </div>
 
                         <!-- Right specifications & narrative panel (41%) -->
@@ -297,9 +349,6 @@ const generateHTML = (wallpapers, title, subtitle) => {
                                 <tr><td>Finish / Texture</td><td>${finishText}</td></tr>
                                 <tr><td>Washability</td><td>${washText}</td></tr>
                                 <tr><td>Durability / Care</td><td>${durText}</td></tr>
-                                <tr><td>Collection Brand</td><td>${brandText}</td></tr>
-                                <tr><td>Country of Origin</td><td>${originText}</td></tr>
-                                <tr><td>Current Stock</td><td>${stockText}</td></tr>
                             </table>
 
                             <div class="narrative-section">
@@ -340,6 +389,7 @@ const generateHTML = (wallpapers, title, subtitle) => {
                     </div>
                 </div>
             </div>
+            ${galleryPagesHtml}
         `;
     }).join('');
 
@@ -745,55 +795,44 @@ const generateHTML = (wallpapers, title, subtitle) => {
                     width: 55%;
                     display: flex;
                     flex-direction: column;
+                    height: 100%;
                 }
                 .details-hero {
-                    height: 380px; /* Increased from 280px to maximize visual canvas */
+                    flex: 1;
                     width: 100%;
                     border-radius: 8px;
                     overflow: hidden;
                     background: #cbd5e1;
                     border: 1px solid #e2e8f0;
-                    margin-bottom: 20px;
+                    margin-bottom: 0;
                 }
                 .details-hero img {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
                 }
-                .details-thumbs-header {
-                    font-size: 10px;
-                    font-weight: 700;
-                    color: #64748b;
-                    letter-spacing: 1px;
-                    margin-bottom: 8px;
+
+                /* Product Gallery Single Page Styles */
+                .gallery-single-page {
+                    padding: 18mm 16mm;
+                    display: flex;
+                    flex-direction: column;
                 }
-                .details-thumbs {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 12px;
-                }
-                .detail-thumb {
-                    background: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 6px;
-                    padding: 3px;
-                    text-align: center;
-                    position: relative;
-                }
-                .detail-thumb img {
-                    height: 75px; /* Increased from 52px to details of alternative views */
+                .gallery-single-content {
                     width: 100%;
-                    object-fit: cover;
-                    border-radius: 6px;
+                    flex: 1;
+                    min-height: 0;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    border: 1px solid #cbd5e1;
+                    background: #f8fafc;
+                    margin-top: 5px;
+                    margin-bottom: 15px;
                 }
-                .detail-thumb .thumb-lbl {
-                    font-size: 8px;
-                    color: #64748b;
-                    display: block;
-                    margin-top: 2px;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
+                .gallery-single-content img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
                 }
 
                 /* Right Side - Information (41%) */
@@ -1063,5 +1102,60 @@ export const downloadPDF = async (req, res) => {
     } catch (err) {
         console.error('PDF Download Error:', err);
         res.status(500).json({ message: 'Failed to retrieve PDF catalog.' });
+    }
+};
+
+// Dynamic Image Resizing Route for optimized PDF file sizes
+export const getResizedImage = async (req, res) => {
+    try {
+        const { url, width = 800, quality = 75 } = req.query;
+        if (!url) {
+            return res.status(400).json({ message: 'URL is required' });
+        }
+
+        // Determine base directories
+        const baseUrl = process.env.ASSETS_BASE_URL || 'https://assets.stenna.cloud/wallpaper';
+        const uploadRootEnv = process.env.UPLOAD_ROOT || '/var/www/stenna/public/wallpaper';
+        
+        let uploadRoot = uploadRootEnv;
+        if (!fs.existsSync(path.parse(uploadRootEnv).root) && process.env.NODE_ENV === 'development') {
+            uploadRoot = path.resolve(process.cwd(), 'public', 'wallpaper');
+        }
+
+        // Check if the URL is locally hosted
+        if (!url.startsWith(baseUrl)) {
+            return res.redirect(url);
+        }
+
+        // Map URL to local path
+        const relativePath = url.replace(baseUrl, '').replace(/^\//, '');
+        const targetPath = path.resolve(uploadRoot, relativePath);
+
+        // Security check: ensure targetPath is strictly inside uploadRoot (prevent directory traversal)
+        if (!targetPath.startsWith(uploadRoot)) {
+            return res.status(403).json({ message: 'Forbidden: Access denied' });
+        }
+
+        // Check if file exists
+        if (!fs.existsSync(targetPath)) {
+            return res.status(404).json({ message: 'Image not found' });
+        }
+
+        const widthNum = parseInt(width, 10) || 800;
+        const qualityNum = parseInt(quality, 10) || 75;
+
+        // Set response headers for caching
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=31536000');
+
+        const imageBuffer = await sharp(targetPath)
+            .resize({ width: widthNum, withoutEnlargement: true })
+            .jpeg({ quality: qualityNum })
+            .toBuffer();
+
+        res.send(imageBuffer);
+    } catch (err) {
+        console.error('Image resize error:', err);
+        res.status(500).json({ message: 'Failed to process image' });
     }
 };

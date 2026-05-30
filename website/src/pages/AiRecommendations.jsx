@@ -10,7 +10,7 @@ import '../styles/CatalogLayout.css';
 const AiRecommendations = () => {
     const { user } = useAuth();
     const [step, setStep] = useState(0);
-    const [answers, setAnswers] = useState({ roomType: '', mood: '', colors: '', lighting: '', style: '' });
+    const [answers, setAnswers] = useState({ roomType: '', lighting: '', furnitureColor: '', vibe: '', adventureLevel: '' });
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(null);
     const [error, setError] = useState(null);
@@ -47,27 +47,27 @@ const AiRecommendations = () => {
         {
             key: 'roomType',
             question: "Which room are we designing for?",
-            options: ['Living Room', 'Bedroom', 'Office', 'Kids Room', 'Dining Room']
-        },
-        {
-            key: 'mood',
-            question: "What vibe do you want to create?",
-            options: ['Calm & Peaceful', 'Energizing & Bright', 'Cozy & Professional', 'Luxurious & Bold', 'Playful & Fun']
-        },
-        {
-            key: 'style',
-            question: "Choose your favorite design aesthetic:",
-            options: ['Modern Minimalist', 'Classic Elegance', 'Industrial Chic', 'Bohemian Soul', 'Scandinavian']
-        },
-        {
-            key: 'colors',
-            question: "What's your preferred color palette?",
-            options: ['Soft Pastels', 'Earth Tones', 'Monochrome (B&W)', 'Rich Jewel Tones', 'Vibrant Primary']
+            options: ['Living Room', 'Bedroom', 'Office', 'Kids Room/Nursery', 'Dining Room', 'Bathroom', 'Kitchen', 'Entryway/Hallway']
         },
         {
             key: 'lighting',
             question: "How much natural light does the room get?",
-            options: ['Flooded with light', 'Moderate', 'Mostly artificial light']
+            options: ['Flooded with light (Tons of natural light)', 'Moderate/Some natural light', 'Barely any natural light (mostly artificial)']
+        },
+        {
+            key: 'furnitureColor',
+            question: "What colors are in your existing furniture, wood, or trim?",
+            options: ['White/Light Neutrals', 'Black/Dark Neutrals', 'Warm Wood Tones', 'Cool/Grey Wood Tones', 'Starting Fresh/Blank Canvas']
+        },
+        {
+            key: 'vibe',
+            question: "Select the primary vibe you want to achieve:",
+            options: ['Calm & Peaceful (Serene)', 'Cozy & Warm (Comforting)', 'Moody & Dramatic (Atmospheric)', 'Airy & Fresh (Bright)', 'Bold & Creative (Vibrant)']
+        },
+        {
+            key: 'adventureLevel',
+            question: "How adventurous are you feeling with color?",
+            options: ['Very safe (soft neutrals & subtle textures)', 'Moderately adventurous (elegant muted color tones)', 'Bold & Creative (vibrant hues & rich deep patterns)']
         }
     ];
 
@@ -117,7 +117,7 @@ const AiRecommendations = () => {
                         <div className="recommendations-page" style={{ textAlign: 'center', padding: '120px 5%', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                             <div className="spinner" style={{ width: '40px', height: '40px', border: '1px solid #eee', borderTop: '1px solid #000', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '2rem' }}></div>
                             <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.5rem', letterSpacing: '0.05em', marginBottom: '1rem' }}>Stenna AI is curating your collection</h3>
-                            <p style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.2em', color: '#888' }}>Analyzing {answers.style} trends and {answers.mood?.toLowerCase()} palettes</p>
+                            <p style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.2em', color: '#888' }}>Analyzing your {answers.roomType?.toLowerCase()} with {answers.vibe?.toLowerCase()} vibes</p>
                             <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
                         </div>
                     </div>
