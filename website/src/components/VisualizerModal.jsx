@@ -110,52 +110,55 @@ const VisualizerModal = ({ isOpen, onClose, wallpaper }) => {
                             </label>
                         </div>
                     ) : (
-                        <div className="upload-placeholder" style={{ border: '2px dashed #ddd', padding: '3rem 1rem' }}>
-                            <p style={{ marginBottom: '1.5rem' }}>Upload a photo of your room to see how this wallpaper looks.</p>
-                            <label className="filter-btn active" style={{ cursor: 'pointer', display: 'inline-block', padding: '0.8rem 2rem' }}>
+                        <div className="upload-placeholder" style={{ padding: '2rem 1rem', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📸</div>
+                            <p style={{ marginBottom: '1.5rem', maxWidth: '320px', fontSize: '0.85rem' }}>Upload a photo of your room to see how this wallpaper looks.</p>
+                            <label className="filter-btn active" style={{ cursor: 'pointer', display: 'inline-block', padding: '0.8rem 2rem', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.1em' }}>
                                 Select Room Photo
                                 <input type="file" onChange={handleFileChange} style={{ display: 'none' }} accept="image/*" />
                             </label>
-
-                            <div className="guidelines-box" style={{ 
-                                marginTop: '3rem', 
-                                padding: '1.5rem', 
-                                background: '#f9f9f9', 
-                                borderRadius: '8px',
-                                textAlign: 'left',
-                                border: '1px solid #eee'
-                            }}>
-                                <h4 style={{ 
-                                    fontSize: '0.65rem', 
-                                    letterSpacing: '0.2em', 
-                                    textTransform: 'uppercase', 
-                                    marginBottom: '1.2rem',
-                                    color: '#000',
-                                    fontWeight: '800',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem'
-                                }}>
-                                    <span style={{ fontSize: '1rem' }}>💡</span> Tips for best results
-                                </h4>
-                                <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#555', lineHeight: '1.5' }}>
-                                        <strong style={{ display: 'block', color: '#000', marginBottom: '0.2rem', fontSize: '0.7rem', textTransform: 'uppercase' }}>Good Lighting</strong>
-                                        Take photos in bright, natural daylight for the most realistic AI textures and shadows.
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#555', lineHeight: '1.5' }}>
-                                        <strong style={{ display: 'block', color: '#000', marginBottom: '0.2rem', fontSize: '0.7rem', textTransform: 'uppercase' }}>Clear View</strong>
-                                        Ensure the wall is clearly visible and not heavily obstructed by large furniture or decor.
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#555', lineHeight: '1.5' }}>
-                                        <strong style={{ display: 'block', color: '#000', marginBottom: '0.2rem', fontSize: '0.7rem', textTransform: 'uppercase' }}>Straight Angle</strong>
-                                        Capture the wall from a straight-on perspective for perfect wallpaper alignment.
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     )}
                 </div>
+
+                {!previewUrl && !resultUrl && !loading && user && (
+                    <div className="guidelines-box" style={{ 
+                        marginTop: '1.5rem', 
+                        padding: '1.25rem', 
+                        background: '#f8fafc', 
+                        borderRadius: '8px',
+                        textAlign: 'left',
+                        border: '1px solid #e2e8f0'
+                    }}>
+                        <h4 style={{ 
+                            fontSize: '0.65rem', 
+                            letterSpacing: '0.15em', 
+                            textTransform: 'uppercase', 
+                            marginBottom: '1rem',
+                            color: '#0f172a',
+                            fontWeight: '800',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}>
+                            <span style={{ fontSize: '1rem' }}>💡</span> Tips for best results
+                        </h4>
+                        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#475569', lineHeight: '1.5' }}>
+                                <strong style={{ display: 'block', color: '#0f172a', marginBottom: '0.2rem', fontSize: '0.65rem', textTransform: 'uppercase' }}>Good Lighting</strong>
+                                Bright, natural daylight creates the most realistic AI textures.
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#475569', lineHeight: '1.5' }}>
+                                <strong style={{ display: 'block', color: '#0f172a', marginBottom: '0.2rem', fontSize: '0.65rem', textTransform: 'uppercase' }}>Clear View</strong>
+                                Ensure the wall is not heavily obstructed by furniture.
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#475569', lineHeight: '1.5' }}>
+                                <strong style={{ display: 'block', color: '#0f172a', marginBottom: '0.2rem', fontSize: '0.65rem', textTransform: 'uppercase' }}>Straight Angle</strong>
+                                Capture the wall from a straight perspective for perfect alignment.
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {error && <p style={{ color: '#ef4444', fontSize: '0.85rem', margin: '1rem 0' }}>{error}</p>}
 

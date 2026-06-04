@@ -45,3 +45,40 @@ export const deleteUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const getUserCredits = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const today = new Date().toISOString().split('T')[0];
+
+        const { data: usage, error } = await supabase
+            .from('user_api_usage')
+            .select('hits_count')
+            .eq('user_id', userId)
+            .eq('usage_date', today)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        const hits = usage ? usage.hits_count : 0;
+
+        const { data: storeInfo } = await supabase
+            .from('store_settings')
+            .select('daily_ai_credit_limit')
+            .maybeSingle();
+
+        const limit = storeInfo?.daily_ai_credit_limit ?? 100;
+        const remaining = Math.max(0, limit - hits);
+
+        res.status(200).json({
+            hits,
+            limit,
+            remaining,
+            resetDate: today
+        });
+    } catch (error) {
+        console.error('Error fetching user credits:', error);
+        res.status(500).json({ message: 'Failed to fetch credit usage information.' });
+    }
+};
+

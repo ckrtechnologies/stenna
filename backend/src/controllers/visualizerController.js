@@ -1,7 +1,25 @@
 import { supabase } from '../config/supabase.js';
+import sharp from 'sharp';
 import kieAiService from '../services/kieAiService.js';
 import fs from 'fs';
 import path from 'path';
+
+const getWebRoot = () => {
+    const webRootEnv = process.env.WEB_ROOT || '/var/www/stenna/public';
+    if (!fs.existsSync('/var/www') && process.env.NODE_ENV === 'development') {
+        return path.resolve(process.cwd(), 'public');
+    }
+    return webRootEnv;
+};
+
+const getVisualizerBaseUrl = () => {
+    const baseUrlEnv = process.env.VISUALIZER_BASE_URL || 'https://assets.stenna.cloud/visualizer';
+    if (!fs.existsSync('/var/www') && process.env.NODE_ENV === 'development') {
+        const port = process.env.PORT || 5010;
+        return `http://localhost:${port}/public/visualizer`;
+    }
+    return baseUrlEnv;
+};
 
 const formatTimestamp = () => {
     const now = new Date();
@@ -22,11 +40,23 @@ export const uploadRoom = async (req, res) => {
 
         const userId = req.user?.id || 'guest';
         const timestamp = formatTimestamp();
-        const filename = `${userId}-room-${timestamp}-${req.file.originalname.replace(/\s+/g, '_')}`;
+        
+        let roomBuffer = req.file.buffer;
+        let ext = path.extname(req.file.originalname).toLowerCase();
+        let baseName = path.basename(req.file.originalname, ext).replace(/\s+/g, '_');
+        let filename = `${userId}-room-${timestamp}-${baseName}`;
+
+        try {
+            roomBuffer = await sharp(req.file.buffer).jpeg({ quality: 90 }).toBuffer();
+            filename += '.jpg';
+        } catch (sharpError) {
+            console.warn("Stenna AI: Sharp uploadRoom conversion failed, using original format:", sharpError.message);
+            filename += ext;
+        }
 
         // VPS Storage Settings
-        const WEB_ROOT = process.env.WEB_ROOT || '/var/www/stenna/public';
-        const VISUALIZER_BASE_URL = process.env.VISUALIZER_BASE_URL || 'https://assets.stenna.cloud/visualizer';
+        const WEB_ROOT = getWebRoot();
+        const VISUALIZER_BASE_URL = getVisualizerBaseUrl();
 
         const targetDir = path.resolve(WEB_ROOT, 'visualizer', 'uploads');
         if (!fs.existsSync(targetDir)) {
@@ -34,7 +64,7 @@ export const uploadRoom = async (req, res) => {
         }
 
         const filePath = path.join(targetDir, filename);
-        fs.writeFileSync(filePath, req.file.buffer, { mode: 0o644 });
+        fs.writeFileSync(filePath, roomBuffer, { mode: 0o644 });
 
         const publicUrl = `${VISUALIZER_BASE_URL}/uploads/${filename}`;
 
@@ -92,7 +122,7 @@ export const generateVisualization = async (req, res) => {
                 .limit(1)
                 .single();
 
-            if (wpErr) throw new Error("Failed to find wallpaper image.");
+            if (wpErr) throw new Error("Failed to find wallpaper image: " + wpErr.message);
             wpUrl = wp.image_url;
         }
 
@@ -102,24 +132,37 @@ export const generateVisualization = async (req, res) => {
                 return res.status(400).json({ message: 'Room image file or URL is required' });
             }
 
-            const WEB_ROOT = process.env.WEB_ROOT || '/var/www/stenna/public';
-            const VISUALIZER_BASE_URL = process.env.VISUALIZER_BASE_URL || 'https://assets.stenna.cloud/visualizer';
+            const WEB_ROOT = getWebRoot();
+            const VISUALIZER_BASE_URL = getVisualizerBaseUrl();
 
-            const roomFilename = `${userId}-room-${timestamp}-${file.originalname.replace(/\s+/g, '_')}`;
+            let roomBuffer = file.buffer;
+            let ext = path.extname(file.originalname).toLowerCase();
+            let baseName = path.basename(file.originalname, ext).replace(/\s+/g, '_');
+            let roomFilename = `${userId}-room-${timestamp}-${baseName}`;
+
+            try {
+                roomBuffer = await sharp(file.buffer).jpeg({ quality: 90 }).toBuffer();
+                roomFilename += '.jpg';
+            } catch (sharpError) {
+                console.warn("Stenna AI: Sharp generateVisualization conversion failed, using original format:", sharpError.message);
+                roomFilename += ext;
+            }
+
             const roomDir = path.resolve(WEB_ROOT, 'visualizer', 'uploads');
             if (!fs.existsSync(roomDir)) fs.mkdirSync(roomDir, { recursive: true, mode: 0o755 });
 
             const roomPath = path.join(roomDir, roomFilename);
-            fs.writeFileSync(roomPath, file.buffer, { mode: 0o644 });
+            fs.writeFileSync(roomPath, roomBuffer, { mode: 0o644 });
             roomUrl = `${VISUALIZER_BASE_URL}/uploads/${roomFilename}`;
         }
 
         // 3. AI Transformation Flow
-        console.log("Stenna AI: Starting generation for design...");
+        console.log("Stenna AI: Starting generation for design...", { roomUrl, wpUrl });
         const taskResponse = await kieAiService.generateEdit(roomUrl, wpUrl);
+        console.log("Stenna AI: KIE.AI Response:", JSON.stringify(taskResponse));
         const taskId = taskResponse.data?.taskId || taskResponse.taskId;
 
-        if (!taskId) throw new Error("AI Task initiation failed.");
+        if (!taskId) throw new Error("AI Task initiation failed. Response: " + JSON.stringify(taskResponse));
 
         const result = await kieAiService.waitForTaskCompletion(taskId);
         const tempGeneratedUrl = result.url;
@@ -128,8 +171,8 @@ export const generateVisualization = async (req, res) => {
 
         // 4. PERSISTENCE: Save AI result permanently to VPS
         console.log("Stenna AI: Downloading and saving result to VPS for permanent storage...");
-        const WEB_ROOT = process.env.WEB_ROOT || '/var/www/stenna/public';
-        const VISUALIZER_BASE_URL = process.env.VISUALIZER_BASE_URL || 'https://assets.stenna.cloud/visualizer';
+        const WEB_ROOT = getWebRoot();
+        const VISUALIZER_BASE_URL = getVisualizerBaseUrl();
 
         const outputFilename = `${userId}-output-${timestamp}.jpg`;
         const resultDir = path.resolve(WEB_ROOT, 'visualizer', 'results');

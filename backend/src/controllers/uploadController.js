@@ -86,7 +86,7 @@ export const uploadWallpaper = async (req, res) => {
 
         // If UPLOAD_ROOT doesn't exist (like on Windows local dev), fall back to local public folder
         let uploadRoot = uploadRootEnv;
-        if (!fs.existsSync(path.parse(uploadRootEnv).root) && process.env.NODE_ENV === 'development') {
+        if (!fs.existsSync('/var/www') && process.env.NODE_ENV === 'development') {
             uploadRoot = path.resolve(process.cwd(), 'public', 'wallpaper');
         }
 
@@ -135,7 +135,7 @@ export const deleteAssetFromDisk = async (url) => {
 
         // Smart Pathing (Cross-platform resolution)
         let uploadRoot = uploadRootEnv;
-        if (!fs.existsSync(path.parse(uploadRootEnv).root) && process.env.NODE_ENV === 'development') {
+        if (!fs.existsSync('/var/www') && process.env.NODE_ENV === 'development') {
             uploadRoot = path.resolve(process.cwd(), 'public', 'wallpaper');
         }
 
@@ -145,7 +145,7 @@ export const deleteAssetFromDisk = async (url) => {
             const visualizerRootEnv = process.env.WEB_ROOT || '/var/www/stenna/public';
 
             let visualizerRoot = visualizerRootEnv;
-            if (!fs.existsSync(path.parse(visualizerRootEnv).root) && process.env.NODE_ENV === 'development') {
+            if (!fs.existsSync('/var/www') && process.env.NODE_ENV === 'development') {
                 visualizerRoot = path.resolve(process.cwd(), 'public');
             }
 
@@ -251,7 +251,7 @@ export const uploadContentToVPS = async (req, res) => {
         let uploadRoot = path.join(webRoot, 'content', module);
 
         // Fallback for local development
-        if (!fs.existsSync(path.parse(webRoot).root) && process.env.NODE_ENV === 'development') {
+        if (!fs.existsSync('/var/www') && process.env.NODE_ENV === 'development') {
             uploadRoot = path.resolve(process.cwd(), 'public', 'content', module);
         }
 

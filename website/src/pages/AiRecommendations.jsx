@@ -4,8 +4,49 @@ import { fetchAiRecommendations, fetchGroups, fetchCategories } from '../service
 import { useAuth } from '../context/AuthContext';
 import SidebarLeft from '../components/SidebarLeft';
 import SidebarRight from '../components/SidebarRight';
+import { 
+    Sofa, Bed, Monitor, Smile, Utensils, Bath, ChefHat, DoorClosed,
+    Sun, SunDim, Lightbulb, Paintbrush, Circle, Trees, Layers, Sparkles,
+    Heart, Coffee, CloudMoon, Wind, Palette, Shield, Compass, Rocket
+} from 'lucide-react';
 import '../styles/App.css';
 import '../styles/CatalogLayout.css';
+
+const optionMetadata = {
+    // Rooms
+    'Living Room': { icon: Sofa, color: '#b45309', bgColor: '#fef3c7' },
+    'Bedroom': { icon: Bed, color: '#4f46e5', bgColor: '#e0e7ff' },
+    'Office': { icon: Monitor, color: '#0369a1', bgColor: '#e0f2fe' },
+    'Kids Room/Nursery': { icon: Smile, color: '#db2777', bgColor: '#fce7f3' },
+    'Dining Room': { icon: Utensils, color: '#047857', bgColor: '#d1fae5' },
+    'Bathroom': { icon: Bath, color: '#0d9488', bgColor: '#ccfbf1' },
+    'Kitchen': { icon: ChefHat, color: '#ea580c', bgColor: '#ffedd5' },
+    'Entryway/Hallway': { icon: DoorClosed, color: '#7c2d12', bgColor: '#ffedd5' },
+
+    // Lighting
+    'Flooded with light (Tons of natural light)': { icon: Sun, color: '#eab308', bgColor: '#fef9c3' },
+    'Moderate/Some natural light': { icon: SunDim, color: '#f97316', bgColor: '#ffedd5' },
+    'Barely any natural light (mostly artificial)': { icon: Lightbulb, color: '#64748b', bgColor: '#f1f5f9' },
+
+    // Furniture
+    'White/Light Neutrals': { icon: Paintbrush, color: '#0f172a', bgColor: '#f1f5f9' },
+    'Black/Dark Neutrals': { icon: Circle, color: '#000000', bgColor: '#e2e8f0' },
+    'Warm Wood Tones': { icon: Trees, color: '#854d0e', bgColor: '#fef9c3' },
+    'Cool/Grey Wood Tones': { icon: Layers, color: '#475569', bgColor: '#f1f5f9' },
+    'Starting Fresh/Blank Canvas': { icon: Sparkles, color: '#7c3aed', bgColor: '#f3e8ff' },
+
+    // Vibes
+    'Calm & Peaceful (Serene)': { icon: Heart, color: '#059669', bgColor: '#d1fae5' },
+    'Cozy & Warm (Comforting)': { icon: Coffee, color: '#d97706', bgColor: '#fef3c7' },
+    'Moody & Dramatic (Atmospheric)': { icon: CloudMoon, color: '#1e1b4b', bgColor: '#e0e7ff' },
+    'Airy & Fresh (Bright)': { icon: Wind, color: '#06b6d4', bgColor: '#ecfeff' },
+    'Bold & Creative (Vibrant)': { icon: Palette, color: '#db2777', bgColor: '#fce7f3' },
+
+    // Adventure
+    'Very safe (soft neutrals & subtle textures)': { icon: Shield, color: '#16a34a', bgColor: '#d1fae5' },
+    'Moderately adventurous (elegant muted color tones)': { icon: Compass, color: '#2563eb', bgColor: '#dbeafe' },
+    'Bold & Creative (vibrant hues & rich deep patterns)': { icon: Rocket, color: '#dc2626', bgColor: '#fee2e2' }
+};
 
 const AiRecommendations = () => {
     const { user } = useAuth();
@@ -92,7 +133,7 @@ const AiRecommendations = () => {
             setResults(data);
         } catch (err) {
             console.error(err);
-            setError("Stenna AI encountered a wrinkle. Please try again.");
+            setError(err.message || "Stenna AI encountered a wrinkle. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -104,6 +145,36 @@ const AiRecommendations = () => {
         setResults(null);
         setError(null);
     };
+
+    if (!user) {
+        return (
+            <div className="catalog-page fade-in-up">
+                <div className="desktop-layout-container" style={{ paddingTop: '0' }}>
+                    <SidebarLeft
+                        breadcrumb={[{ label: 'HOME', path: '/' }, { label: 'AI DESIGNER' }]}
+                        {...sidebarProps}
+                    />
+                    <div className="col-main-content">
+                        <div className="recommendations-page" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
+                            <header className="page-header" style={{ marginBottom: '2rem' }}>
+                                <h2 style={{ fontSize: '2.5rem', fontFamily: "'Playfair Display', serif" }}>The AI Designer</h2>
+                                <p style={{ letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: '0.7rem' }}>Login to get personalized AI wallpaper recommendations.</p>
+                            </header>
+                            <div style={{ marginTop: '4rem' }}>
+                                <Link to="/login" className="btn-zara-solid" style={{ textDecoration: 'none', padding: '1.25rem 3rem' }}>Login to Start Quiz</Link>
+                            </div>
+                        </div>
+                    </div>
+                    <SidebarRight 
+                        user={user} 
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        showSearch={true} 
+                    />
+                </div>
+            </div>
+        );
+    }
 
     if (loading) {
         return (
@@ -223,18 +294,85 @@ const AiRecommendations = () => {
 
                             <div className="question-block" style={{ animation: 'fadeInUp 0.6s ease' }}>
                                 <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '2.5rem', marginBottom: '3rem', textAlign: 'left', lineHeight: '1.2' }}>{currentQuestion.question}</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    {currentQuestion.options.map((option) => (
-                                        <button key={option} className="zara-option-btn" onClick={() => handleOptionSelect(option)} style={{ padding: '2rem 1.5rem', background: '#fff', border: '1px solid #eee', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.15em', textAlign: 'left', cursor: 'pointer', transition: 'all 0.3s ease', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            {option}<span style={{ opacity: 0.3 }}>→</span>
-                                        </button>
-                                    ))}
+                                <div className="zara-options-grid">
+                                    {currentQuestion.options.map((option) => {
+                                        const meta = optionMetadata[option];
+                                        const IconComponent = meta ? meta.icon : Sparkles;
+                                        const iconColor = meta ? meta.color : '#000000';
+                                        const iconBg = meta ? meta.bgColor : '#f3f4f6';
+
+                                        return (
+                                            <button key={option} className="zara-option-btn" onClick={() => handleOptionSelect(option)}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1 }}>
+                                                    <div className="option-icon-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '42px', height: '42px', borderRadius: '10px', backgroundColor: iconBg, flexShrink: 0 }}>
+                                                        <IconComponent size={20} color={iconColor} />
+                                                    </div>
+                                                    <span className="option-text" style={{ fontSize: '0.8rem', fontWeight: '600', letterSpacing: '0.1em', color: '#1e293b' }}>
+                                                        {option}
+                                                    </span>
+                                                </div>
+                                                <span className="option-arrow">→</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                                 {step > 0 && <button onClick={() => setStep(step - 1)} style={{ background: 'none', border: 'none', color: '#888', marginTop: '3rem', cursor: 'pointer', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.2em', padding: '0' }}>← Previous</button>}
                             </div>
                         </div>
 
-                        <style>{`.zara-option-btn:hover { border-color: #000 !important; padding-left: 2.5rem !important; } @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+                        <style>{`
+                            .zara-options-grid {
+                                display: grid;
+                                grid-template-columns: repeat(2, 1fr);
+                                gap: 1.25rem;
+                                width: 100%;
+                            }
+                            @media (max-width: 768px) {
+                                .zara-options-grid {
+                                    grid-template-columns: 1fr;
+                                    gap: 1rem;
+                                }
+                            }
+                            .zara-option-btn {
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                width: 100%;
+                                padding: 1.25rem 1.5rem;
+                                background: #ffffff;
+                                border: 1px solid #e2e8f0;
+                                border-radius: 12px;
+                                text-align: left;
+                                cursor: pointer;
+                                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+                            }
+                            .zara-option-btn:hover {
+                                border-color: #0f172a !important;
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                                transform: translateY(-2px);
+                            }
+                            .zara-option-btn:hover .option-arrow {
+                                transform: translateX(4px);
+                                color: #0f172a;
+                            }
+                            .option-arrow {
+                                font-size: 1.25rem;
+                                color: #94a3b8;
+                                transition: all 0.25s ease;
+                                margin-left: 0.5rem;
+                            }
+                            @keyframes fadeInUp {
+                                from {
+                                    opacity: 0;
+                                    transform: translateY(20px);
+                                }
+                                to {
+                                    opacity: 1;
+                                    transform: translateY(0);
+                                }
+                            }
+                        `}</style>
                         {error && <p style={{ color: '#ef4444', textAlign: 'center', marginTop: '3rem' }}>{error}</p>}
                     </div>
                 </div>

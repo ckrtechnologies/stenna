@@ -2,8 +2,11 @@ import fetch from 'node-fetch';
 
 class KieAiService {
     constructor() {
-        this.apiKey = process.env.KIE_API_KEY;
         this.baseUrl = "https://api.kie.ai/api/v1/jobs";
+    }
+
+    get apiKey() {
+        return process.env.KIE_API_KEY;
     }
 
     /**

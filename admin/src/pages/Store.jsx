@@ -11,7 +11,8 @@ const Store = () => {
         address: '123 Wall Decor St, Creative City',
         website: 'https://stenna.com',
         currency: 'INR',
-        tax_rate: 18
+        tax_rate: 18,
+        daily_ai_credit_limit: 100
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -101,6 +102,23 @@ const Store = () => {
                             <div className="input-group">
                                 <label>Tax Rate (%)</label>
                                 <input type="number" name="tax_rate" value={storeInfo.tax_rate} onChange={handleChange} />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="settings-section">
+                        <h3>AI Configurations</h3>
+                        <div className="form-grid">
+                            <div className="input-group">
+                                <label>Daily AI Credit Limit (per customer)</label>
+                                <input 
+                                    type="number" 
+                                    name="daily_ai_credit_limit" 
+                                    value={storeInfo.daily_ai_credit_limit || 100} 
+                                    onChange={handleChange} 
+                                    min="1"
+                                    required 
+                                />
                             </div>
                         </div>
                     </section>

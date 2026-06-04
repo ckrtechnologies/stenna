@@ -14,6 +14,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import About from '../pages/About';
 import Contact from '../pages/Contact';
 import FAQ from '../pages/FAQ';
+import InstallationGuide from '../pages/InstallationGuide';
 
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import RefundPolicy from '../pages/RefundPolicy';
@@ -30,6 +31,7 @@ const AppRoutes = () => {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/faqs" element={<FAQ />} />
+            <Route path="/installation-guide" element={<InstallationGuide />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/return-policy" element={<ReturnPolicy />} />

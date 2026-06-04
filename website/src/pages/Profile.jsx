@@ -1,9 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { fetchUserCredits } from '../services/api';
 import '../styles/App.css';
 
 const Profile = () => {
     const { user } = useAuth();
+    const [credits, setCredits] = useState(null);
+    const [creditsLoading, setCreditsLoading] = useState(true);
+    const [creditsError, setCreditsError] = useState(null);
+
+    useEffect(() => {
+        const getCredits = async () => {
+            try {
+                const data = await fetchUserCredits();
+                setCredits(data);
+            } catch (err) {
+                console.error("Failed to load credits:", err);
+                setCreditsError("Could not retrieve daily credit limits.");
+            } finally {
+                setCreditsLoading(false);
+            }
+        };
+        if (user) {
+            getCredits();
+        }
+    }, [user]);
 
     if (!user) return null;
 
@@ -63,6 +84,40 @@ const Profile = () => {
                         <button className="filter-btn" style={{ marginTop: '0.5rem', width: 'fit-content' }}>Security Settings</button>
                     </div>
                 </div>
+            </div>
+
+            {/* Daily AI Service Credits */}
+            <div className="card" style={{ marginTop: '2rem', padding: '2rem' }}>
+                <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>Daily AI Service Credits</h3>
+                {creditsLoading ? (
+                    <div style={{ padding: '1rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Loading credit usage...</div>
+                ) : creditsError ? (
+                    <div style={{ padding: '1rem 0', fontSize: '0.85rem', color: '#ef4444' }}>{creditsError}</div>
+                ) : credits ? (
+                    <div style={{ marginTop: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
+                            <div>
+                                <span style={{ fontSize: '1.5rem', fontWeight: '700' }}>{credits.remaining}</span>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginLeft: '0.25rem' }}>/ {credits.limit} remaining today</span>
+                            </div>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                {credits.hits} generations used
+                            </span>
+                        </div>
+                        {/* Progress Bar */}
+                        <div style={{ width: '100%', height: '8px', background: '#f3f4f6', borderRadius: '4px', overflow: 'hidden', marginBottom: '1rem' }}>
+                            <div style={{ 
+                                width: `${(credits.remaining / credits.limit) * 100}%`, 
+                                height: '100%', 
+                                background: credits.remaining > 20 ? 'var(--primary-color, #000)' : '#f59e0b', 
+                                transition: 'width 0.5s ease-out' 
+                            }}></div>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                            Credits reset daily. Free daily credits are provided for AI Room Visualizations and AI recommendations.
+                        </p>
+                    </div>
+                ) : null}
             </div>
 
             <div className="card" style={{ marginTop: '2rem', padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fefce8', borderColor: '#fef08a' }}>

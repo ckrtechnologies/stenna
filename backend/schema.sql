@@ -113,7 +113,14 @@ CREATE TABLE IF NOT EXISTS public.store_settings (
   logo_url TEXT,
   email TEXT,
   phone TEXT,
+  whatsapp TEXT,
   address TEXT,
+  working_hours TEXT,
+  map_link TEXT,
+  website TEXT,
+  currency TEXT DEFAULT 'INR',
+  tax_rate INTEGER DEFAULT 18,
+  daily_ai_credit_limit INTEGER DEFAULT 100,
   facebook_url TEXT,
   instagram_url TEXT,
   twitter_url TEXT,
@@ -191,3 +198,20 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_wallpapers_updated_at BEFORE UPDATE ON public.wallpapers FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_store_settings_updated_at BEFORE UPDATE ON public.store_settings FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- 18. User API Usage (Daily limit tracker)
+CREATE TABLE IF NOT EXISTS public.user_api_usage (
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  usage_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  hits_count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, usage_date)
+);
+
+-- 19. API Usage Logs (Detailed auditing)
+CREATE TABLE IF NOT EXISTS public.api_usage_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+

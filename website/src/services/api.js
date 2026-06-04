@@ -109,14 +109,37 @@ export const fetchVisualizationHistory = async () => {
 };
 
 export const fetchAiRecommendations = async (answers) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
     const response = await fetch(`${API_BASE_URL}/ai/recommendations`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ answers })
     });
-    if (!response.ok) throw new Error('Failed to fetch AI recommendations');
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Failed to fetch AI recommendations');
+    }
+    return response.json();
+};
+
+export const fetchUserCredits = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    const response = await fetch(`${API_BASE_URL}/users/profile/credits`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Failed to fetch user credits');
+    }
     return response.json();
 };
 
@@ -125,3 +148,4 @@ export const fetchRecommendations = async (wallpaperId) => {
     if (!response.ok) throw new Error('Failed to fetch recommendations');
     return response.json();
 };
+

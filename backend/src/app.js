@@ -41,6 +41,9 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
+import path from 'path';
+app.use('/public', express.static(path.resolve('public')));
+
 // Routes
 app.get('/', (req, res) => {
     console.log("Ping: Root endpoint hit");
