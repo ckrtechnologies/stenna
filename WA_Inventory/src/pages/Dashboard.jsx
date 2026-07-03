@@ -13,6 +13,7 @@ const Dashboard = () => {
     const [file, setFile] = useState(null);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [uploadReport, setUploadReport] = useState(null);
+    const [isExporting, setIsExporting] = useState(false);
     
     // Search & Pagination
     const [searchTerm, setSearchTerm] = useState('');
@@ -97,23 +98,52 @@ const Dashboard = () => {
         }
     };
 
-    const downloadCSV = () => {
-        if (inventory.length === 0) return;
-        const data = inventory.map(item => ({
-            'Design Code': item.design_code,
-            'Quantity': item.quantity,
-            'Last Updated': new Date(item.updated_at).toLocaleString()
-        }));
-        const csv = Papa.unparse(data);
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'wa_inventory_export.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const downloadCSV = async () => {
+        setIsExporting(true);
+        try {
+            let allData = [];
+            let currentPage = 1;
+            const limitPerPage = 1000; // Fetch in chunks to bypass Supabase 1000 row limits
+            let hasMore = true;
+
+            while (hasMore) {
+                const res = await api.get(`/wa-inventory?page=${currentPage}&limit=${limitPerPage}&search=${encodeURIComponent(searchTerm)}`);
+                const chunk = res.data.data || [];
+                allData = [...allData, ...chunk];
+                
+                if (chunk.length < limitPerPage) {
+                    hasMore = false;
+                } else {
+                    currentPage++;
+                }
+            }
+            
+            if (allData.length === 0) {
+                alert("No data available to export.");
+                return;
+            }
+
+            const data = allData.map(item => ({
+                'Design Code': item.design_code,
+                'Quantity': item.quantity,
+                'Last Updated': new Date(item.updated_at).toLocaleString()
+            }));
+            const csv = Papa.unparse(data);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'wa_inventory_export.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (err) {
+            console.error("Failed to export CSV", err);
+            alert("Failed to export data.");
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const downloadTemplate = () => {
@@ -249,8 +279,9 @@ const Dashboard = () => {
                                     style={{ padding: '0.5rem 1rem 0.5rem 2.25rem', border: '1px solid var(--border-color)', borderRadius: '0.5rem', background: 'var(--bg-hover)', color: 'var(--text-primary)' }}
                                 />
                             </div>
-                            <Button onClick={downloadCSV} variant="secondary" disabled={inventory.length === 0}>
-                                <Download size={16} /> Export (CSV)
+                            <Button onClick={downloadCSV} variant="secondary" disabled={inventory.length === 0 || isExporting}>
+                                {isExporting ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
+                                {isExporting ? 'Exporting...' : 'Export (CSV)'}
                             </Button>
                             <Button onClick={() => { setSearchTerm(''); fetchInventory(); }} variant="secondary">
                                 <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -376,6 +407,7 @@ const Dashboard = () => {
                                 <option value="25">25</option>
                                 <option value="50">50</option>
                                 <option value="100">100</option>
+                                <option value="500">500</option>
                             </select>
                         </div>
                         

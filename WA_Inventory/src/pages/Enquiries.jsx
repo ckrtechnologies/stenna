@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 const Enquiries = () => {
     const [enquiries, setEnquiries] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isExporting, setIsExporting] = useState(false);
     
     // Filters & Pagination
     const [searchTerm, setSearchTerm] = useState('');
@@ -66,28 +67,61 @@ const Enquiries = () => {
         }
     };
 
-    const downloadCSV = () => {
-        if (enquiries.length === 0) return;
-        const data = enquiries.map((item, index) => ({
-            'S.No': index + 1,
-            'Name': item.name || 'N/A',
-            'Phone Number': item.phone_number,
-            'Design Code': item.design_code,
-            'Quantity': item.quantity,
-            'Status': item.status,
-            'Date Ordered': new Date(item.created_at).toLocaleDateString(),
-            'Time Ordered': new Date(item.created_at).toLocaleTimeString()
-        }));
-        const csv = Papa.unparse(data);
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'wa_enquiries_export.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const downloadCSV = async () => {
+        setIsExporting(true);
+        try {
+            let allData = [];
+            let currentPage = 1;
+            const limitPerPage = 1000;
+            let hasMore = true;
+
+            while (hasMore) {
+                let apiUrl = `/wa-enquiries?page=${currentPage}&limit=${limitPerPage}&search=${encodeURIComponent(searchTerm)}`;
+                if (startDate) apiUrl += `&startDate=${startDate}T00:00:00Z`;
+                if (endDate) apiUrl += `&endDate=${endDate}T23:59:59Z`;
+                
+                const res = await api.get(apiUrl);
+                const chunk = res.data.data?.data || [];
+                allData = [...allData, ...chunk];
+                
+                if (chunk.length < limitPerPage) {
+                    hasMore = false;
+                } else {
+                    currentPage++;
+                }
+            }
+            
+            if (allData.length === 0) {
+                alert("No data available to export.");
+                return;
+            }
+
+            const data = allData.map((item, index) => ({
+                'S.No': index + 1,
+                'Name': item.name || 'N/A',
+                'Phone Number': item.phone_number,
+                'Design Code': item.design_code,
+                'Quantity': item.quantity,
+                'Status': item.status,
+                'Date Ordered': new Date(item.created_at).toLocaleDateString(),
+                'Time Ordered': new Date(item.created_at).toLocaleTimeString()
+            }));
+            const csv = Papa.unparse(data);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'wa_enquiries_export.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (err) {
+            console.error("Failed to export CSV", err);
+            alert("Failed to export data.");
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const getStatusColor = (status) => {
@@ -141,8 +175,9 @@ const Enquiries = () => {
                                     style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', padding: '0.25rem' }}
                                 />
                             </div>
-                            <Button onClick={downloadCSV} variant="secondary" disabled={enquiries.length === 0}>
-                                <Download size={16} /> Export (CSV)
+                            <Button onClick={downloadCSV} variant="secondary" disabled={enquiries.length === 0 || isExporting}>
+                                {isExporting ? <AlertCircle size={16} className="animate-spin" /> : <Download size={16} />}
+                                {isExporting ? 'Exporting...' : 'Export (CSV)'}
                             </Button>
                         </div>
                     </div>
@@ -231,6 +266,7 @@ const Enquiries = () => {
                                 <option value="25">25</option>
                                 <option value="50">50</option>
                                 <option value="100">100</option>
+                                <option value="500">500</option>
                             </select>
                         </div>
                         
