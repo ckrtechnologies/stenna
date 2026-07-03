@@ -1,0 +1,97 @@
+:root {
+    /* Base Colors (Shared) */
+    --primary: #3b82f6;
+    --primary-light: #60a5fa;
+    --primary-dark: #2563eb;
+    --primary-hover: #2563eb;
+    --accent: #8b5cf6;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+
+    --bg-dark: #f1f5f9;
+    --bg-sidebar: #ffffff; /* Clean white sidebar for light mode */
+    --bg-card: #ffffff;
+    --bg-gradient-start: #f1f5f9;
+    --bg-input: #f8fafc;
+    --bg-header-bar: #f1f5f9;
+    --bg-hover: #f1f5f9;
+
+    --border-color: #e2e8f0;
+    --border-highlight: #f1f5f9;
+
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-dim: #64748b;
+    --text-input: #0f172a;
+
+    /* Glassmorphism Light */
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(0, 0, 0, 0.05);
+    --glass-blur: blur(12px);
+
+    /* Spacing & Layout */
+    --sidebar-width: 260px;
+    --header-height: 72px;
+    --radius-lg: 1rem;
+    --radius-md: 0.75rem;
+    --radius-sm: 0.5rem;
+
+    /* Shadows Light */
+    --shadow-premium: 0 4px 20px -5px rgba(0, 0, 0, 0.1);
+    --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.2);
+
+    /* Icon Colors Light */
+    --icon-dashboard: #3b82f6;
+    --icon-groups: #8b5cf6;
+    --icon-categories: #f59e0b;
+    --icon-wallpapers: #10b981;
+    --icon-leads: #0ea5e9;
+    --icon-dealers: #8b5cf6;
+    --icon-books: #6366f1;
+    --icon-enhancer: #ec4899;
+    --icon-users: #14b8a6;
+    --icon-settings: #64748b;
+    --stat-icon-color: inherit;
+    /* Will be overridden by card color */
+
+    /* Transitions */
+    --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='dark'] {
+    --bg-dark: #0f172a;
+    --bg-sidebar: #1e293b; /* Deep slate sidebar for dark mode */
+    --bg-card: #1e293b;
+    --bg-gradient-start: #0f172a;
+    --bg-input: #0f172a;
+    --bg-header-bar: #1e293b;
+    --bg-hover: rgba(255, 255, 255, 0.05);
+
+    --border-color: rgba(51, 65, 85, 0.5);
+    --border-highlight: rgba(148, 163, 184, 0.1);
+
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --text-input: #ffffff;
+
+    /* Glassmorphism Dark */
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
+    /* Icon Colors Dark */
+    --icon-dashboard: #ffffff;
+    --icon-groups: #ffffff;
+    --icon-categories: #ffffff;
+    --icon-wallpapers: #ffffff;
+    --icon-leads: #ffffff;
+    --icon-users: #ffffff;
+    --icon-settings: #ffffff;
+    --stat-icon-color: #ffffff;
+
+    /* Shadows Dark */
+    --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.3);
+}

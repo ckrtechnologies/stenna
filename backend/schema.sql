@@ -215,3 +215,23 @@ CREATE TABLE IF NOT EXISTS public.api_usage_logs (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 20. WA_Inventory
+CREATE TABLE IF NOT EXISTS public.WA_Inventory (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  design_code TEXT UNIQUE NOT NULL,
+  quantity INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enquiry Management System (Phase 2)
+CREATE TABLE public.wa_enquiries (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NULL,
+  phone_number TEXT NOT NULL,
+  design_code TEXT NOT NULL,
+  quantity INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Pending',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
