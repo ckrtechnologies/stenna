@@ -10,7 +10,7 @@ export const getAllWallpapers = async (req, res) => {
     try {
         const { group_id, category_id, book_id, search, activeOnly, tag } = req.query;
 
-        // Base query - remove !inner to allow wallpapers without categories/groups to appear
+        // Base query
         let query = supabase.from('wallpapers').select(`
             *,
             images:wallpaper_images(*),
@@ -24,96 +24,74 @@ export const getAllWallpapers = async (req, res) => {
             query = query.eq('is_active', true);
         }
 
-        if (search) {
-            // Find book IDs that match searching term
-            const { data: matchedBooks } = await supabase
-                .from('books')
-                .select('id')
-                .or(`code.ilike.%${search}%,name.ilike.%${search}%`);
+        let filterIds = null;
 
-            const matchedBookIds = matchedBooks?.map(b => b.id) || [];
+        if (search || category_id || group_id || book_id) {
+            let allMatchIds = [];
+            let isFirstFilter = true;
 
-            // Find wallpaper IDs that belong to those books
-            let relatedWallpaperIds = [];
-            if (matchedBookIds.length > 0) {
-                const { data: matchedRels } = await supabase
-                    .from('book_wallpapers')
-                    .select('wallpaper_id')
-                    .in('book_id', matchedBookIds);
-                relatedWallpaperIds = matchedRels?.map(r => r.wallpaper_id) || [];
+            const intersectIds = (newIds) => {
+                if (isFirstFilter) {
+                    allMatchIds = newIds;
+                    isFirstFilter = false;
+                } else {
+                    allMatchIds = allMatchIds.filter(id => newIds.includes(id));
+                }
+            };
+
+            // 1. Search filter
+            if (search) {
+                const { data: matchedBooks } = await supabase.from('books').select('id').or(`code.ilike.%${search}%,name.ilike.%${search}%`);
+                const matchedBookIds = matchedBooks?.map(b => b.id) || [];
+
+                let relatedWallpaperIds = [];
+                if (matchedBookIds.length > 0) {
+                    const { data: matchedRels } = await supabase.from('book_wallpapers').select('wallpaper_id').in('book_id', matchedBookIds);
+                    relatedWallpaperIds = matchedRels?.map(r => r.wallpaper_id) || [];
+                }
+
+                const { data: matchedDirect } = await supabase.from('wallpapers').select('id').or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
+                const directIds = matchedDirect?.map(w => w.id) || [];
+
+                intersectIds([...new Set([...relatedWallpaperIds, ...directIds])]);
             }
 
-            // Also find wallpapers matching the search term directly
-            const { data: matchedDirect } = await supabase
-                .from('wallpapers')
-                .select('id')
-                .or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
-
-            const directIds = matchedDirect?.map(w => w.id) || [];
-
-            // Combine all IDs
-            const allMatchIds = [...new Set([...relatedWallpaperIds, ...directIds])];
-
-            if (allMatchIds.length > 0) {
-                query = query.in('id', allMatchIds);
-            } else {
-                // No matches at all
-                return res.status(200).json([]);
+            // 2. Category filter
+            if (category_id) {
+                const { data: catRels } = await supabase.from('wallpaper_categories').select('wallpaper_id').in('category_id', category_id.split(','));
+                intersectIds(catRels?.map(r => r.wallpaper_id) || []);
             }
+
+            // 3. Group filter
+            if (group_id) {
+                const { data: groupRels } = await supabase.from('wallpaper_groups').select('wallpaper_id').in('group_id', group_id.split(','));
+                
+                // Fallback: Find wallpapers linked to categories that belong to this group
+                const { data: catsInGroup } = await supabase.from('categories').select('id').in('group_id', group_id.split(','));
+                let catFallbackIds = [];
+                if (catsInGroup && catsInGroup.length > 0) {
+                     const { data: catFallbackRels } = await supabase.from('wallpaper_categories').select('wallpaper_id').in('category_id', catsInGroup.map(c => c.id));
+                     catFallbackIds = catFallbackRels?.map(r => r.wallpaper_id) || [];
+                }
+                
+                intersectIds([...new Set([...(groupRels?.map(r => r.wallpaper_id) || []), ...catFallbackIds])]);
+            }
+
+            // 4. Book filter
+            if (book_id) {
+                const { data: bookRels } = await supabase.from('book_wallpapers').select('wallpaper_id').in('book_id', book_id.split(','));
+                intersectIds(bookRels?.map(r => r.wallpaper_id) || []);
+            }
+
+            filterIds = allMatchIds;
         }
 
-        // Apply filters - if filtering by ID, we might need a separate query or different structure
-        // because standard Supabase JS client filtering on nested relations can be tricky without !inner.
-        // However, for the general case, we want wallpapers even if they have no category.
-        if (category_id) {
-            const ids = category_id.split(',');
-            // If we filter, we re-apply the query with !inner just for that specific call
-            // OR we fetch all and filter in JS (simpler for small-medium datasets)
-            // Let's use the .filter approach or re-init the query
-            query = supabase.from('wallpapers').select(`
-                *,
-                images:wallpaper_images(*),
-                videos:wallpaper_videos(*),
-                categories:wallpaper_categories!inner(category:categories(*)),
-                groups:wallpaper_groups(group:category_groups(*)),
-                books:book_wallpapers(book:books(*))
-            `).in('wallpaper_categories.category_id', ids);
-
-            if (activeOnly === 'true') query = query.eq('is_active', true);
-            if (search) query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
-        }
-
-        if (group_id) {
-            const ids = group_id.split(',');
-            // If category_id was already present, we need to handle both
-            const currentSelect = category_id ?
-                '*, images:wallpaper_images(*), videos:wallpaper_videos(*), categories:wallpaper_categories!inner(category:categories(*)), groups:wallpaper_groups!inner(group:category_groups(*)), books:book_wallpapers(book:books(*))' :
-                '*, images:wallpaper_images(*), videos:wallpaper_videos(*), categories:wallpaper_categories(category:categories(*)), groups:wallpaper_groups!inner(group:category_groups(*)), books:book_wallpapers(book:books(*))';
-
-            query = supabase.from('wallpapers').select(currentSelect).in('wallpaper_groups.group_id', ids);
-
-            if (activeOnly === 'true') query = query.eq('is_active', true);
-            if (category_id) query = query.in('wallpaper_categories.category_id', category_id.split(','));
-            if (search) query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
-        }
-
-        if (book_id) {
-            const ids = book_id.split(',');
-            // Combine with existing filters if needed (similar to group_id logic above)
-            const currentSelect = `
-                *,
-                images:wallpaper_images(*),
-                videos:wallpaper_videos(*),
-                categories:wallpaper_categories${category_id ? '!inner' : ''}(category:categories(*)),
-                groups:wallpaper_groups${group_id ? '!inner' : ''}(group:category_groups(*)),
-                books:book_wallpapers!inner(book:books(*))
-            `;
-            query = supabase.from('wallpapers').select(currentSelect).in('book_wallpapers.book_id', ids);
-
-            if (activeOnly === 'true') query = query.eq('is_active', true);
-            if (category_id) query = query.in('wallpaper_categories.category_id', category_id.split(','));
-            if (group_id) query = query.in('wallpaper_groups.group_id', group_id.split(','));
-            if (search) query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,design_code.ilike.%${search}%`);
+        // Apply intersected IDs to main query
+        if (filterIds !== null) {
+            if (filterIds.length === 0) {
+                return res.status(200).json([]); // No matches
+            }
+            query = query.in('id', filterIds);
         }
 
         const { data, error } = await query;
@@ -490,10 +468,10 @@ export const bulkCreateWallpapers = async (req, res) => {
                 // 3. Resolve Category IDs
                 const category_ids = (category_names || []).map(name => categoryMap[name.toLowerCase().trim()]).filter(Boolean);
 
-                // 4. Create wallpaper
+                // 4. Create or update wallpaper
                 const { data: wallpaper, error: wError } = await supabase
                     .from('wallpapers')
-                    .insert(wallpaperData)
+                    .upsert(wallpaperData, { onConflict: 'design_code' })
                     .select()
                     .single();
 
@@ -501,6 +479,7 @@ export const bulkCreateWallpapers = async (req, res) => {
 
                 // 5. Handle Images
                 if (images && images.length > 0) {
+                    await supabase.from('wallpaper_images').delete().eq('wallpaper_id', wallpaper.id);
                     const imageInserts = images.map((url, index) => ({
                         wallpaper_id: wallpaper.id,
                         image_url: url,
@@ -511,6 +490,7 @@ export const bulkCreateWallpapers = async (req, res) => {
 
                 // 6. Handle Videos
                 if (videos && videos.length > 0) {
+                    await supabase.from('wallpaper_videos').delete().eq('wallpaper_id', wallpaper.id);
                     const videoInserts = videos.map((url, index) => ({
                         wallpaper_id: wallpaper.id,
                         video_url: url,
@@ -521,6 +501,7 @@ export const bulkCreateWallpapers = async (req, res) => {
 
                 // 7. Handle Categories
                 if (category_ids.length > 0) {
+                    await supabase.from('wallpaper_categories').delete().eq('wallpaper_id', wallpaper.id);
                     const catInserts = category_ids.map(id => ({
                         wallpaper_id: wallpaper.id,
                         category_id: id
@@ -530,6 +511,7 @@ export const bulkCreateWallpapers = async (req, res) => {
 
                 // 8. Handle Groups
                 if (group_ids.length > 0) {
+                    await supabase.from('wallpaper_groups').delete().eq('wallpaper_id', wallpaper.id);
                     const grpInserts = group_ids.map(id => ({
                         wallpaper_id: wallpaper.id,
                         group_id: id
