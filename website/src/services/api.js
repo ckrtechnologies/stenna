@@ -24,21 +24,19 @@ export const fetchCategories = async (groupId) => {
 };
 
 export const fetchWallpapers = async ({ groupIds, categoryIds, bookIds, search, tag }) => {
-    const params = new URLSearchParams();
-    if (groupIds && groupIds.length > 0) {
-        params.append('group_id', groupIds.join(','));
-    }
-    if (categoryIds && categoryIds.length > 0) {
-        params.append('category_id', categoryIds.join(','));
-    }
-    if (bookIds && bookIds.length > 0) {
-        params.append('book_id', bookIds.join(','));
-    }
-    if (search) params.append('search', search);
-    if (tag) params.append('tag', tag);
-    params.append('activeOnly', 'true');
+    const bodyPayload = {};
+    if (groupIds && groupIds.length > 0) bodyPayload.group_id = groupIds.join(',');
+    if (categoryIds && categoryIds.length > 0) bodyPayload.category_id = categoryIds.join(',');
+    if (bookIds && bookIds.length > 0) bodyPayload.book_id = bookIds.join(',');
+    if (search) bodyPayload.search = search;
+    if (tag) bodyPayload.tag = tag;
+    bodyPayload.activeOnly = 'true';
 
-    const response = await fetch(`${API_BASE_URL}/wallpapers?${params.toString()}`);
+    const response = await fetch(`${API_BASE_URL}/wallpapers/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyPayload)
+    });
     if (!response.ok) throw new Error('Failed to fetch wallpapers');
     return response.json();
 };

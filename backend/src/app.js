@@ -67,6 +67,11 @@ apiV1.use('/users', userRoutes);
 apiV1.use('/categories', categoryRoutes);
 apiV1.use('/groups', groupRoutes);
 apiV1.use('/wallpapers', wallpaperRoutes);
+apiV1.post('/search', (req, res, next) => {
+    // Fallback if frontend sends to /api/v1/search instead of /api/v1/wallpapers/search
+    req.url = '/search';
+    wallpaperRoutes(req, res, next);
+});
 apiV1.use('/wishlist', wishlistRoutes);
 apiV1.use('/leads', leadRoutes);
 apiV1.use('/visualizer', visualizerRoutes);

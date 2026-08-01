@@ -16,6 +16,7 @@ import upload from '../middlewares/uploadMiddleware.js';
 const router = express.Router();
 
 router.get('/', getAllWallpapers);
+router.post('/search', getAllWallpapers);
 router.get('/slug/:slug', getWallpaperBySlug);
 router.get('/:id/recommendations', getRecommendations);
 router.post('/', verifyToken, isAdmin, createWallpaper);
