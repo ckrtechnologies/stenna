@@ -32,6 +32,41 @@ const formatTimestamp = () => {
     return `${d}-${m}-${y}_${hh}-${mm}-${ss}`;
 };
 
+const ensurePublicAiUrl = async (imageUrl, defaultFileName = 'image.jpg') => {
+    if (!imageUrl) return imageUrl;
+
+    const isLocal = imageUrl.includes('localhost') || 
+                    imageUrl.includes('127.0.0.1') || 
+                    imageUrl.startsWith('/') ||
+                    !imageUrl.startsWith('http');
+
+    if (isLocal) {
+        try {
+            const WEB_ROOT = getWebRoot();
+            let relativePath = imageUrl;
+            try {
+                const parsed = new URL(imageUrl, 'http://localhost');
+                relativePath = parsed.pathname;
+            } catch (e) {}
+
+            // Strip /public prefix if present because WEB_ROOT already points to public
+            const cleanedPath = relativePath.replace(/^\/public\//, '');
+            const localFilePath = path.resolve(WEB_ROOT, cleanedPath);
+
+            if (fs.existsSync(localFilePath)) {
+                const buffer = fs.readFileSync(localFilePath);
+                const fileName = path.basename(localFilePath);
+                console.log(`Stenna AI: Uploading local image (${fileName}) to KIE.AI cloud storage...`);
+                return await kieAiService.uploadFile(buffer, fileName);
+            }
+        } catch (err) {
+            console.warn("Stenna AI: Failed to upload local image to KIE.AI:", err.message);
+        }
+    }
+
+    return imageUrl;
+};
+
 export const uploadRoom = async (req, res) => {
     try {
         if (!req.file) {
@@ -156,9 +191,17 @@ export const generateVisualization = async (req, res) => {
             roomUrl = `${VISUALIZER_BASE_URL}/uploads/${roomFilename}`;
         }
 
-        // 3. AI Transformation Flow
-        console.log("Stenna AI: Starting generation for design...", { roomUrl, wpUrl });
-        const taskResponse = await kieAiService.generateEdit(roomUrl, wpUrl);
+        // 3. Ensure both images have publicly accessible URLs for KIE.AI cloud servers
+        const publicRoomUrl = await ensurePublicAiUrl(roomUrl);
+        const publicWpUrl = await ensurePublicAiUrl(wpUrl);
+
+        // 4. AI Transformation Flow
+        console.log("Stenna AI: Starting generation for design...", { 
+            roomUrl: publicRoomUrl, 
+            wpUrl: publicWpUrl,
+            originalRoomUrl: roomUrl 
+        });
+        const taskResponse = await kieAiService.generateEdit(publicRoomUrl, publicWpUrl);
         console.log("Stenna AI: KIE.AI Response:", JSON.stringify(taskResponse));
         const taskId = taskResponse.data?.taskId || taskResponse.taskId;
 
@@ -169,7 +212,7 @@ export const generateVisualization = async (req, res) => {
 
         if (!tempGeneratedUrl) throw new Error("AI generated an invalid or empty result URL.");
 
-        // 4. PERSISTENCE: Save AI result permanently to VPS
+        // 5. PERSISTENCE: Save AI result permanently to VPS
         console.log("Stenna AI: Downloading and saving result to VPS for permanent storage...");
         const WEB_ROOT = getWebRoot();
         const VISUALIZER_BASE_URL = getVisualizerBaseUrl();

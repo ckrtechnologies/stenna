@@ -98,40 +98,67 @@ const BulkUploadModal = ({ isOpen, onClose, onRefresh }) => {
             skipEmptyLines: true,
             complete: async (parseResults) => {
                 try {
-                    const formattedData = parseResults.data.map(row => ({
-                        name: row['Name'],
-                        design_code: row['Design Code'],
-                        slug: row['Slug'] || row['Name']?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-                        description: row['Description'],
-                        price: parseFloat(row['Price']) || 0,
-                        roll_width: parseFloat(row['Roll Width (cm)']) || null,
-                        roll_height: parseFloat(row['Roll Height (m)']) || null,
-                        quantity: parseInt(row['Stock Quantity']) || 0,
-                        material: row['Material'],
-                        finish: row['Finish'],
-                        washability: row['Washability'],
-                        durability: row['Durability'],
-                        brand: row['Brand'],
-                        country: row['Country'],
-                        tagline: row['Tagline'],
-                        vibe: row['Vibe'],
-                        choose_if: row['Choose If'],
-                        avoid_if: row['Avoid If'],
-                        ideal_for: row['Ideal For'],
-                        is_active: row['Is Active']?.toUpperCase() !== 'FALSE',
-                        swatch: row['Swatch Image'] || null,
-                        images: [
-                            row['Hand Image'],
-                            row['Medium Short'],
-                            row['Far Short'],
-                            row['Warm Family'],
-                            row['Modal with Book'],
-                            row['Rustic']
-                        ].filter(url => url && url.trim() !== '').map(url => url.trim()),
-                        videos: [row['Sponge Wash Video']].filter(url => url && url.trim() !== '').map(url => url.trim()),
-                        category_names: row['Category Names'] ? row['Category Names'].split(',').map(name => name.trim()) : [],
-                        group_names: row['Group Names'] ? row['Group Names'].split(',').map(name => name.trim()) : []
-                    }));
+                    const formattedData = parseResults.data.map(row => {
+                        const getVal = (...keys) => {
+                            for (const key of keys) {
+                                if (row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== '') {
+                                    return row[key];
+                                }
+                            }
+                            return undefined;
+                        };
+
+                        const widthVal = getVal(
+                            'Roll Width (cm)', 'Roll Width', 'Roll Width(cm)', 'Width (cm)', 
+                            'Width(cm)', 'Width', 'roll_width', 'Roll_Width', 'roll_width_cm'
+                        );
+                        const heightVal = getVal(
+                            'Roll Height (m)', 'Roll Height', 'Roll Height(m)', 'Height (m)', 
+                            'Height(m)', 'Height', 'roll_height', 'Roll_Height', 'roll_height_m',
+                            'Roll Length (m)', 'Roll Length', 'Length (m)', 'Length'
+                        );
+                        const quantityVal = getVal(
+                            'Stock Quantity', 'Stock', 'Quantity', 'quantity', 'stock', 
+                            'stock_quantity', 'Stock_Quantity', 'Qty', 'qty'
+                        );
+                        const priceVal = getVal('Price', 'price', 'Price (Rs.)', 'Price (INR)');
+                        const activeVal = getVal('Is Active', 'is_active', 'Active', 'active', 'Status', 'status');
+
+                        return {
+                            name: getVal('Name', 'name', 'Wallpaper Name', 'Title') || '',
+                            design_code: getVal('Design Code', 'design_code', 'DesignCode', 'Code', 'code') || '',
+                            slug: getVal('Slug', 'slug') || (getVal('Name', 'name') ? String(getVal('Name', 'name')).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : ''),
+                            description: getVal('Description', 'description') || '',
+                            price: priceVal ? parseFloat(priceVal) || 0 : 0,
+                            roll_width: widthVal ? parseFloat(widthVal) || null : null,
+                            roll_height: heightVal ? parseFloat(heightVal) || null : null,
+                            quantity: quantityVal ? parseInt(quantityVal, 10) || 0 : 0,
+                            material: getVal('Material', 'material') || '',
+                            finish: getVal('Finish', 'finish') || '',
+                            washability: getVal('Washability', 'washability') || '',
+                            durability: getVal('Durability', 'durability') || '',
+                            brand: getVal('Brand', 'brand') || '',
+                            country: getVal('Country', 'country') || '',
+                            tagline: getVal('Tagline', 'tagline') || '',
+                            vibe: getVal('Vibe', 'vibe') || '',
+                            choose_if: getVal('Choose If', 'choose_if', 'Choose_If') || '',
+                            avoid_if: getVal('Avoid If', 'avoid_if', 'Avoid_If') || '',
+                            ideal_for: getVal('Ideal For', 'ideal_for', 'Ideal_For') || '',
+                            is_active: activeVal !== undefined ? String(activeVal).trim().toUpperCase() !== 'FALSE' : true,
+                            swatch: getVal('Swatch Image', 'Swatch', 'swatch', 'swatch_image') || null,
+                            images: [
+                                getVal('Hand Image', 'hand_image'),
+                                getVal('Medium Short', 'medium_short', 'Medium Shot'),
+                                getVal('Far Short', 'far_short', 'Far Shot'),
+                                getVal('Warm Family', 'warm_family'),
+                                getVal('Modal with Book', 'modal_with_book', 'Model with Book'),
+                                getVal('Rustic', 'rustic')
+                            ].filter(url => url && typeof url === 'string' && url.trim() !== '').map(url => url.trim()),
+                            videos: [getVal('Sponge Wash Video', 'sponge_wash_video', 'Wash Video')].filter(url => url && typeof url === 'string' && url.trim() !== '').map(url => url.trim()),
+                            category_names: getVal('Category Names', 'Categories', 'category_names') ? String(getVal('Category Names', 'Categories', 'category_names')).split(',').map(name => name.trim()) : [],
+                            group_names: getVal('Group Names', 'Groups', 'group_names') ? String(getVal('Group Names', 'Groups', 'group_names')).split(',').map(name => name.trim()) : []
+                        };
+                    });
 
                     console.log('Bulk Uploading formatted data:', formattedData);
                     const res = await api.post('/wallpapers/bulk-upload', { wallpapers: formattedData });

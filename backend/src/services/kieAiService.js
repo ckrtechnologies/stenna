@@ -10,6 +10,54 @@ class KieAiService {
     }
 
     /**
+     * Upload a file (Buffer or Base64) to KIE.AI temporary storage to get a publicly accessible URL
+     * @param {Buffer|string} fileData - File buffer or base64 data
+     * @param {string} fileName - File name with extension
+     * @param {string} uploadPath - Upload directory (default: 'rooms')
+     * @returns {Promise<string>} - Publicly accessible downloadUrl
+     */
+    async uploadFile(fileData, fileName = 'image.jpg', uploadPath = 'rooms') {
+        try {
+            const ext = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+            const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+
+            let base64Data = '';
+            if (Buffer.isBuffer(fileData)) {
+                base64Data = `data:${mimeType};base64,${fileData.toString('base64')}`;
+            } else if (typeof fileData === 'string') {
+                if (fileData.startsWith('data:')) {
+                    base64Data = fileData;
+                } else {
+                    base64Data = `data:${mimeType};base64,${fileData}`;
+                }
+            }
+
+            const response = await fetch("https://kieai.redpandaai.co/api/file-base64-upload", {
+                method: 'POST',
+                headers: {
+                    "Authorization": `Bearer ${this.apiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    base64Data,
+                    uploadPath,
+                    fileName
+                })
+            });
+
+            const result = await response.json();
+            if ((result.code === 200 || result.success) && result.data?.downloadUrl) {
+                console.log(`Stenna AI: Image uploaded to KIE cloud successfully (${fileName}) -> ${result.data.downloadUrl}`);
+                return result.data.downloadUrl;
+            }
+            throw new Error(result.msg || result.message || 'Failed to upload file to KIE.AI');
+        } catch (error) {
+            console.error('KIE File Upload Error:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Create a task on KIE.AI
      * @param {string} model - The model name (e.g., "topaz/image-upscale")
      * @param {object} input - Input parameters for the model
