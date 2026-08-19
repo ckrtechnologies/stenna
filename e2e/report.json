@@ -1,0 +1,1520 @@
+{
+  "config": {
+    "argv": [
+      "/Users/chandanmallik/.nvm/versions/node/v24.15.0/bin/node",
+      "/Users/chandanmallik/projects/stenna/e2e/node_modules/.bin/playwright",
+      "test",
+      "--headed",
+      "--reporter=json"
+    ],
+    "configFile": "/Users/chandanmallik/projects/stenna/e2e/playwright.config.js",
+    "rootDir": "/Users/chandanmallik/projects/stenna/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 7
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/chandanmallik/projects/stenna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 7
+        },
+        "id": "api",
+        "name": "api",
+        "testDir": "/Users/chandanmallik/projects/stenna/e2e/tests/backend",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/chandanmallik/projects/stenna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 7
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/chandanmallik/projects/stenna/e2e/tests/frontend",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 7,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "backend/ai.spec.js",
+      "file": "backend/ai.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Backend AI API",
+          "file": "backend/ai.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should require authentication for AI recommendations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 51,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.026Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ba466df59a35215ef032-10e2389934d9963336c1",
+              "file": "backend/ai.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "backend/auth.spec.js",
+      "file": "backend/auth.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Authentication API",
+          "file": "backend/auth.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should register a new user successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 197,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.025Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-9b0cc8c37e068bead61c",
+              "file": "backend/auth.spec.js",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "should fail to register with duplicate email",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 176,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m400\u001b[39m\nReceived: \u001b[31m201\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m400\u001b[39m\nReceived: \u001b[31m201\u001b[39m\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js:31:31",
+                        "location": {
+                          "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js",
+                          "column": 31,
+                          "line": 31
+                        },
+                        "snippet": "  29 |     });\n  30 |     \n> 31 |     expect(response.status()).toBe(400); // Or whatever duplicate returns\n     |                               ^\n  32 |   });\n  33 |\n  34 |   test('should login successfully and return token', async ({ request }) => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js",
+                            "column": 31,
+                            "line": 31
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m400\u001b[39m\nReceived: \u001b[31m201\u001b[39m\n\n  29 |     });\n  30 |     \n> 31 |     expect(response.status()).toBe(400); // Or whatever duplicate returns\n     |                               ^\n  32 |   });\n  33 |\n  34 |   test('should login successfully and return token', async ({ request }) => {\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js:31:31"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.042Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/chandanmallik/projects/stenna/e2e/test-results/auth-Authentication-API-sh-de4a1-gister-with-duplicate-email-api/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js",
+                        "column": 31,
+                        "line": 31
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-cec69f003e8437e1a0f8",
+              "file": "backend/auth.spec.js",
+              "line": 26,
+              "column": 3
+            },
+            {
+              "title": "should login successfully and return token",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 66,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js:42:27",
+                        "location": {
+                          "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js",
+                          "column": 27,
+                          "line": 42
+                        },
+                        "snippet": "  40 |     });\n  41 |     \n> 42 |     expect(response.ok()).toBeTruthy();\n     |                           ^\n  43 |     const data = await response.json();\n  44 |     expect(data.token).toBeDefined();\n  45 |     token = data.token;"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js",
+                            "column": 27,
+                            "line": 42
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  40 |     });\n  41 |     \n> 42 |     expect(response.ok()).toBeTruthy();\n     |                           ^\n  43 |     const data = await response.json();\n  44 |     expect(data.token).toBeDefined();\n  45 |     token = data.token;\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js:42:27"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.026Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/chandanmallik/projects/stenna/e2e/test-results/auth-Authentication-API-sh-0544f-ccessfully-and-return-token-api/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js",
+                        "column": 27,
+                        "line": 42
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-5343e39de7885d5dbb5e",
+              "file": "backend/auth.spec.js",
+              "line": 34,
+              "column": 3
+            },
+            {
+              "title": "should get user profile with valid token",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "failed",
+                      "duration": 46,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js:55:27",
+                        "location": {
+                          "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js",
+                          "column": 27,
+                          "line": 55
+                        },
+                        "snippet": "  53 |     });\n  54 |     \n> 55 |     expect(response.ok()).toBeTruthy();\n     |                           ^\n  56 |     const data = await response.json();\n  57 |     expect(data.email).toBe(testUser.email);\n  58 |   });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js",
+                            "column": 27,
+                            "line": 55
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  53 |     });\n  54 |     \n> 55 |     expect(response.ok()).toBeTruthy();\n     |                           ^\n  56 |     const data = await response.json();\n  57 |     expect(data.email).toBe(testUser.email);\n  58 |   });\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js:55:27"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.035Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/chandanmallik/projects/stenna/e2e/test-results/auth-Authentication-API-sh-a7bfb-er-profile-with-valid-token-api/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/auth.spec.js",
+                        "column": 27,
+                        "line": 55
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-ce79a313bcbb0b46ac22",
+              "file": "backend/auth.spec.js",
+              "line": 48,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "backend/catalog.spec.js",
+      "file": "backend/catalog.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Catalog API",
+          "file": "backend/catalog.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should fetch all categories",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 69,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.032Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d4514cd69630520b3123-d824c529228e33db925a",
+              "file": "backend/catalog.spec.js",
+              "line": 4,
+              "column": 3
+            },
+            {
+              "title": "should fetch paginated wallpapers",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "failed",
+                      "duration": 150,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeDefined\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mundefined\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeDefined\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mundefined\u001b[39m\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/catalog.spec.js:15:29",
+                        "location": {
+                          "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/catalog.spec.js",
+                          "column": 29,
+                          "line": 15
+                        },
+                        "snippet": "  13 |     expect(response.ok()).toBeTruthy();\n  14 |     const data = await response.json();\n> 15 |     expect(data.wallpapers).toBeDefined();\n     |                             ^\n  16 |     expect(Array.isArray(data.wallpapers)).toBeTruthy();\n  17 |     expect(data.pagination).toBeDefined();\n  18 |   });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/catalog.spec.js",
+                            "column": 29,
+                            "line": 15
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeDefined\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mundefined\u001b[39m\n\n  13 |     expect(response.ok()).toBeTruthy();\n  14 |     const data = await response.json();\n> 15 |     expect(data.wallpapers).toBeDefined();\n     |                             ^\n  16 |     expect(Array.isArray(data.wallpapers)).toBeTruthy();\n  17 |     expect(data.pagination).toBeDefined();\n  18 |   });\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/catalog.spec.js:15:29"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.032Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/chandanmallik/projects/stenna/e2e/test-results/catalog-Catalog-API-should-fetch-paginated-wallpapers-api/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/catalog.spec.js",
+                        "column": 29,
+                        "line": 15
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d4514cd69630520b3123-d3820d5b19e031d8256b",
+              "file": "backend/catalog.spec.js",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "should fetch all books",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 24,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.101Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d4514cd69630520b3123-79673746e6412daf6aa8",
+              "file": "backend/catalog.spec.js",
+              "line": 20,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "backend/leads.spec.js",
+      "file": "backend/leads.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Backend Leads API",
+          "file": "backend/leads.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should create a lead via POST /leads",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 4,
+                      "status": "failed",
+                      "duration": 72,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m500\u001b[39m\nReceived array: \u001b[31m[200, 201]\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m500\u001b[39m\nReceived array: \u001b[31m[200, 201]\u001b[39m\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/leads.spec.js:20:24",
+                        "location": {
+                          "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/leads.spec.js",
+                          "column": 24,
+                          "line": 20
+                        },
+                        "snippet": "  18 |\n  19 |     // It should either return 201 Created or 200 OK\n> 20 |     expect([200, 201]).toContain(response.status());\n     |                        ^\n  21 |     const data = await response.json();\n  22 |     expect(data).toHaveProperty('id');\n  23 |     expect(data.email).toBe('lead@example.com');"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/leads.spec.js",
+                            "column": 24,
+                            "line": 20
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m500\u001b[39m\nReceived array: \u001b[31m[200, 201]\u001b[39m\n\n  18 |\n  19 |     // It should either return 201 Created or 200 OK\n> 20 |     expect([200, 201]).toContain(response.status());\n     |                        ^\n  21 |     const data = await response.json();\n  22 |     expect(data).toHaveProperty('id');\n  23 |     expect(data.email).toBe('lead@example.com');\n    at /Users/chandanmallik/projects/stenna/e2e/tests/backend/leads.spec.js:20:24"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.402Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/chandanmallik/projects/stenna/e2e/test-results/leads-Backend-Leads-API-should-create-a-lead-via-POST-leads-api/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/chandanmallik/projects/stenna/e2e/tests/backend/leads.spec.js",
+                        "column": 24,
+                        "line": 20
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "38ceabc5158df03d64ae-970a4f257456555c7c7b",
+              "file": "backend/leads.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "backend/user.spec.js",
+      "file": "backend/user.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Backend User API",
+          "file": "backend/user.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should require authentication to get profile",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 48,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.413Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5bb1f9dec247018c1123-468d7c19e42ce6d47a07",
+              "file": "backend/user.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "backend/visualizer.spec.js",
+      "file": "backend/visualizer.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Backend Visualizer API",
+          "file": "backend/visualizer.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should require authentication to get visualizer history",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 5,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.126Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6f36e6e71c59d14dc489-63e3d548c0b40d637e36",
+              "file": "backend/visualizer.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "backend/wishlist.spec.js",
+      "file": "backend/wishlist.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Backend Wishlist API",
+          "file": "backend/wishlist.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should require auth for GET /wishlist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "api",
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.132Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "03d075d5011141baba46-d3f583874509d3605fd0",
+              "file": "backend/wishlist.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend/ai-recommendations.spec.js",
+      "file": "frontend/ai-recommendations.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "AI Recommendations Flow",
+          "file": "frontend/ai-recommendations.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should log in, take the AI questionnaire, and see recommendations",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 5,
+                      "status": "timedOut",
+                      "duration": 30031,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/chandanmallik/projects/stenna/e2e/tests/frontend/utils/auth.js",
+                            "column": 14,
+                            "line": 24
+                          },
+                          "message": "Error: page.waitForURL: Test timeout of 30000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"**/login*\" until \"load\"\n============================================================\n\n   at frontend/utils/auth.js:24\n\n  22 |   \n  23 |   // Wait for redirect to login\n> 24 |   await page.waitForURL('**/login*');\n     |              ^\n  25 |   \n  26 |   // Now login with those fresh credentials\n  27 |   await page.fill('input[type=\"email\"]', email);\n    at registerAndLoginUser (/Users/chandanmallik/projects/stenna/e2e/tests/frontend/utils/auth.js:24:14)\n    at /Users/chandanmallik/projects/stenna/e2e/tests/frontend/ai-recommendations.spec.js:7:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.431Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/chandanmallik/projects/stenna/e2e/test-results/ai-recommendations-AI-Reco-8799a-ire-and-see-recommendations-chromium/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "20bf06318c4821fcd836-3f12ccc90b9236caf0c4",
+              "file": "frontend/ai-recommendations.spec.js",
+              "line": 5,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend/auth.spec.js",
+      "file": "frontend/auth.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Frontend Auth Flow",
+          "file": "frontend/auth.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should navigate to login page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3742,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.432Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-c817e3aa3bf2b9d7ea98",
+              "file": "frontend/auth.spec.js",
+              "line": 4,
+              "column": 3
+            },
+            {
+              "title": "should show error on invalid credentials",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 5951,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.538Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-66444e9e6c9bfad22602",
+              "file": "frontend/auth.spec.js",
+              "line": 9,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend/catalog.spec.js",
+      "file": "frontend/catalog.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Frontend Catalog Flow",
+          "file": "frontend/catalog.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should navigate to catalog and see items",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 19713,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.584Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d4514cd69630520b3123-88a81a2a07f7d082e619",
+              "file": "frontend/catalog.spec.js",
+              "line": 4,
+              "column": 3
+            },
+            {
+              "title": "should filter catalog by category",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 11230,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.591Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d4514cd69630520b3123-84c48ec894a786cd0fb6",
+              "file": "frontend/catalog.spec.js",
+              "line": 19,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend/enquiry.spec.js",
+      "file": "frontend/enquiry.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Enquiry Flow",
+          "file": "frontend/enquiry.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should open enquiry modal and submit",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 22595,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.809Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "74b67bee087fe691cfc1-98d9bba9bf9e46aa62f3",
+              "file": "frontend/enquiry.spec.js",
+              "line": 4,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend/navigation.spec.js",
+      "file": "frontend/navigation.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Frontend Navigation & Static Pages",
+          "file": "frontend/navigation.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load the homepage and hero",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 4937,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:45.823Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ce7c070a851ea64285fd-fe2e796d0387bdc04696",
+              "file": "frontend/navigation.spec.js",
+              "line": 4,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Contact page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10284,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:50.600Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ce7c070a851ea64285fd-6fde500699ddbc62b2cd",
+              "file": "frontend/navigation.spec.js",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Try It On page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 10081,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:51.875Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ce7c070a851ea64285fd-8487f6a8c526c7482a8a",
+              "file": "frontend/navigation.spec.js",
+              "line": 18,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend/product-detail.spec.js",
+      "file": "frontend/product-detail.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Product Detail & Actions",
+          "file": "frontend/product-detail.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load product page and display details",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 14620,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:54.050Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a5bf10781012e2e747ee-c7d20880ef44f77f8879",
+              "file": "frontend/product-detail.spec.js",
+              "line": 4,
+              "column": 3
+            },
+            {
+              "title": "should handle wishlist toggle unauthenticated",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "/Users/chandanmallik/projects/stenna/e2e/tests/frontend/product-detail.spec.js",
+                        "line": 24,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:58.884Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "/Users/chandanmallik/projects/stenna/e2e/tests/frontend/product-detail.spec.js",
+                            "line": 24,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a5bf10781012e2e747ee-8e63f1ebf15fa5ab420d",
+              "file": "frontend/product-detail.spec.js",
+              "line": 24,
+              "column": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend/profile.spec.js",
+      "file": "frontend/profile.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Profile & Authenticated Flows",
+          "file": "frontend/profile.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should redirect unauthenticated users from profile",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3662,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:56:58.981Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d3b94327e94fcbd90a1b-242856fb1989ea6b5ced",
+              "file": "frontend/profile.spec.js",
+              "line": 5,
+              "column": 3
+            },
+            {
+              "title": "should redirect unauthenticated users from my-queries",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3452,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:57:01.166Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d3b94327e94fcbd90a1b-2ca075de75733e9e4359",
+              "file": "frontend/profile.spec.js",
+              "line": 11,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend/registration.spec.js",
+      "file": "frontend/registration.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Registration Flow",
+          "file": "frontend/registration.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should successfully register a new user and redirect to catalog",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 4,
+                      "status": "failed",
+                      "duration": 12625,
+                      "error": {
+                        "message": "TimeoutError: page.waitForURL: Timeout 10000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"**/login*\" until \"load\"\n============================================================",
+                        "stack": "TimeoutError: page.waitForURL: Timeout 10000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"**/login*\" until \"load\"\n============================================================\n    at /Users/chandanmallik/projects/stenna/e2e/tests/frontend/registration.spec.js:30:16",
+                        "location": {
+                          "file": "/Users/chandanmallik/projects/stenna/e2e/tests/frontend/registration.spec.js",
+                          "column": 16,
+                          "line": 30
+                        },
+                        "snippet": "  28 |\n  29 |     // It should redirect to login upon successful registration\n> 30 |     await page.waitForURL('**/login*', { timeout: 10000 });\n     |                ^\n  31 |     \n  32 |     expect(page.url()).toContain('/login');\n  33 |   });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/chandanmallik/projects/stenna/e2e/tests/frontend/registration.spec.js",
+                            "column": 16,
+                            "line": 30
+                          },
+                          "message": "TimeoutError: page.waitForURL: Timeout 10000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"**/login*\" until \"load\"\n============================================================\n\n  28 |\n  29 |     // It should redirect to login upon successful registration\n> 30 |     await page.waitForURL('**/login*', { timeout: 10000 });\n     |                ^\n  31 |     \n  32 |     expect(page.url()).toContain('/login');\n  33 |   });\n    at /Users/chandanmallik/projects/stenna/e2e/tests/frontend/registration.spec.js:30:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:57:02.443Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/chandanmallik/projects/stenna/e2e/test-results/registration-Registration--82767-ser-and-redirect-to-catalog-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/chandanmallik/projects/stenna/e2e/tests/frontend/registration.spec.js",
+                        "column": 16,
+                        "line": 30
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "1551a940dbfbf0872387-ab52e6bb47c5042f99e1",
+              "file": "frontend/registration.spec.js",
+              "line": 4,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend/try-it-on.spec.js",
+      "file": "frontend/try-it-on.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Try It On Flow",
+          "file": "frontend/try-it-on.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should log in, view Try It On history, and navigate to visualizer flow",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 1,
+                      "status": "timedOut",
+                      "duration": 30019,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/chandanmallik/projects/stenna/e2e/tests/frontend/utils/auth.js",
+                            "column": 14,
+                            "line": 24
+                          },
+                          "message": "Error: page.waitForURL: Test timeout of 30000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"**/login*\" until \"load\"\n============================================================\n\n   at frontend/utils/auth.js:24\n\n  22 |   \n  23 |   // Wait for redirect to login\n> 24 |   await page.waitForURL('**/login*');\n     |              ^\n  25 |   \n  26 |   // Now login with those fresh credentials\n  27 |   await page.fill('input[type=\"email\"]', email);\n    at registerAndLoginUser (/Users/chandanmallik/projects/stenna/e2e/tests/frontend/utils/auth.js:24:14)\n    at /Users/chandanmallik/projects/stenna/e2e/tests/frontend/try-it-on.spec.js:7:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-18T17:57:03.186Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/chandanmallik/projects/stenna/e2e/test-results/try-it-on-Try-It-On-Flow-s-d3d9a-navigate-to-visualizer-flow-chromium/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "4af8f4876e85fe756650-8e41cd33c8f95d3e01e6",
+              "file": "frontend/try-it-on.spec.js",
+              "line": 5,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-18T17:56:44.669Z",
+    "duration": 48808.859000000004,
+    "expected": 18,
+    "skipped": 1,
+    "unexpected": 8,
+    "flaky": 0
+  }
+}

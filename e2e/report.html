@@ -1,0 +1,213 @@
+
+  <html>
+  <head>
+    <style>
+      body { font-family: -apple-system, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 40px; }
+      h1 { border-bottom: 2px solid #eaecef; padding-bottom: 10px; }
+      h2 { margin-top: 30px; border-bottom: 1px solid #eaecef; padding-bottom: 5px; }
+      table { border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 14px; }
+      th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+      th { background-color: #f6f8fa; }
+      .pass { color: #28a745; font-weight: bold; }
+      .fail { color: #d73a49; font-weight: bold; }
+      .skip { color: #6a737d; }
+      .project-header { background-color: #0366d6; color: white; font-weight: bold; padding: 10px; margin-top: 30px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>Stenna QA Automation Report</h1>
+    <p><strong>Date:</strong> 8/18/2026</p>
+    <p><strong>Total Tests:</strong> 27</p>
+    <p><strong>Passed:</strong> <span class='pass'>18</span></p>
+    <p><strong>Failed:</strong> <span class='fail'>8</span></p>
+    <p><strong>Skipped:</strong> <span class='skip'>1</span></p>
+    <p><strong>Duration:</strong> 48.81 seconds</p>
+    
+    <h2>Index of Projects</h2>
+    <ul>
+  <li><a href="#api">API Testing</a> (12 cases)</li><li><a href="#chromium">CHROMIUM Testing</a> (15 cases)</li></ul><h2 id="api" class="project-header">API TEST CASES</h2>
+    <table>
+      <thead>
+        <tr>
+          <th width="70%">Test Case Details</th>
+          <th width="15%">Status</th>
+          <th width="15%">Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+    
+        <tr>
+          <td>backend/ai › Backend AI API › should require authentication for AI recommendations</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>0.05s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/auth › Authentication API › should register a new user successfully</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>0.20s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/auth › Authentication API › should fail to register with duplicate email</td>
+          <td><span class="fail">❌ Failed</span></td>
+          <td>0.18s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/auth › Authentication API › should login successfully and return token</td>
+          <td><span class="fail">❌ Failed</span></td>
+          <td>0.07s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/auth › Authentication API › should get user profile with valid token</td>
+          <td><span class="fail">❌ Failed</span></td>
+          <td>0.05s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/catalog › Catalog API › should fetch all categories</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>0.07s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/catalog › Catalog API › should fetch paginated wallpapers</td>
+          <td><span class="fail">❌ Failed</span></td>
+          <td>0.15s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/catalog › Catalog API › should fetch all books</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>0.02s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/leads › Backend Leads API › should create a lead via POST /leads</td>
+          <td><span class="fail">❌ Failed</span></td>
+          <td>0.07s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/user › Backend User API › should require authentication to get profile</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>0.05s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/visualizer › Backend Visualizer API › should require authentication to get visualizer history</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>0.01s</td>
+        </tr>
+      
+        <tr>
+          <td>backend/wishlist › Backend Wishlist API › should require auth for GET /wishlist</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>0.00s</td>
+        </tr>
+      </tbody></table><h2 id="chromium" class="project-header">CHROMIUM TEST CASES</h2>
+    <table>
+      <thead>
+        <tr>
+          <th width="70%">Test Case Details</th>
+          <th width="15%">Status</th>
+          <th width="15%">Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+    
+        <tr>
+          <td>frontend/ai-recommendations › AI Recommendations Flow › should log in, take the AI questionnaire, and see recommendations</td>
+          <td><span class="fail">❌ Failed</span></td>
+          <td>30.03s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/auth › Frontend Auth Flow › should navigate to login page</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>3.74s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/auth › Frontend Auth Flow › should show error on invalid credentials</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>5.95s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/catalog › Frontend Catalog Flow › should navigate to catalog and see items</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>19.71s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/catalog › Frontend Catalog Flow › should filter catalog by category</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>11.23s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/enquiry › Enquiry Flow › should open enquiry modal and submit</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>22.59s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/navigation › Frontend Navigation & Static Pages › should load the homepage and hero</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>4.94s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/navigation › Frontend Navigation & Static Pages › should navigate to Contact page</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>10.28s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/navigation › Frontend Navigation & Static Pages › should navigate to Try It On page</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>10.08s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/product-detail › Product Detail & Actions › should load product page and display details</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>14.62s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/product-detail › Product Detail & Actions › should handle wishlist toggle unauthenticated</td>
+          <td><span class="skip">⏭️ Skipped</span></td>
+          <td>-</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/profile › Profile & Authenticated Flows › should redirect unauthenticated users from profile</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>3.66s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/profile › Profile & Authenticated Flows › should redirect unauthenticated users from my-queries</td>
+          <td><span class="pass">✅ Passed</span></td>
+          <td>3.45s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/registration › Registration Flow › should successfully register a new user and redirect to catalog</td>
+          <td><span class="fail">❌ Failed</span></td>
+          <td>12.63s</td>
+        </tr>
+      
+        <tr>
+          <td>frontend/try-it-on › Try It On Flow › should log in, view Try It On history, and navigate to visualizer flow</td>
+          <td><span class="fail">❌ Failed</span></td>
+          <td>30.02s</td>
+        </tr>
+      </tbody></table>
+  </body>
+  </html>
+  
