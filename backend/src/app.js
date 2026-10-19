@@ -21,6 +21,7 @@ import aiRoutes from './routes/aiRoutes.js';
 import pdfRoutes from './routes/pdfRoutes.js';
 import waInventoryRoutes from './WA_Inventory/routes/inventory.routes.js';
 import waEnquiryRoutes from './WA_Enquiries/routes/enquiry.routes.js';
+import salesTrackingRoutes from './domains/sales-tracking/routes.js';
 
 const app = express();
 
@@ -85,6 +86,7 @@ apiV1.use('/ai', aiRoutes);
 apiV1.use('/pdf', pdfRoutes);
 apiV1.use('/wa-inventory', waInventoryRoutes);
 apiV1.use('/wa-enquiries', waEnquiryRoutes);
+apiV1.use('/sales-tracking', salesTrackingRoutes);
 
 app.use('/api/v1', apiV1);
 

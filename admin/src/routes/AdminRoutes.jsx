@@ -15,6 +15,12 @@ import BookWallpapers from '../pages/BookWallpapers';
 import InventoryManagement from '../pages/InventoryManagement';
 import ImageEnhancer from '../pages/ContentCreation/ImageEnhancer';
 import GeneratePDF from '../pages/GeneratePDF';
+import SalesDashboard from '../pages/SalesDashboard';
+import Vendors from '../pages/Vendors';
+import Zones from '../pages/Zones';
+import SalesBoys from '../pages/SalesBoys';
+import VisitRecords from '../pages/VisitRecords';
+import ShopHistoryLedger from '../pages/ShopHistoryLedger';
 
 const AdminRoutes = () => {
     return (
@@ -36,6 +42,14 @@ const AdminRoutes = () => {
             <Route path="/books" element={<ProtectedRoute><Books /></ProtectedRoute>} />
             <Route path="/books/:id/wallpapers" element={<ProtectedRoute><BookWallpapers /></ProtectedRoute>} />
             <Route path="/generate-pdf" element={<ProtectedRoute><GeneratePDF /></ProtectedRoute>} />
+
+            {/* Sales Tracking & Field Management Routes */}
+            <Route path="/sales-tracking/dashboard" element={<ProtectedRoute><SalesDashboard /></ProtectedRoute>} />
+            <Route path="/sales-tracking/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
+            <Route path="/sales-tracking/shop-history" element={<ProtectedRoute><ShopHistoryLedger /></ProtectedRoute>} />
+            <Route path="/sales-tracking/zones" element={<ProtectedRoute><Zones /></ProtectedRoute>} />
+            <Route path="/sales-tracking/sales-boys" element={<ProtectedRoute><SalesBoys /></ProtectedRoute>} />
+            <Route path="/sales-tracking/visits" element={<ProtectedRoute><VisitRecords /></ProtectedRoute>} />
         </Routes>
     );
 };

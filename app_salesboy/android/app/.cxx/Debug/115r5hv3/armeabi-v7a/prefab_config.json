@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "prefabPath": "/Users/chandanmallik/.gradle/caches/modules-2/files-2.1/com.google.prefab/cli/2.1.0/aa32fec809c44fa531f01dcfb739b5b3304d3050/cli-2.1.0-all.jar",
+  "packages": [
+    "/Users/chandanmallik/projects/stenna/app_salesboy/node_modules/react-native-reanimated/android/build/intermediates/prefab_package/debug/prefab",
+    "/Users/chandanmallik/projects/stenna/app_salesboy/node_modules/react-native-worklets/android/build/intermediates/prefab_package/debug/prefab",
+    "/Users/chandanmallik/.gradle/caches/9.4.1/transforms/ff4fb6b267fed88ff4266fc3d1d67f55/transformed/react-android-0.88.0-debug/prefab",
+    "/Users/chandanmallik/.gradle/caches/9.4.1/transforms/b1b7728b66f520ef71bfbc3b90079b60/transformed/hermes-android-260318099.0.4-debug/prefab",
+    "/Users/chandanmallik/.gradle/caches/9.4.1/transforms/d9cd681e73f552020dc6884beb2fdec5/transformed/fbjni-0.7.0/prefab"
+  ]
+}
