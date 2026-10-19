@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Papa from 'papaparse';
 import {
   Plus,
@@ -22,7 +22,9 @@ import {
   UploadCloud,
   Download,
   FileSpreadsheet,
-  Building2
+  Building2,
+  Clock,
+  Check
 } from 'lucide-react';
 import api from '../utils/api';
 import Loader from '../components/Loader';
@@ -31,13 +33,16 @@ import '../styles/salesTracking.css';
 
 export default function Vendors() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [vendors, setVendors] = useState([]);
   const [zones, setZones] = useState([]);
   const [markets, setMarkets] = useState([]);
+  const [vendorVisitsMap, setVendorVisitsMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [zoneFilter, setZoneFilter] = useState('ALL');
-  const [marketFilter, setMarketFilter] = useState('ALL');
+  const [zoneFilter, setZoneFilter] = useState(searchParams.get('zoneId') || 'ALL');
+  const [marketFilter, setMarketFilter] = useState(searchParams.get('marketId') || 'ALL');
+  const [visitStatusFilter, setVisitStatusFilter] = useState(searchParams.get('visitStatus') || 'ALL');
 
   // Sorting state
   const [sortField, setSortField] = useState('shop_name');
@@ -72,19 +77,45 @@ export default function Vendors() {
     fetchInitialData();
   }, []);
 
+  // Sync state with search params changes
+  useEffect(() => {
+    const qVisitStatus = searchParams.get('visitStatus');
+    if (qVisitStatus && qVisitStatus !== visitStatusFilter) {
+      setVisitStatusFilter(qVisitStatus);
+    }
+    const qZone = searchParams.get('zoneId');
+    if (qZone && qZone !== zoneFilter) {
+      setZoneFilter(qZone);
+    }
+    const qMarket = searchParams.get('marketId');
+    if (qMarket && qMarket !== marketFilter) {
+      setMarketFilter(qMarket);
+    }
+  }, [searchParams]);
+
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const [vRes, zRes, mRes] = await Promise.all([
+      const [vRes, zRes, mRes, visitsRes] = await Promise.all([
         api.get('/sales-tracking/vendors'),
         api.get('/sales-tracking/admin/zones'),
-        api.get('/sales-tracking/admin/markets')
+        api.get('/sales-tracking/admin/markets'),
+        api.get('/sales-tracking/visits?limit=2000').catch(() => ({ data: { data: [] } }))
       ]);
+
       setVendors(vRes.data?.data || []);
       setZones(zRes.data?.data || []);
       setMarkets(mRes.data?.data || []);
+
+      const visitCounts = {};
+      (visitsRes.data?.data || []).forEach((visit) => {
+        if (visit.vendor_id) {
+          visitCounts[visit.vendor_id] = (visitCounts[visit.vendor_id] || 0) + 1;
+        }
+      });
+      setVendorVisitsMap(visitCounts);
     } catch (err) {
-      console.error('Failed to load vendors, zones, or markets', err);
+      console.error('Failed to load vendors, zones, markets, or visits', err);
     } finally {
       setLoading(false);
     }
@@ -111,6 +142,12 @@ export default function Vendors() {
       .filter((v) => {
         if (zoneFilter !== 'ALL' && v.zone_id !== zoneFilter) return false;
         if (marketFilter !== 'ALL' && v.market_id !== marketFilter) return false;
+
+        // Visit status filtering (Stores Reached vs Stores Pending Visit)
+        const visitCount = vendorVisitsMap[v.id] || 0;
+        if (visitStatusFilter === 'VISITED' && visitCount === 0) return false;
+        if (visitStatusFilter === 'UNVISITED' && visitCount > 0) return false;
+
         if (searchTerm.trim()) {
           const s = searchTerm.toLowerCase();
           const matchName = v.shop_name?.toLowerCase().includes(s);
@@ -132,6 +169,11 @@ export default function Vendors() {
           aVal = a.sales_markets?.name || '';
           bVal = b.sales_markets?.name || '';
         }
+        if (sortField === 'visits') {
+          aVal = vendorVisitsMap[a.id] || 0;
+          bVal = vendorVisitsMap[b.id] || 0;
+          return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+        }
         if (typeof aVal === 'string') aVal = aVal.toLowerCase();
         if (typeof bVal === 'string') bVal = bVal.toLowerCase();
 
@@ -139,7 +181,7 @@ export default function Vendors() {
         if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [vendors, zoneFilter, marketFilter, searchTerm, sortField, sortOrder]);
+  }, [vendors, zoneFilter, marketFilter, visitStatusFilter, vendorVisitsMap, searchTerm, sortField, sortOrder]);
 
   const handleOpenAdd = () => {
     setEditingVendor(null);
@@ -396,17 +438,66 @@ export default function Vendors() {
           />
         </div>
 
-        {(searchTerm || zoneFilter !== 'ALL' || marketFilter !== 'ALL') && (
+        {/* Visit Status Filter Pills (All / Reached / Pending) */}
+        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {[
+            { id: 'ALL', label: `All Shops (${vendors.length})` },
+            {
+              id: 'VISITED',
+              label: `✓ Reached (${vendors.filter((v) => vendorVisitsMap[v.id]).length})`,
+              activeColor: '#10b981'
+            },
+            {
+              id: 'UNVISITED',
+              label: `⏳ Pending Visit (${vendors.filter((v) => !vendorVisitsMap[v.id]).length})`,
+              activeColor: '#f59e0b'
+            }
+          ].map((pill) => {
+            const active = visitStatusFilter === pill.id;
+            return (
+              <button
+                key={pill.id}
+                type="button"
+                onClick={() => setVisitStatusFilter(pill.id)}
+                style={{
+                  padding: '0.35rem 0.65rem',
+                  fontSize: '0.76rem',
+                  borderRadius: '6px',
+                  border: active
+                    ? `1px solid ${pill.activeColor || 'var(--primary)'}`
+                    : '1px solid var(--border-color)',
+                  background: active
+                    ? pill.activeColor
+                      ? `${pill.activeColor}1a`
+                      : 'rgba(59, 130, 246, 0.12)'
+                    : 'var(--bg-card)',
+                  color: active
+                    ? pill.activeColor || 'var(--primary)'
+                    : 'var(--text-muted)',
+                  fontWeight: active ? 700 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {pill.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {(searchTerm || zoneFilter !== 'ALL' || marketFilter !== 'ALL' || visitStatusFilter !== 'ALL') && (
           <button
             className="btn"
-            style={{ background: 'var(--border-color)', color: 'var(--text-main)' }}
+            style={{ background: 'var(--border-color)', color: 'var(--text-main)', fontSize: '0.78rem', padding: '0.4rem 0.65rem' }}
             onClick={() => {
               setSearchTerm('');
               setZoneFilter('ALL');
               setMarketFilter('ALL');
+              setVisitStatusFilter('ALL');
+              setSearchParams({});
             }}
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={14} />
             <span>Reset</span>
           </button>
         )}
@@ -451,6 +542,11 @@ export default function Vendors() {
                   </div>
                 </th>
                 <th>
+                  <div className="table-sort-header" onClick={() => handleSort('visits')}>
+                    <span>Visit Reach</span> {renderSortIndicator('visits')}
+                  </div>
+                </th>
+                <th>
                   <div className="table-sort-header" onClick={() => handleSort('is_active')}>
                     <span>Status</span> {renderSortIndicator('is_active')}
                   </div>
@@ -461,7 +557,7 @@ export default function Vendors() {
             <tbody>
               {filteredAndSortedVendors.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No retail shops found matching your criteria.
                   </td>
                 </tr>
@@ -497,6 +593,34 @@ export default function Vendors() {
                         <Building2 size={12} />
                         {vendor.sales_markets?.name || 'Unassigned'}
                       </span>
+                    </td>
+                    <td>
+                      {vendorVisitsMap[vendor.id] ? (
+                        <span
+                          className="badge badge-success"
+                          title={`${vendorVisitsMap[vendor.id]} recorded field visit(s). Click to inspect ledger.`}
+                          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          onClick={() => handleOpenHistory(vendor)}
+                        >
+                          <Check size={12} />
+                          <span>Reached ({vendorVisitsMap[vendor.id]})</span>
+                        </span>
+                      ) : (
+                        <span
+                          className="badge"
+                          style={{
+                            background: 'rgba(245, 158, 11, 0.12)',
+                            color: '#f59e0b',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Clock size={12} />
+                          <span>Pending Visit</span>
+                        </span>
+                      )}
                     </td>
                     <td>
                       <span className={`status-tag ${vendor.is_active ? 'active' : 'inactive'}`}>

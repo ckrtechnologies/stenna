@@ -207,8 +207,8 @@ const DealerBooks = () => {
                 .empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; text-align: center; color: var(--text-dim); gap: 1rem; border: 2px dashed var(--border-color); border-radius: 1rem; }
                 
                 /* Modal Styles */
-                .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-                .modal-content { background: var(--bg-card); border-radius: 1rem; border: 1px solid var(--border-color); width: 100%; max-width: 500px; max-height: 80vh; display: flex; flex-direction: column; }
+                .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: stretch; justify-content: flex-end; z-index: 1000; padding: 0; animation: adminFadeIn 0.2s ease-out; }
+                .modal-content { background: var(--bg-card); border-radius: 1.25rem 0 0 1.25rem; border: 1px solid var(--border-color); border-right: none; width: 100%; max-width: 500px; height: 100vh; max-height: 100vh; display: flex; flex-direction: column; box-shadow: -20px 0 50px rgba(0,0,0,0.35); animation: adminSlideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
                 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.5rem; border-bottom: 1px solid var(--border-color); }
                 .modal-header h2 { margin: 0; font-size: 1.25rem; }
                 .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }

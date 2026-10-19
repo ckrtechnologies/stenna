@@ -24,13 +24,13 @@ export default function S08VisitSuccess({ route, navigation }) {
           <Button
             title="Next Store"
             variant="outline"
-            onPress={() => navigation.replace(ROUTES.SHOPS)}
+            onPress={() => navigation.navigate(ROUTES.MAIN_TABS, { screen: ROUTES.SHOPS })}
             style={styles.halfBtn}
           />
           <Button
             title="Dashboard"
             variant="primary"
-            onPress={() => navigation.replace(ROUTES.MAIN_TABS)}
+            onPress={() => navigation.navigate(ROUTES.MAIN_TABS, { screen: ROUTES.DASHBOARD })}
             style={styles.halfBtn}
           />
         </View>

@@ -70,7 +70,13 @@ export async function updateZone(req, res) {
 
 export async function listZones(req, res) {
   try {
-    const zones = await service.listZones();
+    let zones = await service.listZones();
+    if (req.user?.role === 'sales_boy') {
+      const assignedIds = await service.getSalesBoyZoneIds(req.user.id);
+      if (assignedIds && assignedIds.length > 0) {
+        zones = zones.filter((z) => assignedIds.includes(z.id));
+      }
+    }
     res.status(200).json({ data: zones });
   } catch (error) {
     handleError(req, res, error, 500);
@@ -118,8 +124,13 @@ export async function updateMarket(req, res) {
 export async function listMarkets(req, res) {
   try {
     const { zoneId, isActive } = req.query;
+    let zoneIds = undefined;
+    if (req.user?.role === 'sales_boy') {
+      zoneIds = await service.getSalesBoyZoneIds(req.user.id);
+    }
     const markets = await service.listMarkets({
       zoneId,
+      zoneIds: (zoneIds && zoneIds.length > 0) ? zoneIds : undefined,
       isActive: isActive !== undefined ? isActive === 'true' : undefined
     });
     res.status(200).json({ data: markets });
@@ -183,8 +194,8 @@ export async function updateVendor(req, res) {
 export async function listVendors(req, res) {
   try {
     const { zoneId, marketId, search } = req.query;
-    let zoneIds = req.user?.assignedZoneIds;
-    if ((!zoneIds || zoneIds.length === 0) && req.user?.role === 'sales_boy') {
+    let zoneIds = undefined;
+    if (req.user?.role === 'sales_boy') {
       zoneIds = await service.getSalesBoyZoneIds(req.user.id);
     }
     const filterZoneIds = (zoneIds && zoneIds.length > 0) ? zoneIds : undefined;
@@ -252,6 +263,17 @@ export async function listSalesBoys(req, res) {
   }
 }
 
+export async function deleteSalesBoy(req, res) {
+  try {
+    const { id } = req.params;
+    await service.deleteSalesBoy(id);
+    logger.success(`[DELETE] /admin/sales-boys/${id} - Deleted sales rep`);
+    res.status(200).json({ message: 'Sales representative deleted successfully' });
+  } catch (error) {
+    handleError(req, res, error, 400);
+  }
+}
+
 // ------------------------------------------------------------------------------
 // 5. FIELD VISITS & VISIT RECORDING (Sales Boy & Admin)
 // ------------------------------------------------------------------------------
@@ -310,8 +332,8 @@ export async function getAppDashboard(req, res) {
 
 export async function getAdminAnalytics(req, res) {
   try {
-    const { zoneId } = req.query;
-    const analytics = await service.getAdminSalesAnalytics({ zoneId });
+    const { zoneId, startDate, endDate, datePreset } = req.query;
+    const analytics = await service.getAdminSalesAnalytics({ zoneId, startDate, endDate, datePreset });
     res.status(200).json({ data: analytics });
   } catch (error) {
     handleError(req, res, error, 500);

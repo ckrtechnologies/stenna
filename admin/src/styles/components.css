@@ -150,16 +150,16 @@ tr:hover td {
     color: var(--text-muted);
 }
 
-/* Modals */
+/* Modals (Slide-in Right Drawer) */
 .modal-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(4px);
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 0;
     z-index: 1000;
 }
 
@@ -167,12 +167,16 @@ tr:hover td {
     background: var(--bg-sidebar);
     width: 100%;
     max-width: 600px;
-    border-radius: 1.5rem;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 1.25rem 0 0 1.25rem;
     border: 1px solid var(--border-color);
+    border-right: none;
+    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.35);
     position: relative;
-    max-height: 90vh;
     display: flex;
     flex-direction: column;
+    animation: adminSlideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-header {

@@ -48,5 +48,6 @@ r.delete('/admin/vendors/:id', verifyToken, isAdmin, c.deleteVendor);
 r.get('/admin/sales-boys', verifyToken, isAdmin, c.listSalesBoys);
 r.post('/admin/sales-boys', verifyToken, isAdmin, c.createSalesBoy);
 r.put('/admin/sales-boys/:id', verifyToken, isAdmin, c.updateSalesBoy);
+r.delete('/admin/sales-boys/:id', verifyToken, isAdmin, c.deleteSalesBoy);
 
 export default r;

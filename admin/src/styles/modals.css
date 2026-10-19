@@ -11,28 +11,30 @@
     background: rgba(15, 23, 42, 0.75);
     backdrop-filter: blur(8px);
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-end;
+    align-items: stretch;
     z-index: 1000;
-    padding: 1.5rem;
+    padding: 0;
     animation: adminFadeIn 0.25s ease-out;
 }
 
-/* Modal Content Container */
+/* Modal Content Container (Slide-in Right Drawer) */
 .modal {
     background: var(--bg-card, #ffffff);
     color: var(--text-main, #0f172a);
     width: 100%;
     max-width: 560px;
-    max-height: 90vh;
-    border-radius: 1rem;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 1.25rem 0 0 1.25rem;
     border: 1px solid var(--border-color, #e2e8f0);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    border-right: none;
+    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.35);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     padding: 1.75rem;
-    animation: adminScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: adminSlideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-header {
@@ -84,12 +86,19 @@
     animation: adminModalSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Modal Standard (Centered) Styling */
+/* Modal Standard (Right Drawer) Styling */
 .admin-modal-standard {
     max-width: 600px;
-    max-height: 90vh;
-    border-radius: 1.25rem;
-    animation: adminScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 1.25rem 0 0 1.25rem;
+    border-right: none;
+    animation: adminSlideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes adminSlideInRight {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes adminModalSlideUp {

@@ -81,7 +81,7 @@ export default function MainBottomTabs({ navigation }) {
           name={ROUTES.VISITS_LEDGER}
           component={S09VisitsLedger}
           options={{
-            tabBarLabel: 'My Ledger',
+            tabBarLabel: 'Ledger',
             tabBarIcon: ({ color, focused }) => (
               <IconClipboardList
                 size={22}

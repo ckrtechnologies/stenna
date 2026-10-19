@@ -380,6 +380,10 @@ export async function getSalesBoyZoneIds(salesBoyId) {
   return await repo.getSalesBoyAssignedZoneIds(salesBoyId);
 }
 
+export async function deleteSalesBoy(id) {
+  return await repo.deleteSalesBoy(id);
+}
+
 // ------------------------------------------------------------------------------
 // 5. FIELD VISITS & VISIT RECORDING SERVICE
 // ------------------------------------------------------------------------------
@@ -498,10 +502,30 @@ export async function getSalesBoyAppDashboard(salesBoyId) {
 // 7. ADMIN SALES ANALYTICS & COVERAGE REPORT
 // ------------------------------------------------------------------------------
 
-export async function getAdminSalesAnalytics({ zoneId } = {}) {
+export async function getAdminSalesAnalytics({ zoneId, startDate, endDate, datePreset } = {}) {
+  let start = startDate;
+  let end = endDate;
+
+  if (datePreset && !start && !end) {
+    const now = new Date();
+    if (datePreset === 'TODAY') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      start = today.toISOString();
+    } else if (datePreset === '7DAYS') {
+      const past7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      start = past7.toISOString();
+    } else if (datePreset === '30DAYS') {
+      const past30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      start = past30.toISOString();
+    } else if (datePreset === 'THIS_MONTH') {
+      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      start = firstOfMonth.toISOString();
+    }
+  }
+
   const [allVendors, allVisits, allZones, allSalesBoys] = await Promise.all([
     repo.listVendors({ zoneId }),
-    repo.listVisits({ zoneId, limit: 1000 }),
+    repo.listVisits({ zoneId, startDate: start, endDate: end, limit: 2000 }),
     repo.listZones(),
     repo.listSalesBoys()
   ]);
@@ -544,9 +568,10 @@ export async function getAdminSalesAnalytics({ zoneId } = {}) {
       coveragePercent,
       unvisitedShopsCount: unvisitedShops.length,
       totalSalesReps: allSalesBoys.length,
-      totalZones: allZones.length
+      totalZones: allZones.length,
+      dateRange: { startDate: start, endDate: end, datePreset }
     },
-    unvisitedShops: unvisitedShops.slice(0, 20),
+    unvisitedShops: unvisitedShops.slice(0, 50),
     bookConversions: Array.from(bookConversionMap.values())
   };
 }

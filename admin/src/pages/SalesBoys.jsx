@@ -12,7 +12,8 @@ import {
   ArrowDown,
   Search,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Trash2
 } from 'lucide-react';
 import api from '../utils/api';
 import Loader from '../components/Loader';
@@ -150,6 +151,31 @@ export default function SalesBoys() {
     }
   };
 
+  const handleDelete = async (rep) => {
+    const confirmMsg = `Are you sure you want to delete sales rep "${rep.name}"? This action cannot be undone.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      await api.delete(`/sales-tracking/admin/sales-boys/${rep.id}`);
+      fetchInitialData();
+    } catch (err) {
+      console.error('Failed to delete sales rep:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to delete sales rep');
+    }
+  };
+
+  const handleToggleStatus = async (rep) => {
+    try {
+      await api.put(`/sales-tracking/admin/sales-boys/${rep.id}`, {
+        isActive: !rep.is_active
+      });
+      fetchInitialData();
+    } catch (err) {
+      console.error('Failed to toggle status:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to update status');
+    }
+  };
+
   return (
     <div className="sales-tracking-page">
       <header className="page-header">
@@ -262,9 +288,28 @@ export default function SalesBoys() {
                         </div>
                       </td>
                       <td>
-                        <span className={`status-tag ${rep.is_active ? 'active' : 'inactive'}`}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatus(rep)}
+                          className={`status-tag ${rep.is_active ? 'active' : 'inactive'}`}
+                          style={{
+                            background: rep.is_active ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                            color: rep.is_active ? '#10b981' : '#ef4444',
+                            border: `1px solid ${rep.is_active ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                            cursor: 'pointer',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Click to toggle Active / Inactive"
+                        >
+                          {rep.is_active ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
                           {rep.is_active ? 'Active' : 'Inactive'}
-                        </span>
+                        </button>
                       </td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                         {new Date(rep.created_at).toLocaleDateString('en-IN', {
@@ -274,13 +319,22 @@ export default function SalesBoys() {
                         })}
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <button
-                          className="icon-btn"
-                          title="Edit Sales Rep"
-                          onClick={() => handleOpenEdit(rep)}
-                        >
-                          <Edit size={16} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                          <button
+                            className="icon-btn"
+                            title="Edit Sales Rep"
+                            onClick={() => handleOpenEdit(rep)}
+                          >
+                            <Edit size={15} />
+                          </button>
+                          <button
+                            className="icon-btn red"
+                            title="Delete Sales Rep"
+                            onClick={() => handleDelete(rep)}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

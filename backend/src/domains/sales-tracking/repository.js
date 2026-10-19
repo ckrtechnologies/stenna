@@ -286,6 +286,23 @@ export async function getSalesBoyAssignedZoneIds(salesBoyId) {
   return (data || []).map((row) => row.zone_id);
 }
 
+export async function deleteSalesBoy(id) {
+  // 1. Clear assigned zones mappings
+  await supabase
+    .from('sales_boy_zones')
+    .delete()
+    .eq('sales_boy_id', id);
+
+  // 2. Delete sales boy
+  const { error } = await supabase
+    .from('sales_boys')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
 // ------------------------------------------------------------------------------
 // 3. VENDORS / RETAIL SHOPS
 // ------------------------------------------------------------------------------
@@ -478,8 +495,14 @@ export async function listVisits({ vendorId, salesBoyId, zoneId, isAvailable, st
   if (isAvailable !== undefined && isAvailable !== null && isAvailable !== '') {
     q = q.eq('is_available', isAvailable === 'true' || isAvailable === true);
   }
-  if (startDate) q = q.gte('visited_at', startDate);
-  if (endDate) q = q.lte('visited_at', endDate);
+  if (startDate) {
+    const s = typeof startDate === 'string' && startDate.length === 10 ? `${startDate}T00:00:00.000Z` : startDate;
+    q = q.gte('visited_at', s);
+  }
+  if (endDate) {
+    const e = typeof endDate === 'string' && endDate.length === 10 ? `${endDate}T23:59:59.999Z` : endDate;
+    q = q.lte('visited_at', e);
+  }
 
   const { data, error } = await q;
   if (error) throw error;

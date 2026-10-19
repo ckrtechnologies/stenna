@@ -139,21 +139,21 @@ export default function CustomSelect({
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '0.5rem',
-          padding: size === 'sm' ? '0.45rem 0.65rem' : '0.6rem 0.75rem',
-          background: 'var(--bg-main, #f8fafc)',
+          padding: size === 'sm' ? '0.45rem 0.65rem' : '0.55rem 0.75rem',
+          background: 'var(--bg-card, #ffffff)',
           color: 'var(--text-main)',
           border: isOpen
             ? '1px solid var(--primary)'
             : isSelected
             ? '1px solid var(--primary)'
             : '1px solid var(--border-color)',
-          borderRadius: '0.375rem',
-          fontSize: size === 'sm' ? '0.8rem' : '0.85rem',
-          fontWeight: isSelected ? 600 : 400,
+          borderRadius: '6px',
+          fontSize: size === 'sm' ? '0.8rem' : '0.84rem',
+          fontWeight: isSelected ? 500 : 400,
           cursor: disabled ? 'not-allowed' : 'pointer',
           textAlign: 'left',
-          transition: 'border-color 0.15s, box-shadow 0.15s',
-          boxShadow: isOpen ? '0 0 0 2px rgba(59, 130, 246, 0.2)' : 'none',
+          transition: 'all 0.15s ease',
+          boxShadow: isOpen ? '0 0 0 2px rgba(16, 185, 129, 0.2)' : 'none',
           opacity: disabled ? 0.6 : 1,
           ...triggerStyle
         }}

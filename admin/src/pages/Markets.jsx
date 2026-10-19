@@ -319,20 +319,20 @@ export default function Markets() {
                       {market.created_at ? new Date(market.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
                         <button
-                          className="btn-icon"
+                          className="icon-btn"
                           title="Edit Market"
                           onClick={() => handleOpenEdit(market)}
                         >
-                          <Edit size={16} />
+                          <Edit size={15} />
                         </button>
                         <button
-                          className="btn-icon delete"
+                          className="icon-btn red"
                           title="Delete Market"
                           onClick={() => handleDelete(market.id)}
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </td>

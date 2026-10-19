@@ -85,7 +85,11 @@ export default function AppDrawer() {
   const handleNavigate = (route) => {
     closeDrawer();
     setTimeout(() => {
-      navigation?.navigate(route);
+      if ([ROUTES.DASHBOARD, ROUTES.SHOPS, ROUTES.VISITS_LEDGER, ROUTES.PROFILE].includes(route)) {
+        navigation?.navigate(ROUTES.MAIN_TABS, { screen: route });
+      } else {
+        navigation?.navigate(route);
+      }
     }, 150);
   };
 
@@ -140,7 +144,7 @@ export default function AppDrawer() {
               </View>
               <View style={styles.territoryPill}>
                 <Text style={styles.territoryPillText} numberOfLines={1}>
-                  📍 {primaryZoneName} • {assignedMarkets.length} Mkts • {assignedCount} Shops
+                  📍 {assignedZones.length > 0 ? assignedZones.map((z) => z.name).join(', ') : 'All Zones'} • {assignedMarkets.length} Mkts • {assignedCount} Shops
                 </Text>
               </View>
             </View>
@@ -171,7 +175,7 @@ export default function AppDrawer() {
             <View style={[styles.iconBox, { backgroundColor: 'rgba(29, 78, 216, 0.12)' }]}>
               <IconLayoutDashboard size={20} color={theme.colors.primaryLight} />
             </View>
-            <Text style={styles.navItemText}>Field Dashboard</Text>
+            <Text style={styles.navItemText}>Dashboard</Text>
             <IconChevronRight size={16} color="#475569" />
           </TouchableOpacity>
 
@@ -183,7 +187,7 @@ export default function AppDrawer() {
             <View style={[styles.iconBox, { backgroundColor: 'rgba(5, 150, 105, 0.12)' }]}>
               <IconBuildingStore size={20} color={theme.colors.callGreenLight} />
             </View>
-            <Text style={styles.navItemText}>Assigned Stores Beat</Text>
+            <Text style={styles.navItemText}>Shops</Text>
             <IconChevronRight size={16} color="#475569" />
           </TouchableOpacity>
 
@@ -195,7 +199,7 @@ export default function AppDrawer() {
             <View style={[styles.iconBox, { backgroundColor: 'rgba(212, 175, 55, 0.12)' }]}>
               <IconClipboardList size={20} color={theme.colors.gold} />
             </View>
-            <Text style={styles.navItemText}>Field Visits Ledger</Text>
+            <Text style={styles.navItemText}>Ledger</Text>
             <IconChevronRight size={16} color="#475569" />
           </TouchableOpacity>
 
@@ -209,7 +213,7 @@ export default function AppDrawer() {
             <View style={[styles.iconBox, { backgroundColor: 'rgba(148, 163, 184, 0.12)' }]}>
               <IconRefresh size={20} color="#94A3B8" />
             </View>
-            <Text style={styles.navItemText}>Offline Queue & Sync</Text>
+            <Text style={styles.navItemText}>Sync</Text>
             <IconChevronRight size={16} color="#475569" />
           </TouchableOpacity>
 
@@ -221,7 +225,7 @@ export default function AppDrawer() {
             <View style={[styles.iconBox, { backgroundColor: 'rgba(148, 163, 184, 0.12)' }]}>
               <IconUser size={20} color="#94A3B8" />
             </View>
-            <Text style={styles.navItemText}>Rep Profile & Settings</Text>
+            <Text style={styles.navItemText}>Profile</Text>
             <IconChevronRight size={16} color="#475569" />
           </TouchableOpacity>
         </ScrollView>

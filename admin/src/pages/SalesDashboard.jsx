@@ -13,9 +13,10 @@ import {
   ArrowDown,
   CheckCircle2,
   XCircle,
-  BookOpen
+  BookOpen,
+  Calendar
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 import Loader from '../components/Loader';
 import CustomSelect from '../components/CustomSelect';
@@ -24,7 +25,11 @@ import '../styles/salesTracking.css';
 export default function SalesDashboard() {
   const [data, setData] = useState(null);
   const [zones, setZones] = useState([]);
-  const [selectedZone, setSelectedZone] = useState('ALL');
+  const [searchParams] = useSearchParams();
+  const [selectedZone, setSelectedZone] = useState(searchParams.get('zoneId') || 'ALL');
+  const [datePreset, setDatePreset] = useState(searchParams.get('datePreset') || 'ALL');
+  const [startDate, setStartDate] = useState(searchParams.get('startDate') || '');
+  const [endDate, setEndDate] = useState(searchParams.get('endDate') || '');
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState('shop_name');
   const [sortOrder, setSortOrder] = useState('asc');
@@ -36,7 +41,7 @@ export default function SalesDashboard() {
 
   useEffect(() => {
     fetchAnalytics();
-  }, [selectedZone]);
+  }, [selectedZone, datePreset, startDate, endDate]);
 
   const fetchZones = async () => {
     try {
@@ -50,10 +55,14 @@ export default function SalesDashboard() {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const endpoint = selectedZone === 'ALL'
-        ? '/sales-tracking/admin/analytics'
-        : `/sales-tracking/admin/analytics?zoneId=${selectedZone}`;
-      const res = await api.get(endpoint);
+      const params = new URLSearchParams();
+      if (selectedZone !== 'ALL') params.set('zoneId', selectedZone);
+      if (datePreset !== 'ALL') params.set('datePreset', datePreset);
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      const query = params.toString() ? `?${params.toString()}` : '';
+
+      const res = await api.get(`/sales-tracking/admin/analytics${query}`);
       setData(res.data?.data || null);
     } catch (err) {
       console.error('Failed to fetch analytics', err);
@@ -101,7 +110,53 @@ export default function SalesDashboard() {
             Real-time field activity, territory coverage, and sample books conversion metrics.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Quick Date Presets */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              padding: '2px'
+            }}
+          >
+            <div style={{ padding: '0 5px', display: 'flex', alignItems: 'center', color: 'var(--text-muted)' }}>
+              <Calendar size={13} />
+            </div>
+            {[
+              { id: 'ALL', label: 'All' },
+              { id: 'TODAY', label: 'Today' },
+              { id: '7DAYS', label: '7D' },
+              { id: '30DAYS', label: '30D' },
+              { id: 'THIS_MONTH', label: 'Month' }
+            ].map((p) => {
+              const active = datePreset === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setDatePreset(p.id)}
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.72rem',
+                    fontWeight: active ? 700 : 500,
+                    borderRadius: '4px',
+                    border: 'none',
+                    background: active ? 'var(--primary)' : 'transparent',
+                    color: active ? '#ffffff' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    transition: 'all 0.12s ease'
+                  }}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '170px' }}>
             <MapPin size={16} color="var(--primary)" style={{ flexShrink: 0 }} />
             <CustomSelect
@@ -118,7 +173,7 @@ export default function SalesDashboard() {
             />
           </div>
           <button className="btn btn-primary" onClick={fetchAnalytics}>
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             <span>Refresh</span>
           </button>
         </div>
@@ -256,10 +311,10 @@ export default function SalesDashboard() {
               </div>
               <button
                 className="btn"
-                style={{ background: 'var(--border-color)', color: 'var(--text-main)' }}
-                onClick={() => navigate('/sales-tracking/vendors')}
+                style={{ background: 'var(--border-color)', color: 'var(--text-main)', fontSize: '0.78rem' }}
+                onClick={() => navigate('/sales-tracking/vendors?visitStatus=UNVISITED')}
               >
-                View All Vendors
+                View Unvisited Shops ({sortedUnvisitedShops.length})
               </button>
             </div>
 

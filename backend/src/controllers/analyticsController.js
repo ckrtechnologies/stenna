@@ -42,10 +42,44 @@ export const getPopular = async (req, res) => {
 
 export const getDashboardStats = async (req, res) => {
     try {
+        let { startDate, endDate, datePreset } = req.query;
+        if (datePreset && datePreset !== 'ALL' && (!startDate || !endDate)) {
+            const now = new Date();
+            const formatYMD = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (datePreset === 'TODAY') {
+                startDate = formatYMD(now);
+                endDate = formatYMD(now);
+            } else if (datePreset === '7DAYS') {
+                const past = new Date(now);
+                past.setDate(past.getDate() - 7);
+                startDate = formatYMD(past);
+                endDate = formatYMD(now);
+            } else if (datePreset === '30DAYS') {
+                const past = new Date(now);
+                past.setDate(past.getDate() - 30);
+                startDate = formatYMD(past);
+                endDate = formatYMD(now);
+            } else if (datePreset === 'THIS_MONTH') {
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                startDate = formatYMD(firstDay);
+                endDate = formatYMD(now);
+            }
+        }
+
+        let leadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
+        if (startDate) {
+            const sIso = startDate.includes('T') ? startDate : `${startDate}T00:00:00.000Z`;
+            leadsQuery = leadsQuery.gte('created_at', sIso);
+        }
+        if (endDate) {
+            const eIso = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999Z`;
+            leadsQuery = leadsQuery.lte('created_at', eIso);
+        }
+
         const [{ count: wallpapers }, { count: categories }, { count: leads }, { count: dealers }, { count: books }] = await Promise.all([
             supabase.from('wallpapers').select('*', { count: 'exact', head: true }),
             supabase.from('categories').select('*', { count: 'exact', head: true }),
-            supabase.from('leads').select('*', { count: 'exact', head: true }),
+            leadsQuery,
             supabase.from('dealers').select('*', { count: 'exact', head: true }),
             supabase.from('books').select('*', { count: 'exact', head: true })
         ]);

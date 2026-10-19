@@ -65,14 +65,22 @@ export default function S03FieldDashboard({ navigation }) {
     >
       {/* Rep Greeting Banner */}
       <View style={styles.greetingBar}>
-        <View>
+        <View style={{ flex: 1, marginRight: 8 }}>
           <Text style={styles.repGreeting}>Welcome back,</Text>
-          <Text style={styles.repName}>{user?.name || 'Sales Representative'}</Text>
+          <Text style={styles.repName} numberOfLines={1}>{user?.name || 'Sales Representative'}</Text>
         </View>
-        <View style={styles.territoryBadge}>
-          <Text style={styles.territoryText}>
-            📍 {primaryZone?.name ? primaryZone.name.toUpperCase() : 'ALL ZONES'}
-          </Text>
+        <View style={styles.territoryBadgeWrap}>
+          {assignedZones.length > 0 ? (
+            assignedZones.map((z) => (
+              <View key={z.id} style={styles.territoryBadge}>
+                <Text style={styles.territoryText}>📍 {z.name.toUpperCase()}</Text>
+              </View>
+            ))
+          ) : (
+            <View style={styles.territoryBadge}>
+              <Text style={styles.territoryText}>📍 ALL ZONES</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -140,10 +148,12 @@ export default function S03FieldDashboard({ navigation }) {
               <View style={styles.iconCircle}>
                 <IconBuildingStore size={22} color={theme.colors.primary} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.territorySectionTitle}>Assigned Territory Beat</Text>
-                <Text style={styles.territorySectionSub}>
-                  {primaryZone?.name || 'All Territory'} • {assignedMarkets.length} Markets • {assignedCount} Shops
+                <Text style={styles.territorySectionSub} numberOfLines={1}>
+                  {assignedZones.length > 0
+                    ? `${assignedZones.length} Zones (${assignedZones.map((z) => z.name).join(', ')})`
+                    : 'All Territory'} • {assignedMarkets.length} Markets • {assignedCount} Shops
                 </Text>
               </View>
             </View>
@@ -153,15 +163,21 @@ export default function S03FieldDashboard({ navigation }) {
           {/* 3-Tier Badges Row */}
           <View style={styles.tierChipsRow}>
             <View style={styles.tierChip}>
-              <Text style={styles.tierChipLabel}>ZONE</Text>
-              <Text style={styles.tierChipValue} numberOfLines={1}>{primaryZone?.name || 'North Zone'}</Text>
+              <Text style={styles.tierChipLabel}>
+                {assignedZones.length > 1 ? `ZONES (${assignedZones.length})` : 'ZONE'}
+              </Text>
+              <Text style={styles.tierChipValue} numberOfLines={1}>
+                {assignedZones.length > 0
+                  ? assignedZones.map((z) => z.name).join(', ')
+                  : 'All Zones'}
+              </Text>
             </View>
             <View style={styles.tierChipDivider} />
             <View style={styles.tierChip}>
               <Text style={styles.tierChipLabel}>MARKETS</Text>
               <Text style={styles.tierChipValue} numberOfLines={1}>
                 {assignedMarkets.length > 0
-                  ? `${assignedMarkets.length} Markets (${assignedMarkets.map((m) => m.name).slice(0, 2).join(', ')}${assignedMarkets.length > 2 ? '...' : ''})`
+                  ? `${assignedMarkets.length} Markets`
                   : 'All Markets'}
               </Text>
             </View>
@@ -239,9 +255,16 @@ const styles = StyleSheet.create({
     color: theme.colors.navyPrimary,
     letterSpacing: -0.3
   },
+  territoryBadgeWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    maxWidth: '55%'
+  },
   territoryBadge: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: 8,
     backgroundColor: 'rgba(29, 78, 216, 0.08)',
     borderWidth: 1,

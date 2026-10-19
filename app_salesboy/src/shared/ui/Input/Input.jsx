@@ -18,12 +18,18 @@ const Input = forwardRef(function Input(
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
       
-      <View style={[styles.inputBox, error && styles.boxError]}>
+      <View
+        style={[
+          styles.inputBox,
+          rest.multiline && styles.inputBoxMultiline,
+          error && styles.boxError
+        ]}
+      >
         {prefix && <View style={styles.prefixWrap}>{prefix}</View>}
         <TextInput
           ref={ref}
           placeholderTextColor={theme.colors.textDim}
-          style={[styles.input, inputStyle]}
+          style={[styles.input, rest.multiline && styles.inputMultiline, inputStyle]}
           {...rest}
         />
       </View>
@@ -57,6 +63,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md
   },
+  inputBoxMultiline: {
+    alignItems: 'flex-start',
+    minHeight: 120,
+    paddingVertical: 10
+  },
   boxError: {
     borderColor: theme.colors.danger
   },
@@ -68,6 +79,11 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.textMain,
     paddingVertical: 10
+  },
+  inputMultiline: {
+    textAlignVertical: 'top',
+    minHeight: 100,
+    paddingVertical: 4
   },
   errorText: {
     fontSize: theme.typography.fontSize.xs,

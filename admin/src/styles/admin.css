@@ -25,11 +25,15 @@ body {
 .main-content {
     flex: 1;
     margin-left: var(--sidebar-width);
-    padding: 1rem; /* Further reduced from 1.5rem */
-    transition: var(--transition-slow);
+    padding: 0.75rem 1rem;
+    transition: margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Sidebar */
+.admin-layout.sidebar-collapsed .main-content {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+/* Sidebar — Compact SaaS Density */
 .sidebar {
     width: var(--sidebar-width);
     height: 100vh;
@@ -41,65 +45,73 @@ body {
     left: 0;
     top: 0;
     z-index: 100;
-    transition: var(--transition-slow);
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
 }
 
 .logo {
-    padding: 1rem 0.75rem; /* Match sidebar item alignment */
+    padding: 0.6rem 0.65rem;
     border-bottom: 1px solid var(--border-color);
     display: flex;
-    flex-direction: column; /* Stack logo and text */
-    align-items: flex-start;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.sidebar.collapsed .logo {
+    justify-content: center;
+    padding: 0.6rem 0.35rem;
 }
 
 .logo-img {
-    height: 32px;
+    height: 26px;
     width: auto;
     object-fit: contain;
 }
 
-.logo h2 {
-    font-size: 1.1rem;
-    color: var(--text-main);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    margin: 0;
-}
-
 .logo span {
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
     color: var(--primary);
     font-weight: 700;
     background: rgba(59, 130, 246, 0.1);
-    padding: 0.2rem 0.5rem;
+    padding: 0.12rem 0.35rem;
     border-radius: 4px;
-    margin-left: 0.5rem;
+}
+
+.sidebar-collapse-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: var(--primary) !important;
+}
+
+[data-theme='dark'] .sidebar-collapse-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
 }
 
 .menu {
     flex: 1;
-    padding: 1rem 0; /* Removed horizontal padding */
+    padding: 0.35rem 0;
     overflow-y: auto;
 }
 
 .menu-category-header,
 .menu-category {
-    font-size: 0.68rem;
+    font-size: 0.64rem;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     color: #047857;
-    margin: 1.15rem 0.35rem 0.25rem 0.45rem;
-    padding: 0.35rem 0.6rem;
+    margin: 0.35rem 0.25rem 0.08rem 0.35rem;
+    padding: 0.18rem 0.45rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
     user-select: none;
-    transition: all 0.2s ease;
-    border-radius: 6px;
+    transition: all 0.15s ease;
+    border-radius: 5px;
 }
 
 [data-theme='dark'] .menu-category-header,
@@ -124,14 +136,14 @@ body {
     display: flex;
     align-items: center;
     white-space: nowrap;
-    font-size: 0.68rem;
+    font-size: 0.64rem;
     font-weight: 800;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
 }
 
 .menu-category-chevron,
 .menu-category .chevron {
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0.65;
     color: inherit;
     flex-shrink: 0;
@@ -144,7 +156,7 @@ body {
 
 .menu-group-items {
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     max-height: 500px;
     opacity: 1;
 }
@@ -156,46 +168,53 @@ body {
 }
 
 .menu-group:first-child {
-    margin-top: 0.25rem;
+    margin-top: 0.1rem;
 }
 
 .menu-group:first-child .menu-category-header,
 .menu-group:first-child .menu-category {
-    margin-top: 0.25rem;
+    margin-top: 0.1rem;
 }
 
 .menu-item {
     display: flex;
     align-items: center;
-    padding: 0.45rem 0.65rem;
+    padding: 0.25rem 0.45rem;
     color: var(--text-muted);
     text-decoration: none;
-    border-radius: 8px;
-    margin: 0.15rem 0.35rem;
-    transition: all 0.15s ease;
-    font-size: 0.85rem;
+    border-radius: 6px;
+    margin: 0.06rem 0.25rem;
+    transition: all 0.12s ease;
+    font-size: 0.78rem;
     border: 1px solid transparent;
+    height: 30px;
+}
+
+.menu-item.rail-mode {
+    justify-content: center;
+    padding: 0.25rem 0;
+    margin: 0.12rem 0.2rem;
 }
 
 .menu-squircle-badge {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .menu-item:hover .menu-squircle-badge {
-    transform: scale(1.08);
+    transform: scale(1.05);
 }
 
 .menu-item-title {
-    margin-left: 0.65rem;
+    margin-left: 0.45rem;
     font-weight: 500;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     color: var(--text-main);
     flex: 1;
     white-space: nowrap;
@@ -388,39 +407,86 @@ body {
 }
 
 .icon-box.blue {
-    color: var(--icon-dashboard);
-    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.1);
 }
 
 .icon-box.purple {
-    color: var(--icon-groups);
-    background: rgba(139, 92, 246, 0.1);
+    color: #7c3aed;
+    background: rgba(124, 58, 237, 0.1);
 }
 
 .icon-box.green {
-    color: var(--icon-wallpapers);
-    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    background: rgba(5, 150, 105, 0.1);
 }
 
 .icon-box.orange {
-    color: var(--icon-categories);
-    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+    background: rgba(217, 119, 6, 0.1);
 }
 
+.icon-box.pink {
+    color: #db2777;
+    background: rgba(219, 39, 119, 0.1);
+}
+
+.icon-box.cyan {
+    color: #0284c7;
+    background: rgba(2, 132, 199, 0.1);
+}
+
+.icon-box.indigo {
+    color: #4f46e5;
+    background: rgba(79, 70, 229, 0.1);
+}
+
+/* Dark Mode Icon Boxes — High contrast, vibrant glowing tints */
 [data-theme='dark'] .icon-box {
-    color: white !important;
-    background: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
-.icon-box.green {
-    color: var(--success);
-    background: rgba(16, 185, 129, 0.1);
+[data-theme='dark'] .icon-box.blue {
+    color: #60a5fa !important;
+    background: rgba(59, 130, 246, 0.16) !important;
+    border-color: rgba(59, 130, 246, 0.28) !important;
 }
 
-.icon-box.orange {
-    color: var(--warning);
-    background: rgba(245, 158, 11, 0.1);
+[data-theme='dark'] .icon-box.purple {
+    color: #c084fc !important;
+    background: rgba(168, 85, 247, 0.16) !important;
+    border-color: rgba(168, 85, 247, 0.28) !important;
+}
+
+[data-theme='dark'] .icon-box.green {
+    color: #34d399 !important;
+    background: rgba(16, 185, 129, 0.16) !important;
+    border-color: rgba(16, 185, 129, 0.28) !important;
+}
+
+[data-theme='dark'] .icon-box.orange {
+    color: #fbbf24 !important;
+    background: rgba(245, 158, 11, 0.16) !important;
+    border-color: rgba(245, 158, 11, 0.28) !important;
+}
+
+[data-theme='dark'] .icon-box.pink {
+    color: #f472b6 !important;
+    background: rgba(244, 114, 182, 0.16) !important;
+    border-color: rgba(244, 114, 182, 0.28) !important;
+}
+
+[data-theme='dark'] .icon-box.cyan {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.16) !important;
+    border-color: rgba(56, 189, 248, 0.28) !important;
+}
+
+[data-theme='dark'] .icon-box.indigo {
+    color: #a5b4fc !important;
+    background: rgba(129, 140, 248, 0.16) !important;
+    border-color: rgba(129, 140, 248, 0.28) !important;
 }
 
 .stat-info h3 {
@@ -785,4 +851,86 @@ body {
 
 .ckr-custom-select-menu::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
+}
+
+/* ==============================================================================
+   CKR Rule: Strict Dropdown Appearance Reset (Ban OS / macOS Aqua UI)
+   ============================================================================== */
+select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-color: var(--surface-ground, #ffffff) !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 14px 14px !important;
+    border: 1px solid var(--border-color, #e2e8f0) !important;
+    border-radius: 6px !important;
+    padding: 7px 32px 7px 10px !important;
+    font-size: 0.85rem !important;
+    color: var(--text-main) !important;
+    cursor: pointer !important;
+    transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+
+select:focus {
+    outline: none !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* ==============================================================================
+   CKR Rule: Tabular Data — Strictly One Sleek Line Per Row (36px–40px)
+   ============================================================================== */
+.table-container table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-container th {
+    padding: 8px 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    background: var(--bg-table-header, var(--bg-card));
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+    height: 38px;
+}
+
+.table-container td {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    white-space: nowrap;
+    height: 38px;
+}
+
+.table-container tr:hover td {
+    background-color: var(--bg-hover, rgba(0, 0, 0, 0.02));
+}
+
+.table-cell-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.table-meta-muted {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.table-separator {
+    color: var(--text-muted);
+    opacity: 0.6;
+    margin: 0 2px;
 }

@@ -151,10 +151,10 @@ const BookModal = ({ isOpen, onClose, onSave, book }) => {
                     background: rgba(0, 0, 0, 0.65);
                     backdrop-filter: blur(6px);
                     display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    align-items: stretch;
+                    justify-content: flex-end;
                     z-index: 9999;
-                    padding: 1.5rem;
+                    padding: 0;
                     animation: bmFadeIn 0.2s ease;
                 }
                 @keyframes bmFadeIn {
@@ -165,19 +165,21 @@ const BookModal = ({ isOpen, onClose, onSave, book }) => {
                 .bm-modal {
                     background: var(--bg-card, #fff);
                     border: 1px solid var(--border-color, #e2e8f0);
-                    border-radius: 1.25rem;
+                    border-right: none;
+                    border-radius: 1.25rem 0 0 1.25rem;
                     width: 100%;
                     max-width: 540px;
-                    max-height: 90vh;
+                    height: 100vh;
+                    max-height: 100vh;
                     display: flex;
                     flex-direction: column;
                     overflow: hidden;
-                    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
-                    animation: bmSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.25);
+                    animation: bmSlideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                 }
-                @keyframes bmSlideIn {
-                    from { opacity: 0; transform: translateY(16px) scale(0.97); }
-                    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+                @keyframes bmSlideInRight {
+                    from { opacity: 0; transform: translateX(100%); }
+                    to   { opacity: 1; transform: translateX(0); }
                 }
 
                 /* Header */

@@ -529,8 +529,11 @@ const styles = StyleSheet.create({
     color: theme.colors.primary
   },
   multilineInput: {
-    height: 80,
-    textAlignVertical: 'top'
+    minHeight: 125,
+    height: 125,
+    textAlignVertical: 'top',
+    fontSize: theme.typography.fontSize.sm,
+    lineHeight: 20
   },
   modalOverlay: {
     flex: 1,

@@ -2,13 +2,48 @@ import { supabase } from '../config/supabase.js';
 
 export const getAllLeads = async (req, res) => {
     try {
-        const { data, error } = await supabase
+        let { startDate, endDate, datePreset } = req.query;
+        if (datePreset && datePreset !== 'ALL' && (!startDate || !endDate)) {
+            const now = new Date();
+            const formatYMD = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (datePreset === 'TODAY') {
+                startDate = formatYMD(now);
+                endDate = formatYMD(now);
+            } else if (datePreset === '7DAYS') {
+                const past = new Date(now);
+                past.setDate(past.getDate() - 7);
+                startDate = formatYMD(past);
+                endDate = formatYMD(now);
+            } else if (datePreset === '30DAYS') {
+                const past = new Date(now);
+                past.setDate(past.getDate() - 30);
+                startDate = formatYMD(past);
+                endDate = formatYMD(now);
+            } else if (datePreset === 'THIS_MONTH') {
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                startDate = formatYMD(firstDay);
+                endDate = formatYMD(now);
+            }
+        }
+
+        let query = supabase
             .from('leads')
             .select(`
                 *,
                 wallpaper:wallpapers(id, name, slug)
             `)
             .order('created_at', { ascending: false });
+
+        if (startDate) {
+            const sIso = startDate.includes('T') ? startDate : `${startDate}T00:00:00.000Z`;
+            query = query.gte('created_at', sIso);
+        }
+        if (endDate) {
+            const eIso = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999Z`;
+            query = query.lte('created_at', eIso);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
         res.status(200).json(data);
     } catch (error) {
