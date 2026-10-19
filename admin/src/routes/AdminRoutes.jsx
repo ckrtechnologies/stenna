@@ -18,6 +18,7 @@ import GeneratePDF from '../pages/GeneratePDF';
 import SalesDashboard from '../pages/SalesDashboard';
 import Vendors from '../pages/Vendors';
 import Zones from '../pages/Zones';
+import Markets from '../pages/Markets';
 import SalesBoys from '../pages/SalesBoys';
 import VisitRecords from '../pages/VisitRecords';
 import ShopHistoryLedger from '../pages/ShopHistoryLedger';
@@ -45,9 +46,10 @@ const AdminRoutes = () => {
 
             {/* Sales Tracking & Field Management Routes */}
             <Route path="/sales-tracking/dashboard" element={<ProtectedRoute><SalesDashboard /></ProtectedRoute>} />
+            <Route path="/sales-tracking/zones" element={<ProtectedRoute><Zones /></ProtectedRoute>} />
+            <Route path="/sales-tracking/markets" element={<ProtectedRoute><Markets /></ProtectedRoute>} />
             <Route path="/sales-tracking/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
             <Route path="/sales-tracking/shop-history" element={<ProtectedRoute><ShopHistoryLedger /></ProtectedRoute>} />
-            <Route path="/sales-tracking/zones" element={<ProtectedRoute><Zones /></ProtectedRoute>} />
             <Route path="/sales-tracking/sales-boys" element={<ProtectedRoute><SalesBoys /></ProtectedRoute>} />
             <Route path="/sales-tracking/visits" element={<ProtectedRoute><VisitRecords /></ProtectedRoute>} />
         </Routes>

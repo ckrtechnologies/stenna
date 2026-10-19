@@ -19,3 +19,4 @@ export { default as IconStar } from './IconStar';
 export { default as IconLogout } from './IconLogout';
 export { default as IconPlus } from './IconPlus';
 export { default as IconLock } from './IconLock';
+export { default as IconFilter } from './IconFilter';

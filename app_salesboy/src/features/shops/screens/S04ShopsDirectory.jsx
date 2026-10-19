@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import Screen from '@shared/layout/Screen';
 import AppBar from '@shared/layout/AppBar';
 import Input from '@shared/ui/Input';
@@ -14,20 +14,33 @@ export default function S04ShopsDirectory({ navigation }) {
     refetchOnMountOrArgChange: true
   });
   const [search, setSearch] = useState('');
+  const [selectedMarketId, setSelectedMarketId] = useState('ALL');
 
   const shops = data?.data || [];
 
+  const availableMarkets = useMemo(() => {
+    const map = new Map();
+    shops.forEach((s) => {
+      if (s.sales_markets?.id && s.sales_markets?.name) {
+        map.set(s.sales_markets.id, s.sales_markets.name);
+      }
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [shops]);
+
   const filteredShops = useMemo(() => {
-    if (!search.trim()) return shops;
-    const q = search.toLowerCase();
     return shops.filter((s) => {
+      if (selectedMarketId !== 'ALL' && s.market_id !== selectedMarketId) return false;
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
       const name = (s.shop_name || '').toLowerCase();
       const person = (s.contact_person || '').toLowerCase();
       const phone = (s.phone || '').toLowerCase();
       const addr = (s.shop_address || '').toLowerCase();
-      return name.includes(q) || person.includes(q) || phone.includes(q) || addr.includes(q);
+      const market = (s.sales_markets?.name || '').toLowerCase();
+      return name.includes(q) || person.includes(q) || phone.includes(q) || addr.includes(q) || market.includes(q);
     });
-  }, [shops, search]);
+  }, [shops, search, selectedMarketId]);
 
   const handleSelectShop = (shop) => {
     navigation.navigate(ROUTES.SHOP_DETAIL, { vendorId: shop.id });
@@ -63,6 +76,56 @@ export default function S04ShopsDirectory({ navigation }) {
         style={styles.searchBar}
       />
 
+      {availableMarkets.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.marketChipsScroll}
+        >
+          <TouchableOpacity
+            style={[
+              styles.marketChip,
+              selectedMarketId === 'ALL' && styles.marketChipActive
+            ]}
+            onPress={() => setSelectedMarketId('ALL')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.marketChipText,
+                selectedMarketId === 'ALL' && styles.marketChipTextActive
+              ]}
+            >
+              All Markets ({shops.length})
+            </Text>
+          </TouchableOpacity>
+          {availableMarkets.map((m) => {
+            const count = shops.filter((s) => s.market_id === m.id).length;
+            const isSelected = selectedMarketId === m.id;
+            return (
+              <TouchableOpacity
+                key={m.id}
+                style={[
+                  styles.marketChip,
+                  isSelected && styles.marketChipActive
+                ]}
+                onPress={() => setSelectedMarketId(isSelected ? 'ALL' : m.id)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.marketChipText,
+                    isSelected && styles.marketChipTextActive
+                  ]}
+                >
+                  {m.name} ({count})
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
+
       {isLoading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -92,7 +155,34 @@ export default function S04ShopsDirectory({ navigation }) {
 
 const styles = StyleSheet.create({
   searchBar: {
-    marginBottom: theme.spacing.sm
+    marginBottom: theme.spacing.xs
+  },
+  marketChipsScroll: {
+    paddingBottom: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  marketChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginRight: 8
+  },
+  marketChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary
+  },
+  marketChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.textMuted
+  },
+  marketChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700'
   },
   centerBox: {
     padding: theme.spacing.xl,

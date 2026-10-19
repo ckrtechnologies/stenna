@@ -9,14 +9,8 @@ const DrawerContext = createContext({
 
 export function DrawerProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
-  const openDrawer = useCallback(() => {
-    console.log('[DrawerContext] openDrawer called, setting isOpen=true');
-    setIsOpen(true);
-  }, []);
-  const closeDrawer = useCallback(() => {
-    console.log('[DrawerContext] closeDrawer called, setting isOpen=false');
-    setIsOpen(false);
-  }, []);
+  const openDrawer = useCallback(() => setIsOpen(true), []);
+  const closeDrawer = useCallback(() => setIsOpen(false), []);
   const toggleDrawer = useCallback(() => setIsOpen((prev) => !prev), []);
 
   return (

@@ -7,7 +7,8 @@ import {
   TouchableWithoutFeedback,
   Dimensions,
   ScrollView,
-  StatusBar
+  StatusBar,
+  Modal
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -22,6 +23,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { useDrawer } from './DrawerContext';
 import { logout } from '@features/auth/slice';
+import { useGetAppDashboardQuery } from '@features/dashboard/api';
 import { baseApi } from '@store/baseApi';
 import { ROUTES } from '../routes';
 import { StennaLogo } from '@shared/ui/Brand';
@@ -47,20 +49,24 @@ export default function AppDrawer() {
   const dispatch = useDispatch();
   const { isOpen, closeDrawer } = useDrawer();
   const user = useSelector((state) => state.auth?.user);
+  const { data: dashData } = useGetAppDashboardQuery();
+  const assignedZones = dashData?.data?.assignedZones || [];
+  const assignedMarkets = dashData?.data?.assignedMarkets || [];
+  const assignedCount = dashData?.data?.assignedShopsCount || 0;
+  const primaryZoneName = assignedZones.length > 0 ? assignedZones[0].name : 'Primary Zone';
 
   const [visible, setVisible] = useState(false);
   const translateX = useSharedValue(-DRAWER_WIDTH);
   const backdropOpacity = useSharedValue(0);
 
   useEffect(() => {
-    console.log('[AppDrawer] useEffect trigger with isOpen =', isOpen, 'visible =', visible);
     if (isOpen) {
       setVisible(true);
-      translateX.value = withSpring(0, { damping: 24, stiffness: 220 });
-      backdropOpacity.value = withTiming(0.65, { duration: 250, easing: Easing.out(Easing.ease) });
+      translateX.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) });
+      backdropOpacity.value = withTiming(0.65, { duration: 240, easing: Easing.out(Easing.cubic) });
     } else if (visible) {
-      backdropOpacity.value = withTiming(0, { duration: 200 });
-      translateX.value = withTiming(-DRAWER_WIDTH, { duration: 220, easing: Easing.in(Easing.ease) }, (finished) => {
+      backdropOpacity.value = withTiming(0, { duration: 200, easing: Easing.in(Easing.cubic) });
+      translateX.value = withTiming(-DRAWER_WIDTH, { duration: 200, easing: Easing.in(Easing.cubic) }, (finished) => {
         if (finished) {
           runOnJS(setVisible)(false);
         }
@@ -75,10 +81,6 @@ export default function AppDrawer() {
   const animatedBackdropStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value
   }));
-
-  if (!visible && !isOpen) {
-    return null;
-  }
 
   const handleNavigate = (route) => {
     closeDrawer();
@@ -97,17 +99,21 @@ export default function AppDrawer() {
   };
 
   return (
-    <View
-      style={[StyleSheet.absoluteFillObject, { zIndex: 9999, elevation: 30 }]}
-      pointerEvents={isOpen ? 'auto' : 'none'}
+    <Modal
+      transparent
+      visible={visible || isOpen}
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={closeDrawer}
     >
-      {/* Dark Dim Backdrop */}
-      <TouchableWithoutFeedback onPress={closeDrawer}>
-        <Animated.View style={[styles.backdrop, animatedBackdropStyle]} />
-      </TouchableWithoutFeedback>
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        {/* Dark Dim Backdrop */}
+        <TouchableWithoutFeedback onPress={closeDrawer}>
+          <Animated.View style={[StyleSheet.absoluteFillObject, styles.backdrop, animatedBackdropStyle]} />
+        </TouchableWithoutFeedback>
 
-      {/* Slide-out Drawer Panel */}
-      <Animated.View style={[styles.drawerPanel, { width: DRAWER_WIDTH }, animatedDrawerStyle]}>
+        {/* Slide-out Drawer Panel */}
+        <Animated.View style={[styles.drawerPanel, { width: DRAWER_WIDTH }, animatedDrawerStyle]}>
         <View style={[styles.headerSection, { paddingTop: insets.top + 16 }]}>
           <View style={styles.headerTopRow}>
             <StennaLogo size="sm" subtitle="ENTERPRISE FIELD FORCE" />
@@ -131,6 +137,11 @@ export default function AppDrawer() {
               <View style={styles.rolePill}>
                 <View style={styles.statusDot} />
                 <Text style={styles.roleText}>Field Sales Executive</Text>
+              </View>
+              <View style={styles.territoryPill}>
+                <Text style={styles.territoryPillText} numberOfLines={1}>
+                  📍 {primaryZoneName} • {assignedMarkets.length} Mkts • {assignedCount} Shops
+                </Text>
               </View>
             </View>
           </View>
@@ -219,10 +230,10 @@ export default function AppDrawer() {
         <View style={[styles.footerSection, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity
             style={styles.logoutBtn}
-            activeOpacity={0.75}
+            activeOpacity={0.85}
             onPress={handleLogout}
           >
-            <IconLogout size={18} color={theme.colors.danger} />
+            <IconLogout size={18} color="#FFFFFF" strokeWidth={2.2} />
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
 
@@ -231,6 +242,7 @@ export default function AppDrawer() {
         </View>
       </Animated.View>
     </View>
+    </Modal>
   );
 }
 
@@ -240,10 +252,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000'
   },
   drawerPanel: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
+    height: '100%',
     backgroundColor: theme.colors.navyDark,
     borderRightWidth: 1,
     borderRightColor: theme.colors.navyBorder,
@@ -329,6 +338,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600'
   },
+  territoryPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 6,
+    alignSelf: 'flex-start'
+  },
+  territoryPillText: {
+    color: '#CBD5E1',
+    fontSize: 10,
+    fontWeight: '600'
+  },
   ctaWrap: {
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -405,17 +427,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: 'rgba(220, 38, 38, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(220, 38, 38, 0.25)',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#DC2626',
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 3,
     marginBottom: 10
   },
   logoutText: {
-    color: theme.colors.danger,
+    color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 13
+    fontSize: 14,
+    letterSpacing: 0.3
   },
   footerVersion: {
     fontSize: 10,

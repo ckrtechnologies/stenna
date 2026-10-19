@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, TouchableOpacity, Alert, StyleSheet, Modal, ScrollView, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  Modal,
+  ScrollView,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard
+} from 'react-native';
 import { useDispatch } from 'react-redux';
 import Screen from '@shared/layout/Screen';
 import AppBar from '@shared/layout/AppBar';
@@ -28,8 +41,10 @@ export default function S06RecordVisit({ route, navigation }) {
   const shops = shopsData?.data || [];
 
   const [currentShop, setCurrentShop] = useState(route.params?.prefilledShop || null);
-  const [shopPickerVisible, setShopPickerVisible] = useState(false);
+  const [shopPickerVisible, setShopPickerVisible] = useState(!route.params?.prefilledShop && !route.params?.vendorId);
   const [shopSearch, setShopSearch] = useState('');
+  const [selectedZoneId, setSelectedZoneId] = useState(null);
+  const [selectedMarketId, setSelectedMarketId] = useState(null);
 
   const [recordVisitApi, { isLoading }] = useRecordVisitMutation();
   const [isAvailable, setIsAvailable] = useState(true);
@@ -43,17 +58,54 @@ export default function S06RecordVisit({ route, navigation }) {
       if (route.params?.vendorId) {
         const found = shops.find((s) => s.id === route.params.vendorId);
         if (found) setCurrentShop(found);
+      } else if (route.params?.prefilledShop) {
+        setCurrentShop(route.params.prefilledShop);
       } else {
-        setCurrentShop(shops[0]);
+        // Automatically prompt rep to pick store
+        setShopPickerVisible(true);
       }
     }
-  }, [shops, currentShop, route.params?.vendorId]);
+  }, [shops, currentShop, route.params?.vendorId, route.params?.prefilledShop]);
+
+  const availableZones = useMemo(() => {
+    const map = new Map();
+    shops.forEach((s) => {
+      const z = s.sales_zones;
+      if (z?.id && !map.has(z.id)) {
+        map.set(z.id, z);
+      }
+    });
+    return Array.from(map.values());
+  }, [shops]);
+
+  const availableMarkets = useMemo(() => {
+    const map = new Map();
+    shops.forEach((s) => {
+      const m = s.sales_markets;
+      if (m?.id && !map.has(m.id)) {
+        if (!selectedZoneId || s.zone_id === selectedZoneId) {
+          map.set(m.id, m);
+        }
+      }
+    });
+    return Array.from(map.values());
+  }, [shops, selectedZoneId]);
 
   const filteredShops = useMemo(() => {
-    if (!shopSearch.trim()) return shops;
-    const q = shopSearch.toLowerCase();
-    return shops.filter((s) => (s.shop_name || '').toLowerCase().includes(q) || (s.phone || '').includes(q));
-  }, [shops, shopSearch]);
+    return shops.filter((s) => {
+      if (selectedZoneId && s.zone_id !== selectedZoneId) return false;
+      if (selectedMarketId && s.market_id !== selectedMarketId) return false;
+      if (shopSearch.trim()) {
+        const q = shopSearch.toLowerCase();
+        const nameMatch = (s.shop_name || '').toLowerCase().includes(q);
+        const phoneMatch = (s.phone || '').includes(q);
+        const contactMatch = (s.contact_person || '').toLowerCase().includes(q);
+        const marketMatch = (s.sales_markets?.name || '').toLowerCase().includes(q);
+        if (!nameMatch && !phoneMatch && !contactMatch && !marketMatch) return false;
+      }
+      return true;
+    });
+  }, [shops, selectedZoneId, selectedMarketId, shopSearch]);
 
   const handleSubmitVisit = async () => {
     if (!currentShop?.id) {
@@ -189,45 +241,150 @@ export default function S06RecordVisit({ route, navigation }) {
       </View>
 
       {/* Store Picker Modal */}
-      <Modal visible={shopPickerVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Assigned Store</Text>
-              <TouchableOpacity onPress={() => setShopPickerVisible(false)} style={styles.closeBtn}>
-                <IconX size={20} color={theme.colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.modalSearchBox}>
-              <IconSearch size={18} color={theme.colors.textMuted} />
-              <TextInput
-                placeholder="Search store name or phone..."
-                placeholderTextColor={theme.colors.textDim}
-                value={shopSearch}
-                onChangeText={setShopSearch}
-                style={styles.modalSearchInput}
-              />
-            </View>
+      <Modal visible={shopPickerVisible} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setShopPickerVisible(false)}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={{ width: '100%', justifyContent: 'flex-end' }}
+            >
+              <TouchableWithoutFeedback onPress={(e) => e.stopPropagation?.()}>
+                <View style={styles.modalSheet}>
+                  <View style={styles.modalHeader}>
+                    <View>
+                      <Text style={styles.modalTitle}>Select Target Retail Store</Text>
+                      <Text style={styles.modalSub}>{filteredShops.length} stores available</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => setShopPickerVisible(false)} style={styles.closeBtn}>
+                      <IconX size={20} color={theme.colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
 
-            <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
-              {filteredShops.map((s) => (
-                <TouchableOpacity
-                  key={s.id}
-                  style={[styles.shopItem, currentShop?.id === s.id && styles.shopItemActive]}
-                  onPress={() => {
-                    setCurrentShop(s);
-                    setShopPickerVisible(false);
-                  }}
-                >
-                  <Text style={styles.itemTitle}>{s.shop_name}</Text>
-                  <Text style={styles.itemSub}>{s.contact_person} • {s.phone}</Text>
-                  <Text style={styles.itemAddr}>{s.shop_address}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                  {/* Zone Filter Chips */}
+                  {availableZones.length > 1 && (
+                    <View style={styles.pickerFilterSection}>
+                      <Text style={styles.pickerFilterLabel}>ZONE</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
+                        <TouchableOpacity
+                          style={[styles.modalChip, !selectedZoneId && styles.modalChipActive]}
+                          onPress={() => {
+                            setSelectedZoneId(null);
+                            setSelectedMarketId(null);
+                          }}
+                        >
+                          <Text style={[styles.modalChipText, !selectedZoneId && styles.modalChipTextActive]}>
+                            All Zones
+                          </Text>
+                        </TouchableOpacity>
+                        {availableZones.map((z) => (
+                          <TouchableOpacity
+                            key={z.id}
+                            style={[styles.modalChip, selectedZoneId === z.id && styles.modalChipActive]}
+                            onPress={() => {
+                              setSelectedZoneId(z.id);
+                              setSelectedMarketId(null);
+                            }}
+                          >
+                            <Text style={[styles.modalChipText, selectedZoneId === z.id && styles.modalChipTextActive]}>
+                              {z.name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+
+                  {/* Market Filter Chips */}
+                  {availableMarkets.length > 0 && (
+                    <View style={styles.pickerFilterSection}>
+                      <Text style={styles.pickerFilterLabel}>MARKET</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
+                        <TouchableOpacity
+                          style={[styles.modalChip, !selectedMarketId && styles.modalChipActive]}
+                          onPress={() => setSelectedMarketId(null)}
+                        >
+                          <Text style={[styles.modalChipText, !selectedMarketId && styles.modalChipTextActive]}>
+                            All Markets
+                          </Text>
+                        </TouchableOpacity>
+                        {availableMarkets.map((m) => (
+                          <TouchableOpacity
+                            key={m.id}
+                            style={[styles.modalChip, selectedMarketId === m.id && styles.modalChipActive]}
+                            onPress={() => setSelectedMarketId(m.id)}
+                          >
+                            <Text style={[styles.modalChipText, selectedMarketId === m.id && styles.modalChipTextActive]}>
+                              📍 {m.name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                  
+                  <View style={styles.modalSearchBox}>
+                    <IconSearch size={18} color={theme.colors.textMuted} />
+                    <TextInput
+                      placeholder="Search store name, phone or market..."
+                      placeholderTextColor={theme.colors.textDim}
+                      value={shopSearch}
+                      onChangeText={setShopSearch}
+                      style={styles.modalSearchInput}
+                      returnKeyType="search"
+                      onSubmitEditing={Keyboard.dismiss}
+                    />
+                  </View>
+
+                  <ScrollView
+                    style={{ maxHeight: 280 }}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {filteredShops.length === 0 ? (
+                      <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                        <Text style={{ fontSize: 13, color: theme.colors.textMuted }}>No stores match your selected filters</Text>
+                      </View>
+                    ) : (
+                      filteredShops.map((s) => (
+                        <TouchableOpacity
+                          key={s.id}
+                          style={[styles.shopItem, currentShop?.id === s.id && styles.shopItemActive]}
+                          onPress={() => {
+                            setCurrentShop(s);
+                            setShopPickerVisible(false);
+                          }}
+                        >
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={styles.itemTitle}>{s.shop_name}</Text>
+                            {currentShop?.id === s.id && (
+                              <IconCheck size={16} color={theme.colors.primary} />
+                            )}
+                          </View>
+                          
+                          <View style={styles.itemBadgeRow}>
+                            {s.sales_markets?.name && (
+                              <View style={styles.itemMarketBadge}>
+                                <Text style={styles.itemMarketBadgeText}>📍 {s.sales_markets.name}</Text>
+                              </View>
+                            )}
+                            {s.sales_zones?.name && (
+                              <View style={styles.itemZoneBadge}>
+                                <Text style={styles.itemZoneBadgeText}>{s.sales_zones.name}</Text>
+                              </View>
+                            )}
+                          </View>
+
+                          <Text style={styles.itemSub}>{s.contact_person} • {s.phone}</Text>
+                          <Text style={styles.itemAddr}>{s.shop_address}</Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </ScrollView>
+                </View>
+              </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* Book Picker Popover */}
@@ -399,6 +556,46 @@ const styles = StyleSheet.create({
     fontWeight: theme.typography.fontWeight.bold,
     color: theme.colors.textMain
   },
+  modalSub: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    marginTop: 2
+  },
+  pickerFilterSection: {
+    marginBottom: 10
+  },
+  pickerFilterLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: theme.colors.primary,
+    marginBottom: 6
+  },
+  chipsScroll: {
+    gap: 6,
+    paddingRight: 10
+  },
+  modalChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border
+  },
+  modalChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary
+  },
+  modalChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.colors.textMuted
+  },
+  modalChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700'
+  },
   closeBtn: {
     padding: 6
   },
@@ -431,6 +628,34 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.sm,
     fontWeight: theme.typography.fontWeight.bold,
     color: theme.colors.textMain
+  },
+  itemBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginVertical: 4
+  },
+  itemMarketBadge: {
+    backgroundColor: 'rgba(5, 150, 105, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4
+  },
+  itemMarketBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: theme.colors.callGreenLight || '#059669'
+  },
+  itemZoneBadge: {
+    backgroundColor: 'rgba(29, 78, 216, 0.08)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4
+  },
+  itemZoneBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: theme.colors.primary
   },
   itemSub: {
     fontSize: theme.typography.fontSize.xs,

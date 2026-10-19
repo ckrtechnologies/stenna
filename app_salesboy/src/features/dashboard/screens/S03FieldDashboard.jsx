@@ -35,6 +35,9 @@ export default function S03FieldDashboard({ navigation }) {
 
   const recentVisits = data?.data?.recentVisits || [];
   const assignedCount = data?.data?.assignedShopsCount || 0;
+  const assignedZones = data?.data?.assignedZones || [];
+  const assignedMarkets = data?.data?.assignedMarkets || [];
+  const primaryZone = assignedZones.length > 0 ? assignedZones[0] : null;
 
   const todayDate = new Date().toLocaleDateString('en-IN', {
     day: 'numeric',
@@ -67,7 +70,9 @@ export default function S03FieldDashboard({ navigation }) {
           <Text style={styles.repName}>{user?.name || 'Sales Representative'}</Text>
         </View>
         <View style={styles.territoryBadge}>
-          <Text style={styles.territoryText}>TERRITORY</Text>
+          <Text style={styles.territoryText}>
+            📍 {primaryZone?.name ? primaryZone.name.toUpperCase() : 'ALL ZONES'}
+          </Text>
         </View>
       </View>
 
@@ -124,22 +129,48 @@ export default function S03FieldDashboard({ navigation }) {
         style={styles.mainCtaBtn}
       />
 
-      {/* Assigned Retail Stores Link Card */}
+      {/* Assigned Territory & Retail Stores Link Card (Zone > Markets > Shops) */}
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.85}
         onPress={() => navigation.navigate(ROUTES.SHOPS)}
       >
-        <Card style={styles.navLinkCard}>
-          <View style={styles.navLinkLeft}>
-            <View style={styles.iconCircle}>
-              <IconBuildingStore size={22} color={theme.colors.primary} />
+        <Card style={styles.territoryCard}>
+          <View style={styles.territoryHeaderRow}>
+            <View style={styles.territoryHeaderLeft}>
+              <View style={styles.iconCircle}>
+                <IconBuildingStore size={22} color={theme.colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.territorySectionTitle}>Assigned Territory Beat</Text>
+                <Text style={styles.territorySectionSub}>
+                  {primaryZone?.name || 'All Territory'} • {assignedMarkets.length} Markets • {assignedCount} Shops
+                </Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.navLinkTitle}>Assigned Retail Stores</Text>
-              <Text style={styles.navLinkSub}>{assignedCount} shops in your territory beat</Text>
+            <IconChevronRight size={20} color={theme.colors.textDim} />
+          </View>
+
+          {/* 3-Tier Badges Row */}
+          <View style={styles.tierChipsRow}>
+            <View style={styles.tierChip}>
+              <Text style={styles.tierChipLabel}>ZONE</Text>
+              <Text style={styles.tierChipValue} numberOfLines={1}>{primaryZone?.name || 'North Zone'}</Text>
+            </View>
+            <View style={styles.tierChipDivider} />
+            <View style={styles.tierChip}>
+              <Text style={styles.tierChipLabel}>MARKETS</Text>
+              <Text style={styles.tierChipValue} numberOfLines={1}>
+                {assignedMarkets.length > 0
+                  ? `${assignedMarkets.length} Markets (${assignedMarkets.map((m) => m.name).slice(0, 2).join(', ')}${assignedMarkets.length > 2 ? '...' : ''})`
+                  : 'All Markets'}
+              </Text>
+            </View>
+            <View style={styles.tierChipDivider} />
+            <View style={styles.tierChip}>
+              <Text style={styles.tierChipLabel}>SHOPS</Text>
+              <Text style={styles.tierChipValue}>{assignedCount} Stores</Text>
             </View>
           </View>
-          <IconChevronRight size={20} color={theme.colors.textDim} />
         </Card>
       </TouchableOpacity>
 
@@ -300,6 +331,73 @@ const styles = StyleSheet.create({
   mainCtaBtn: {
     marginBottom: 14
   },
+  territoryCard: {
+    padding: 14,
+    marginBottom: 18
+  },
+  territoryHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12
+  },
+  territoryHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(29, 78, 216, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(29, 78, 216, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  territorySectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.colors.textMain
+  },
+  territorySectionSub: {
+    fontSize: 12,
+    color: theme.colors.textMuted,
+    marginTop: 2
+  },
+  tierChipsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight
+  },
+  tierChip: {
+    flex: 1
+  },
+  tierChipLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: theme.colors.primary,
+    letterSpacing: 0.8,
+    marginBottom: 2
+  },
+  tierChipValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.colors.textMain
+  },
+  tierChipDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: theme.colors.border,
+    marginHorizontal: 8
+  },
   navLinkCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -311,16 +409,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(29, 78, 216, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(29, 78, 216, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center'
   },
   navLinkTitle: {
     fontSize: 15,

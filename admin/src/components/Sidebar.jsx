@@ -20,6 +20,7 @@ import {
   TrendingUp,
   Store,
   MapPin,
+  Building2,
   CalendarCheck,
   UserCheck,
   History
@@ -70,6 +71,7 @@ const Sidebar = () => {
         { title: 'Vendors / Shops', icon: <Store size={15} />, path: '/sales-tracking/vendors', slug: 'sales-vendors', solidColor: '#10b981' },
         { title: 'Shop History & Ledger', icon: <History size={15} />, path: '/sales-tracking/shop-history', slug: 'sales-history', solidColor: '#e11d48' },
         { title: 'Zone Master', icon: <MapPin size={15} />, path: '/sales-tracking/zones', slug: 'sales-zones', solidColor: '#9333ea' },
+        { title: 'Market Master', icon: <Building2 size={15} />, path: '/sales-tracking/markets', slug: 'sales-markets', solidColor: '#0d9488' },
         { title: 'Sales Reps', icon: <UserCheck size={15} />, path: '/sales-tracking/sales-boys', slug: 'sales-boys', solidColor: '#3b82f6' },
         { title: 'Visit Records', icon: <CalendarCheck size={15} />, path: '/sales-tracking/visits', slug: 'sales-visits', solidColor: '#f59e0b' },
       ]

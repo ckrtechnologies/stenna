@@ -33,10 +33,23 @@ export const SalesBoyZoneEntity = z.object({
   zone_id: z.string().uuid()
 });
 
-// 4. VENDORS / SHOPS MASTER (`public.sales_vendors`)
+// 4. MARKETS MASTER (`public.sales_markets` - Zone > Market > Shop)
+export const SalesMarketEntity = z.object({
+  id: z.string().uuid(),
+  zone_id: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  description: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  is_active: z.boolean().default(true),
+  created_at: z.union([z.string(), z.date()]).optional(),
+  updated_at: z.union([z.string(), z.date()]).optional()
+});
+
+// 5. VENDORS / SHOPS MASTER (`public.sales_vendors`)
 export const SalesVendorEntity = z.object({
   id: z.string().uuid(),
   zone_id: z.string().uuid().nullable().optional(),
+  market_id: z.string().uuid().nullable().optional(),
   shop_name: z.string().min(1).max(255),
   phone: z.string().min(10).max(15),
   shop_address: z.string().min(1),

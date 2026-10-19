@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDrawer } from '@navigation/drawer/DrawerContext';
 import { IconMenu2, IconArrowLeft } from '@shared/icons';
@@ -20,7 +20,6 @@ export default function AppBar({
   const { openDrawer } = useDrawer();
 
   const handleMenuPress = () => {
-    console.log('[AppBar] Menu button pressed!');
     if (onMenu) {
       onMenu();
     } else {
@@ -30,6 +29,7 @@ export default function AppBar({
 
   return (
     <View style={[styles.bar, { paddingTop: insets.top > 0 ? insets.top : 8 }]}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.navyDark} />
       <View style={styles.inner}>
         {/* Left Action / Navigation Button */}
         <View style={styles.leftCol}>
@@ -72,16 +72,9 @@ export default function AppBar({
           )}
         </View>
 
-        {/* Right Action / Status Slot */}
+        {/* Right Action Slot */}
         <View style={styles.rightCol}>
-          {right !== undefined ? (
-            right
-          ) : (
-            <View style={styles.onlineBadge}>
-              <View style={styles.pulseDot} />
-              <Text style={styles.onlineText}>Online</Text>
-            </View>
-          )}
+          {right !== undefined ? right : null}
         </View>
       </View>
     </View>

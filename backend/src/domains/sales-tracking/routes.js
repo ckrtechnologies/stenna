@@ -17,6 +17,8 @@ r.post('/app/visits', verifyToken, c.recordVisit);
 r.get('/vendors', verifyToken, c.listVendors);
 r.get('/vendors/:id/history', verifyToken, c.getVendorWithHistory);
 r.get('/visits', verifyToken, c.listVisits);
+r.get('/zones', verifyToken, c.listZones);
+r.get('/markets', verifyToken, c.listMarkets);
 
 /* ==============================================================================
  * 3. ADMIN MANAGEMENT ROUTES (Protected: Admin Only)
@@ -29,6 +31,12 @@ r.get('/admin/zones', verifyToken, isAdmin, c.listZones);
 r.post('/admin/zones', verifyToken, isAdmin, c.createZone);
 r.put('/admin/zones/:id', verifyToken, isAdmin, c.updateZone);
 r.delete('/admin/zones/:id', verifyToken, isAdmin, c.deleteZone);
+
+// Market Master (Zone > Market > Shop)
+r.get('/admin/markets', verifyToken, isAdmin, c.listMarkets);
+r.post('/admin/markets', verifyToken, isAdmin, c.createMarket);
+r.put('/admin/markets/:id', verifyToken, isAdmin, c.updateMarket);
+r.delete('/admin/markets/:id', verifyToken, isAdmin, c.deleteMarket);
 
 // Vendor Master
 r.post('/admin/vendors', verifyToken, isAdmin, c.createVendor);

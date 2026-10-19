@@ -19,11 +19,18 @@ export default function ShopCard({ shop, onSelect, onCheckIn }) {
           <Text style={styles.shopName} numberOfLines={1}>
             {shop.shop_name}
           </Text>
-          {shop.sales_zones?.name && (
-            <View style={styles.zoneTag}>
-              <Text style={styles.zoneText}>{shop.sales_zones.name}</Text>
-            </View>
-          )}
+          <View style={styles.tagsRow}>
+            {shop.sales_zones?.name && (
+              <View style={styles.zoneTag}>
+                <Text style={styles.zoneText}>{shop.sales_zones.name}</Text>
+              </View>
+            )}
+            {shop.sales_markets?.name && (
+              <View style={styles.marketTag}>
+                <Text style={styles.marketText}>{shop.sales_markets.name}</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={styles.metaLine}>
@@ -83,17 +90,36 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8
   },
+  tagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap'
+  },
   zoneTag: {
-    backgroundColor: 'rgba(29, 78, 216, 0.08)',
+    backgroundColor: 'rgba(11, 61, 46, 0.08)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(29, 78, 216, 0.15)'
+    borderColor: 'rgba(11, 61, 46, 0.18)'
   },
   zoneText: {
     fontSize: 11,
     color: theme.colors.primary,
+    fontWeight: '700'
+  },
+  marketTag: {
+    backgroundColor: 'rgba(13, 148, 136, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(13, 148, 136, 0.25)'
+  },
+  marketText: {
+    fontSize: 11,
+    color: '#0d9488',
     fontWeight: '700'
   },
   metaLine: {

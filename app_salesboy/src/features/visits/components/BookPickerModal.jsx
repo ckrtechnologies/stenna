@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, TextInput, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  StyleSheet,
+  Platform,
+  Keyboard
+} from 'react-native';
 import Button from '@shared/ui/Button';
 import { useGetBooksQuery } from '../api';
 import { theme } from '@theme';
@@ -18,6 +28,33 @@ export default function BookPickerModal({
   const [search, setSearch] = useState('');
   const [shownIds, setShownIds] = useState(selectedShown);
   const [boughtIds, setBoughtIds] = useState(selectedBought);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (visible) {
+      setShownIds(selectedShown || []);
+      setBoughtIds(selectedBought || []);
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates?.height || 300);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const isKeyboardOpen = keyboardHeight > 0;
 
   const filteredBooks = books.filter((b) => {
     if (!search.trim()) return true;
@@ -25,11 +62,10 @@ export default function BookPickerModal({
     return (b.name || '').toLowerCase().includes(q) || (b.code || '').toLowerCase().includes(q);
   });
 
+  // Pitched and Order are completely SEPARATE and INDEPENDENT sets
   const toggleShown = (id) => {
     if (shownIds.includes(id)) {
       setShownIds(shownIds.filter((item) => item !== id));
-      // if un-pitching, also remove from bought
-      setBoughtIds(boughtIds.filter((item) => item !== id));
     } else {
       setShownIds([...shownIds, id]);
     }
@@ -40,34 +76,51 @@ export default function BookPickerModal({
       setBoughtIds(boughtIds.filter((item) => item !== id));
     } else {
       setBoughtIds([...boughtIds, id]);
-      // buying implies it was pitched/shown
-      if (!shownIds.includes(id)) {
-        setShownIds([...shownIds, id]);
-      }
     }
   };
 
   const handleApply = () => {
+    Keyboard.dismiss();
     onConfirm({ shownIds, boughtIds });
     onClose();
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.overlay}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={[styles.overlay, { paddingBottom: isKeyboardOpen ? keyboardHeight + 14 : 0 }]}>
+        {/* Top Backdrop Area: tap to dismiss keyboard & close */}
+        <TouchableOpacity
+          style={styles.backdropArea}
+          activeOpacity={1}
+          onPress={() => {
+            if (isKeyboardOpen) {
+              Keyboard.dismiss();
+            } else {
+              onClose();
+            }
+          }}
+        />
+
+        {/* Modal Bottom Sheet */}
         <View style={styles.sheet}>
-          {/* Header */}
+          {/* 1. Header */}
           <View style={styles.header}>
             <View>
               <Text style={styles.title}>Select Wallpaper Books</Text>
               <Text style={styles.sub}>Mark books Pitched and/or Ordered</Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
               <IconX size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
           </View>
 
-          {/* Search */}
+          {/* 2. Top Search Box */}
           <View style={styles.searchBox}>
             <IconSearch size={18} color={theme.colors.textMuted} />
             <TextInput
@@ -76,67 +129,92 @@ export default function BookPickerModal({
               value={search}
               onChangeText={setSearch}
               style={styles.searchInput}
+              returnKeyType="search"
+              onSubmitEditing={Keyboard.dismiss}
             />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')} style={styles.clearBtn}>
+                <IconX size={15} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            )}
           </View>
 
-          {/* Books List */}
-          <ScrollView style={styles.bookList} showsVerticalScrollIndicator={false}>
-            {filteredBooks.map((b) => {
-              const isShown = shownIds.includes(b.id);
-              const isBought = boughtIds.includes(b.id);
+          {/* 3. Flexible Scrollable Content List */}
+          <ScrollView
+            style={[styles.bookList, isKeyboardOpen && styles.bookListKeyboard]}
+            contentContainerStyle={styles.bookListContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {filteredBooks.length === 0 ? (
+              <View style={styles.emptyWrap}>
+                <Text style={styles.emptyText}>No catalog books matching "{search}"</Text>
+              </View>
+            ) : (
+              filteredBooks.map((b) => {
+                const isShown = shownIds.includes(b.id);
+                const isBought = boughtIds.includes(b.id);
 
-              return (
-                <View key={b.id} style={styles.bookRow}>
-                  <View style={styles.bookInfo}>
-                    <Text style={styles.bookName}>{b.name}</Text>
-                    {b.code && <Text style={styles.bookCode}>SKU: {b.code}</Text>}
+                return (
+                  <View key={b.id} style={styles.bookRow}>
+                    <View style={styles.bookInfo}>
+                      <Text style={styles.bookName}>{b.name}</Text>
+                      {b.code && <Text style={styles.bookCode}>SKU: {b.code}</Text>}
+                    </View>
+
+                    <View style={styles.toggleGroup}>
+                      {/* Pitch Button - Independent */}
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => toggleShown(b.id)}
+                        style={[styles.pillBtn, isShown && styles.shownActive]}
+                      >
+                        {isShown ? (
+                          <IconCheck size={13} color="#FFFFFF" />
+                        ) : (
+                          <IconPlus size={13} color={theme.colors.textMuted} />
+                        )}
+                        <Text style={[styles.pillText, isShown && styles.shownActiveText]}>
+                          Pitch
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* Order Button - Independent */}
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => toggleBought(b.id)}
+                        style={[styles.pillBtn, isBought && styles.boughtActive]}
+                      >
+                        {isBought ? (
+                          <IconStar size={13} color="#FFFFFF" />
+                        ) : (
+                          <IconPlus size={13} color={theme.colors.textMuted} />
+                        )}
+                        <Text style={[styles.pillText, isBought && styles.boughtActiveText]}>
+                          Order
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-
-                  <View style={styles.toggleGroup}>
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => toggleShown(b.id)}
-                      style={[styles.pillBtn, isShown && styles.shownActive]}
-                    >
-                      {isShown ? (
-                        <IconCheck size={13} color={theme.colors.accent} />
-                      ) : (
-                        <IconPlus size={13} color={theme.colors.textMuted} />
-                      )}
-                      <Text style={[styles.pillText, isShown && styles.shownActiveText]}>
-                        Pitch
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => toggleBought(b.id)}
-                      style={[styles.pillBtn, isBought && styles.boughtActive]}
-                    >
-                      {isBought ? (
-                        <IconStar size={13} color={theme.colors.success} />
-                      ) : (
-                        <IconPlus size={13} color={theme.colors.textMuted} />
-                      )}
-                      <Text style={[styles.pillText, isBought && styles.boughtActiveText]}>
-                        Order
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              );
-            })}
+                );
+              })
+            )}
           </ScrollView>
 
-          {/* Footer Bar */}
+          {/* 4. Pinned Sticky CTA Footer (Always 100% Visible Above Keyboard) */}
           <View style={styles.footer}>
-            <View>
-              <Text style={styles.summaryTitle}>Selection Summary</Text>
+            <View style={styles.summaryWrap}>
+              <Text style={styles.summaryTitle}>SELECTION SUMMARY</Text>
               <Text style={styles.summaryText}>
                 {shownIds.length} Pitched · {boughtIds.length} Ordered
               </Text>
             </View>
-            <Button title="Confirm Books" onPress={handleApply} style={styles.confirmBtn} variant="primary" />
+            <Button
+              title="Confirm Books"
+              onPress={handleApply}
+              style={styles.confirmBtn}
+              variant="primary"
+            />
           </View>
         </View>
       </View>
@@ -150,22 +228,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.65)',
     justifyContent: 'flex-end'
   },
+  backdropArea: {
+    flex: 1
+  },
   sheet: {
     backgroundColor: theme.colors.card,
-    borderTopLeftRadius: theme.spacing.borderRadius.xl,
-    borderTopRightRadius: theme.spacing.borderRadius.xl,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     borderTopWidth: 1,
     borderColor: theme.colors.borderLight,
     paddingTop: theme.spacing.base,
     paddingHorizontal: theme.spacing.gutter,
-    paddingBottom: 28,
-    maxHeight: '85%'
+    paddingBottom: Platform.OS === 'ios' ? 24 : 14,
+    maxHeight: '90%'
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.md
+    marginBottom: theme.spacing.sm
   },
   title: {
     fontSize: theme.typography.fontSize.lg,
@@ -188,7 +269,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.inputBg,
     borderRadius: theme.spacing.borderRadius.md,
     paddingHorizontal: 12,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
     gap: 8
   },
   searchInput: {
@@ -197,14 +278,31 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textMain
   },
+  clearBtn: {
+    padding: 4
+  },
   bookList: {
-    maxHeight: 360
+    maxHeight: 320
+  },
+  bookListKeyboard: {
+    maxHeight: 130
+  },
+  bookListContent: {
+    paddingBottom: 4
+  },
+  emptyWrap: {
+    paddingVertical: 24,
+    alignItems: 'center'
+  },
+  emptyText: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textMuted
   },
   bookRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 11,
+    paddingVertical: 9,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.borderLight
   },
@@ -243,34 +341,37 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted
   },
   shownActive: {
-    backgroundColor: theme.colors.accentSurface,
-    borderColor: theme.colors.accent
+    backgroundColor: '#0B3D2E',
+    borderColor: '#0B3D2E'
   },
   shownActiveText: {
-    color: theme.colors.accent,
+    color: '#FFFFFF',
     fontWeight: theme.typography.fontWeight.bold
   },
   boughtActive: {
-    backgroundColor: theme.colors.successSurface,
-    borderColor: theme.colors.success
+    backgroundColor: '#B8860B',
+    borderColor: '#B8860B'
   },
   boughtActiveText: {
-    color: theme.colors.success,
+    color: '#FFFFFF',
     fontWeight: theme.typography.fontWeight.bold
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: theme.spacing.md,
-    paddingTop: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: theme.colors.borderLight
+  },
+  summaryWrap: {
+    flex: 1
   },
   summaryTitle: {
     fontSize: 10,
     fontWeight: theme.typography.fontWeight.heavy,
-    color: theme.colors.accent,
+    color: '#0B3D2E',
     letterSpacing: 0.8
   },
   summaryText: {
@@ -280,7 +381,8 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   confirmBtn: {
-    height: 40,
-    paddingHorizontal: 16
+    height: 42,
+    paddingHorizontal: 18,
+    borderRadius: 10
   }
 });

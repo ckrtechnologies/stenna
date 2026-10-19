@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, StatusBar, Image } from 'react-native';
 import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setCredentials } from '../slice';
@@ -41,12 +41,11 @@ export default function S01Splash({ navigation }) {
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.navyDark} />
 
       <View style={styles.centerContent}>
-        <View style={styles.monogramWrap}>
-          <StennaMonogram size={72} />
-        </View>
-
-        <Text style={styles.brandTitle}>S T E N N A</Text>
-        <Text style={styles.brandTagline}>LUXURY ARCHITECTURAL SURFACES</Text>
+        <Image
+          source={require('../../../assets/logo.png')}
+          style={styles.splashLogo}
+          resizeMode="contain"
+        />
 
         <View style={styles.fieldBadge}>
           <Text style={styles.fieldBadgeText}>ENTERPRISE FIELD FORCE</Text>
@@ -71,6 +70,11 @@ const styles = StyleSheet.create({
   },
   centerContent: {
     alignItems: 'center'
+  },
+  splashLogo: {
+    width: 240,
+    height: 52,
+    marginBottom: 8
   },
   monogramWrap: {
     marginBottom: 20,

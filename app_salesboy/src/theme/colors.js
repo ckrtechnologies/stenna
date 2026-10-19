@@ -1,9 +1,9 @@
 export const colors = {
-  // Brand Archetype: Executive Stenna Midnight & Luxury Gold
-  navyPrimary: '#09111E',
-  navyDark: '#060B14',
-  navyCard: '#0E1726',
-  navyBorder: '#1E293B',
+  // Brand Archetype: Luxury Deep Forest Dark Green & Architectural Gold
+  forestPrimary: '#0B3D2E',
+  forestDark: '#07261C',
+  forestCard: '#0E3326',
+  forestBorder: '#144D3B',
 
   // Stenna Gold Accents
   gold: '#D4AF37',
@@ -11,46 +11,52 @@ export const colors = {
   goldDark: '#B8860B',
   goldSurface: 'rgba(212, 175, 55, 0.12)',
 
-  // Solid Primary Action Blue
-  primary: '#1D4ED8',
-  primaryDark: '#1E40AF',
-  primaryLight: '#3B82F6',
-  primarySurface: 'rgba(29, 78, 216, 0.08)',
+  // Solid Unified Primary Action (Dark Green - ONE consistent button color)
+  primary: '#0B3D2E',
+  primaryDark: '#07261C',
+  primaryLight: '#14533C',
+  primarySurface: 'rgba(11, 61, 46, 0.10)',
 
-  // Solid High-Impact Call Green (Call Shopkeeper, Open Status)
-  call: '#059669',
-  callDark: '#047857',
-  callLight: '#10B981',
-  callSurface: 'rgba(5, 150, 105, 0.12)',
+  // Call / Secondary / Action (Mapped to dark green for consistency)
+  call: '#0B3D2E',
+  callDark: '#07261C',
+  callLight: '#14533C',
+  callSurface: 'rgba(11, 61, 46, 0.10)',
   callText: '#FFFFFF',
-  callGreen: '#059669',
-  callGreenDark: '#047857',
-  callGreenLight: '#10B981',
-  callGreenSurface: 'rgba(5, 150, 105, 0.12)',
+  callGreen: '#0B3D2E',
+  callGreenDark: '#07261C',
+  callGreenLight: '#14533C',
+  callGreenSurface: 'rgba(11, 61, 46, 0.10)',
 
   // Semantic
-  success: '#10b981',
-  successSurface: 'rgba(16, 185, 129, 0.12)',
+  success: '#0B3D2E',
+  successSurface: 'rgba(11, 61, 46, 0.12)',
   warning: '#D97706',
   warningSurface: 'rgba(217, 119, 6, 0.12)',
   danger: '#DC2626',
   dangerDark: '#B91C1C',
   dangerSurface: 'rgba(220, 38, 38, 0.12)',
-  accent: '#7C3AED',
-  accentSurface: 'rgba(124, 58, 237, 0.12)',
+  accent: '#0B3D2E',
+  accentSurface: 'rgba(11, 61, 46, 0.10)',
 
   // Background & Surfaces
   background: '#F8FAFC',
   card: '#FFFFFF',
   inputBg: '#FFFFFF',
-  headerBar: '#09111E',
-  bottomBar: '#09111E',
-  drawerBg: '#060B14',
+  headerBar: '#07261C',
+  bottomBar: '#07261C',
+  drawerBg: '#07261C',
+
+  // Legacy mappings for backwards-compatibility
+  navyPrimary: '#07261C',
+  navyDark: '#051A13',
+  navyCard: '#0B3024',
+  navyBorder: '#144D3B',
 
   // Borders & Dividers
   border: '#E2E8F0',
   borderLight: '#F1F5F9',
-  borderDark: '#1E293B',
+  borderDark: '#144D3B',
 
   // Typography
   textMain: '#0F172A',
@@ -60,5 +66,5 @@ export const colors = {
   textGold: '#D4AF37',
 
   // System bars
-  statusBar: '#09111E'
+  statusBar: '#07261C'
 };

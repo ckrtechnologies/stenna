@@ -89,6 +89,57 @@ export async function deleteZone(req, res) {
 }
 
 // ------------------------------------------------------------------------------
+// 2b. MARKET MASTER (Admin & Mobile App)
+// ------------------------------------------------------------------------------
+
+export async function createMarket(req, res) {
+  try {
+    const input = v.createMarketBody.parse(req.body);
+    const market = await service.createMarket(input);
+    logger.success(`[POST] /admin/markets - Created market '${market.name}' (${market.id})`);
+    res.status(201).json({ message: 'Market created successfully', data: market });
+  } catch (error) {
+    handleError(req, res, error, 400);
+  }
+}
+
+export async function updateMarket(req, res) {
+  try {
+    const { id } = req.params;
+    const input = v.updateMarketBody.parse(req.body);
+    const market = await service.updateMarket(id, input);
+    logger.success(`[PUT] /admin/markets/${id} - Updated market '${market.name}'`);
+    res.status(200).json({ message: 'Market updated successfully', data: market });
+  } catch (error) {
+    handleError(req, res, error, 400);
+  }
+}
+
+export async function listMarkets(req, res) {
+  try {
+    const { zoneId, isActive } = req.query;
+    const markets = await service.listMarkets({
+      zoneId,
+      isActive: isActive !== undefined ? isActive === 'true' : undefined
+    });
+    res.status(200).json({ data: markets });
+  } catch (error) {
+    handleError(req, res, error, 500);
+  }
+}
+
+export async function deleteMarket(req, res) {
+  try {
+    const { id } = req.params;
+    await service.deleteMarket(id);
+    logger.success(`[DELETE] /admin/markets/${id} - Deleted market`);
+    res.status(200).json({ message: 'Market deleted successfully' });
+  } catch (error) {
+    handleError(req, res, error, 500);
+  }
+}
+
+// ------------------------------------------------------------------------------
 // 3. VENDOR / RETAIL SHOPS MASTER (Admin & Mobile App)
 // ------------------------------------------------------------------------------
 
@@ -106,7 +157,7 @@ export async function createVendor(req, res) {
 export async function bulkCreateVendors(req, res) {
   try {
     const input = v.bulkCreateVendorsBody.parse(req.body);
-    const result = await service.bulkImportVendors(input.vendors, input.defaultZoneId);
+    const result = await service.bulkImportVendors(input.vendors, input.defaultZoneId, input.defaultMarketId);
     logger.success(`[POST] /admin/vendors/bulk - Imported ${result.insertedCount} vendors (Failed: ${result.failedCount})`);
     res.status(200).json({
       message: `Successfully imported ${result.insertedCount} vendor(s)${result.failedCount > 0 ? `, ${result.failedCount} rows failed` : ''}`,
@@ -131,13 +182,13 @@ export async function updateVendor(req, res) {
 
 export async function listVendors(req, res) {
   try {
-    const { zoneId, search } = req.query;
+    const { zoneId, marketId, search } = req.query;
     let zoneIds = req.user?.assignedZoneIds;
     if ((!zoneIds || zoneIds.length === 0) && req.user?.role === 'sales_boy') {
       zoneIds = await service.getSalesBoyZoneIds(req.user.id);
     }
     const filterZoneIds = (zoneIds && zoneIds.length > 0) ? zoneIds : undefined;
-    const vendors = await service.listVendors({ zoneId, search, zoneIds: filterZoneIds });
+    const vendors = await service.listVendors({ zoneId, marketId, search, zoneIds: filterZoneIds });
     res.status(200).json({ data: vendors });
   } catch (error) {
     handleError(req, res, error, 500);

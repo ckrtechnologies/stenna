@@ -106,8 +106,9 @@ export default function S02LoginPhone({ navigation }) {
       />
 
       <View style={styles.securityNote}>
+        <IconLock size={13} color={theme.colors.primaryDark} />
         <Text style={styles.securityText}>
-          🔒 End-to-end encrypted session with Stenna enterprise backend.
+          End-to-end encrypted session with Stenna enterprise backend.
         </Text>
       </View>
     </Screen>
@@ -157,7 +158,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(29, 78, 216, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(29, 78, 216, 0.12)',
-    alignItems: 'center'
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6
   },
   securityText: {
     fontSize: 11,

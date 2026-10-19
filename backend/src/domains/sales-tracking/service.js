@@ -4,6 +4,8 @@ import * as repo from './repository.js';
 import {
   CreateZoneDTO,
   UpdateZoneDTO,
+  CreateMarketDTO,
+  UpdateMarketDTO,
   CreateVendorDTO,
   UpdateVendorDTO,
   CreateSalesBoyDTO,
@@ -97,6 +99,42 @@ export async function deleteZone(id) {
 }
 
 // ------------------------------------------------------------------------------
+// 2b. MARKET MASTER SERVICE (Zone > Market > Shop)
+// ------------------------------------------------------------------------------
+
+export async function createMarket(rawInput) {
+  const isActive = rawInput.isActive !== undefined ? rawInput.isActive : (rawInput.is_active !== undefined ? rawInput.is_active : true);
+  const dto = CreateMarketDTO.parse({
+    zone_id: rawInput.zoneId,
+    name: rawInput.name.trim(),
+    description: rawInput.description ? rawInput.description.trim() : null,
+    city: rawInput.city ? rawInput.city.trim() : null,
+    is_active: Boolean(isActive)
+  });
+  return await repo.insertMarket(dto);
+}
+
+export async function updateMarket(id, rawInput) {
+  const isActive = rawInput.isActive !== undefined ? rawInput.isActive : rawInput.is_active;
+  const dto = UpdateMarketDTO.parse({
+    zone_id: rawInput.zoneId !== undefined ? rawInput.zoneId : undefined,
+    name: rawInput.name ? rawInput.name.trim() : undefined,
+    description: rawInput.description !== undefined ? rawInput.description : undefined,
+    city: rawInput.city !== undefined ? rawInput.city : undefined,
+    is_active: isActive !== undefined ? Boolean(isActive) : undefined
+  });
+  return await repo.updateMarket(id, dto);
+}
+
+export async function listMarkets(filters) {
+  return await repo.listMarkets(filters);
+}
+
+export async function deleteMarket(id) {
+  return await repo.deleteMarket(id);
+}
+
+// ------------------------------------------------------------------------------
 // 3. VENDOR / RETAIL SHOPS SERVICE
 // ------------------------------------------------------------------------------
 
@@ -109,23 +147,33 @@ export async function createVendor(rawInput) {
     shop_address: rawInput.shopAddress.trim(),
     contact_person: rawInput.contactPerson.trim(),
     zone_id: rawInput.zoneId || null,
+    market_id: rawInput.marketId || null,
     is_active: Boolean(isActive)
   });
   return await repo.insertVendor(dto);
 }
 
-export async function bulkImportVendors(rawVendorsList, defaultZoneId = null) {
+export async function bulkImportVendors(rawVendorsList, defaultZoneId = null, defaultMarketId = null) {
   if (!Array.isArray(rawVendorsList) || rawVendorsList.length === 0) {
     const err = new Error('No vendor rows provided for import');
     err.status = 400;
     throw err;
   }
 
-  // Fetch all zones to resolve zone names to zone_ids
-  const existingZones = await repo.listZones();
+  // Fetch all zones and markets to resolve names to IDs
+  const [existingZones, existingMarkets] = await Promise.all([
+    repo.listZones(),
+    repo.listMarkets()
+  ]);
+
   const zoneNameToIdMap = new Map();
   existingZones.forEach((z) => {
     zoneNameToIdMap.set(z.name.toLowerCase().trim(), z.id);
+  });
+
+  const marketNameToIdMap = new Map();
+  existingMarkets.forEach((m) => {
+    marketNameToIdMap.set(m.name.toLowerCase().trim(), m.id);
   });
 
   const validDTOs = [];
@@ -165,6 +213,18 @@ export async function bulkImportVendors(rawVendorsList, defaultZoneId = null) {
         zoneId = defaultZoneId;
       }
 
+      // Resolve Market: either given as marketId (uuid), or marketName string, or fallback defaultMarketId
+      let marketId = raw.marketId || raw.market_id || null;
+      const marketName = String(
+        raw.marketName || raw.market_name || raw.market || raw['Market'] || raw['Market Name'] || ''
+      ).trim();
+
+      if (marketName && marketNameToIdMap.has(marketName.toLowerCase())) {
+        marketId = marketNameToIdMap.get(marketName.toLowerCase());
+      } else if (!marketId && defaultMarketId) {
+        marketId = defaultMarketId;
+      }
+
       const isActive = raw.isActive !== undefined ? raw.isActive : (raw.is_active !== undefined ? raw.is_active : true);
 
       // Validate through strict DTO
@@ -174,6 +234,7 @@ export async function bulkImportVendors(rawVendorsList, defaultZoneId = null) {
         shop_address: shopAddress,
         contact_person: contactPerson,
         zone_id: zoneId || null,
+        market_id: marketId || null,
         is_active: Boolean(isActive)
       });
 
@@ -214,6 +275,7 @@ export async function updateVendor(id, rawInput) {
     shop_address: rawInput.shopAddress ? rawInput.shopAddress.trim() : undefined,
     contact_person: rawInput.contactPerson ? rawInput.contactPerson.trim() : undefined,
     zone_id: rawInput.zoneId !== undefined ? (rawInput.zoneId || null) : undefined,
+    market_id: rawInput.marketId !== undefined ? (rawInput.marketId || null) : undefined,
     is_active: isActive !== undefined ? Boolean(isActive) : undefined
   });
   return await repo.updateVendor(id, dto);
@@ -382,6 +444,15 @@ export async function getSalesBoyAppDashboard(salesBoyId) {
   const assignedShops = await repo.listVendors({ zoneIds: assignedZoneIds });
   const todayVisits = await repo.getSalesBoyVisitsToday(salesBoyId);
 
+  // Fetch detailed assigned zones & markets for 3-tier visibility
+  const allZones = await repo.listZones();
+  const assignedZones = (assignedZoneIds && assignedZoneIds.length > 0)
+    ? allZones.filter((z) => assignedZoneIds.includes(z.id))
+    : allZones;
+
+  const zoneIdsToQuery = (assignedZoneIds && assignedZoneIds.length > 0) ? assignedZoneIds : undefined;
+  const assignedMarkets = await repo.listMarkets({ zoneIds: zoneIdsToQuery });
+
   const availableCount = todayVisits.filter((v) => v.is_available).length;
   const closedCount = todayVisits.filter((v) => !v.is_available).length;
 
@@ -411,7 +482,14 @@ export async function getSalesBoyAppDashboard(salesBoyId) {
       beatCoveragePercent
     },
     assignedZoneIds,
+    assignedZones,
+    assignedMarkets,
     assignedShopsCount: totalAssigned,
+    assignedShopsSummary: {
+      total: totalAssigned,
+      zonesCount: assignedZones.length,
+      marketsCount: assignedMarkets.length
+    },
     recentVisits: todayVisits.slice(0, 5)
   };
 }

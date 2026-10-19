@@ -10,7 +10,7 @@ export default function Screen({
   header = null,
   footer = null,
   edges = null,
-  barStyle = 'dark-content',
+  barStyle = 'light-content',
   backgroundColor = theme.colors.background,
   children,
   contentContainerStyle,

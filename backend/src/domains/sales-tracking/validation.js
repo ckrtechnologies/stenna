@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   SalesZoneEntity,
+  SalesMarketEntity,
   SalesBoyEntity,
   SalesVendorEntity,
   SalesVisitEntity,
@@ -18,6 +19,13 @@ export const CreateZoneDTO = SalesZoneEntity.omit({
   updated_at: true
 });
 export const UpdateZoneDTO = CreateZoneDTO.partial();
+
+export const CreateMarketDTO = SalesMarketEntity.omit({
+  id: true,
+  created_at: true,
+  updated_at: true
+});
+export const UpdateMarketDTO = CreateMarketDTO.partial();
 
 export const CreateSalesBoyDTO = SalesBoyEntity.omit({
   id: true,
@@ -74,6 +82,18 @@ export const createZoneBody = z.object({
 
 export const updateZoneBody = createZoneBody.partial();
 
+// Admin: Market Master (Zone > Market > Shop)
+export const createMarketBody = z.object({
+  zoneId: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  description: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  isActive: z.boolean().optional(),
+  is_active: z.boolean().optional()
+}).strict();
+
+export const updateMarketBody = createMarketBody.partial();
+
 // Admin: Vendor Master
 export const createVendorBody = z.object({
   shopName: z.string().min(1).max(255),
@@ -81,6 +101,7 @@ export const createVendorBody = z.object({
   shopAddress: z.string().min(1),
   contactPerson: z.string().min(1).max(255),
   zoneId: z.string().uuid().optional().nullable(),
+  marketId: z.string().uuid().optional().nullable(),
   isActive: z.boolean().optional(),
   is_active: z.boolean().optional()
 }).strict();
@@ -89,7 +110,8 @@ export const updateVendorBody = createVendorBody.partial();
 
 export const bulkCreateVendorsBody = z.object({
   vendors: z.array(z.record(z.any())).min(1).max(2000),
-  defaultZoneId: z.string().uuid().optional().nullable()
+  defaultZoneId: z.string().uuid().optional().nullable(),
+  defaultMarketId: z.string().uuid().optional().nullable()
 });
 
 // Admin: Sales Boy Management

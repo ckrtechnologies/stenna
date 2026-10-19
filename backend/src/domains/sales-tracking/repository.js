@@ -79,6 +79,97 @@ export async function deleteZone(id) {
 }
 
 // ------------------------------------------------------------------------------
+// 1b. MARKETS MASTER (Zone > Market > Shop)
+// ------------------------------------------------------------------------------
+
+export async function insertMarket(dto) {
+  const { data, error } = await supabase
+    .from('sales_markets')
+    .insert({
+      zone_id: dto.zone_id,
+      name: dto.name,
+      description: dto.description ?? null,
+      city: dto.city ?? null,
+      is_active: dto.is_active ?? true
+    })
+    .select(`
+      *,
+      sales_zones ( id, name )
+    `)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateMarket(id, dto) {
+  const updates = {};
+  if (dto.zone_id !== undefined) updates.zone_id = dto.zone_id;
+  if (dto.name !== undefined) updates.name = dto.name;
+  if (dto.description !== undefined) updates.description = dto.description;
+  if (dto.city !== undefined) updates.city = dto.city;
+  if (dto.is_active !== undefined) updates.is_active = dto.is_active;
+  updates.updated_at = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('sales_markets')
+    .update(updates)
+    .eq('id', id)
+    .select(`
+      *,
+      sales_zones ( id, name )
+    `)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function listMarkets({ zoneId, zoneIds } = {}) {
+  let q = supabase
+    .from('sales_markets')
+    .select(`
+      *,
+      sales_zones ( id, name )
+    `)
+    .order('name', { ascending: true });
+
+  if (zoneId) {
+    q = q.eq('zone_id', zoneId);
+  } else if (zoneIds && zoneIds.length > 0) {
+    q = q.in('zone_id', zoneIds);
+  }
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getMarketById(id) {
+  const { data, error } = await supabase
+    .from('sales_markets')
+    .select(`
+      *,
+      sales_zones ( id, name )
+    `)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteMarket(id) {
+  const { error } = await supabase
+    .from('sales_markets')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// ------------------------------------------------------------------------------
 // 2. SALES BOYS & ZONE MAPPINGS
 // ------------------------------------------------------------------------------
 
@@ -208,9 +299,14 @@ export async function insertVendor(dto) {
       shop_address: dto.shop_address,
       contact_person: dto.contact_person,
       zone_id: dto.zone_id ?? null,
+      market_id: dto.market_id ?? null,
       is_active: dto.is_active ?? true
     })
-    .select()
+    .select(`
+      *,
+      sales_zones ( id, name ),
+      sales_markets ( id, name )
+    `)
     .single();
 
   if (error) throw error;
@@ -225,13 +321,18 @@ export async function bulkInsertVendors(dtos) {
     shop_address: dto.shop_address,
     contact_person: dto.contact_person,
     zone_id: dto.zone_id ?? null,
+    market_id: dto.market_id ?? null,
     is_active: dto.is_active ?? true
   }));
 
   const { data, error } = await supabase
     .from('sales_vendors')
     .insert(rows)
-    .select();
+    .select(`
+      *,
+      sales_zones ( id, name ),
+      sales_markets ( id, name )
+    `);
 
   if (error) throw error;
   return data || [];
@@ -244,6 +345,7 @@ export async function updateVendor(id, dto) {
   if (dto.shop_address !== undefined) updates.shop_address = dto.shop_address;
   if (dto.contact_person !== undefined) updates.contact_person = dto.contact_person;
   if (dto.zone_id !== undefined) updates.zone_id = dto.zone_id;
+  if (dto.market_id !== undefined) updates.market_id = dto.market_id;
   if (dto.is_active !== undefined) updates.is_active = dto.is_active;
   updates.updated_at = new Date().toISOString();
 
@@ -251,22 +353,30 @@ export async function updateVendor(id, dto) {
     .from('sales_vendors')
     .update(updates)
     .eq('id', id)
-    .select()
+    .select(`
+      *,
+      sales_zones ( id, name ),
+      sales_markets ( id, name )
+    `)
     .single();
 
   if (error) throw error;
   return data;
 }
 
-export async function listVendors({ zoneId, search, zoneIds } = {}) {
+export async function listVendors({ zoneId, marketId, search, zoneIds } = {}) {
   let q = supabase
     .from('sales_vendors')
     .select(`
       *,
-      sales_zones ( id, name )
+      sales_zones ( id, name ),
+      sales_markets ( id, name )
     `)
     .order('shop_name', { ascending: true });
 
+  if (marketId) {
+    q = q.eq('market_id', marketId);
+  }
   if (zoneId) {
     q = q.eq('zone_id', zoneId);
   } else if (zoneIds && zoneIds.length > 0) {
@@ -287,7 +397,8 @@ export async function getVendorById(id) {
     .from('sales_vendors')
     .select(`
       *,
-      sales_zones ( id, name )
+      sales_zones ( id, name ),
+      sales_markets ( id, name )
     `)
     .eq('id', id)
     .maybeSingle();
@@ -351,7 +462,7 @@ export async function listVisits({ vendorId, salesBoyId, zoneId, isAvailable, st
     .select(`
       *,
       sales_boys ( id, name, phone ),
-      sales_vendors ( id, shop_name, contact_person, phone, shop_address, zone_id, sales_zones(id, name) ),
+      sales_vendors ( id, shop_name, contact_person, phone, shop_address, zone_id, market_id, sales_zones(id, name), sales_markets(id, name) ),
       sales_visit_books (
         id,
         action_type,

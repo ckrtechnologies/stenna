@@ -21,7 +21,8 @@ import {
   BookOpen,
   UploadCloud,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Building2
 } from 'lucide-react';
 import api from '../utils/api';
 import Loader from '../components/Loader';
@@ -32,9 +33,11 @@ export default function Vendors() {
   const navigate = useNavigate();
   const [vendors, setVendors] = useState([]);
   const [zones, setZones] = useState([]);
+  const [markets, setMarkets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [zoneFilter, setZoneFilter] = useState('ALL');
+  const [marketFilter, setMarketFilter] = useState('ALL');
 
   // Sorting state
   const [sortField, setSortField] = useState('shop_name');
@@ -49,6 +52,7 @@ export default function Vendors() {
     shopAddress: '',
     contactPerson: '',
     zoneId: '',
+    marketId: '',
     isActive: true
   });
   const [modalSaving, setModalSaving] = useState(false);
@@ -59,6 +63,7 @@ export default function Vendors() {
   const [bulkParsedRows, setBulkParsedRows] = useState([]);
   const [bulkErrors, setBulkErrors] = useState([]);
   const [bulkDefaultZoneId, setBulkDefaultZoneId] = useState('');
+  const [bulkDefaultMarketId, setBulkDefaultMarketId] = useState('');
   const [bulkImporting, setBulkImporting] = useState(false);
   const [bulkResult, setBulkResult] = useState(null);
   const fileInputRef = useRef(null);
@@ -70,14 +75,16 @@ export default function Vendors() {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const [vRes, zRes] = await Promise.all([
+      const [vRes, zRes, mRes] = await Promise.all([
         api.get('/sales-tracking/vendors'),
-        api.get('/sales-tracking/admin/zones')
+        api.get('/sales-tracking/admin/zones'),
+        api.get('/sales-tracking/admin/markets')
       ]);
       setVendors(vRes.data?.data || []);
       setZones(zRes.data?.data || []);
+      setMarkets(mRes.data?.data || []);
     } catch (err) {
-      console.error('Failed to load vendors or zones', err);
+      console.error('Failed to load vendors, zones, or markets', err);
     } finally {
       setLoading(false);
     }
@@ -103,12 +110,14 @@ export default function Vendors() {
     return vendors
       .filter((v) => {
         if (zoneFilter !== 'ALL' && v.zone_id !== zoneFilter) return false;
+        if (marketFilter !== 'ALL' && v.market_id !== marketFilter) return false;
         if (searchTerm.trim()) {
           const s = searchTerm.toLowerCase();
           const matchName = v.shop_name?.toLowerCase().includes(s);
           const matchContact = v.contact_person?.toLowerCase().includes(s);
           const matchPhone = v.phone?.includes(s);
-          if (!matchName && !matchContact && !matchPhone) return false;
+          const matchMarket = v.sales_markets?.name?.toLowerCase().includes(s);
+          if (!matchName && !matchContact && !matchPhone && !matchMarket) return false;
         }
         return true;
       })
@@ -119,6 +128,10 @@ export default function Vendors() {
           aVal = a.sales_zones?.name || '';
           bVal = b.sales_zones?.name || '';
         }
+        if (sortField === 'sales_markets') {
+          aVal = a.sales_markets?.name || '';
+          bVal = b.sales_markets?.name || '';
+        }
         if (typeof aVal === 'string') aVal = aVal.toLowerCase();
         if (typeof bVal === 'string') bVal = bVal.toLowerCase();
 
@@ -126,7 +139,7 @@ export default function Vendors() {
         if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [vendors, zoneFilter, searchTerm, sortField, sortOrder]);
+  }, [vendors, zoneFilter, marketFilter, searchTerm, sortField, sortOrder]);
 
   const handleOpenAdd = () => {
     setEditingVendor(null);
@@ -136,6 +149,7 @@ export default function Vendors() {
       shopAddress: '',
       contactPerson: '',
       zoneId: zones[0]?.id || '',
+      marketId: '',
       isActive: true
     });
     setIsModalOpen(true);
@@ -149,6 +163,7 @@ export default function Vendors() {
       shopAddress: vendor.shop_address,
       contactPerson: vendor.contact_person,
       zoneId: vendor.zone_id || '',
+      marketId: vendor.market_id || '',
       isActive: vendor.is_active ?? true
     });
     setIsModalOpen(true);
@@ -192,10 +207,10 @@ export default function Vendors() {
 
   const handleDownloadTemplate = () => {
     const csvContent =
-      'Shop Name,Phone Number,Shop Address,Contact Person,Zone Name\n' +
-      'Royal Wall Decor,9876543210,14 Connaught Place Market New Delhi,Rajesh Sharma,Central Delhi\n' +
-      'Elegance Wallpapers,9811223344,Plot 45 Sector 18 Noida,Sunil Verma,Noida\n' +
-      'Classic Home Interiors,9899001122,Shop 12 MG Road Gurgaon,Anil Mehta,Gurgaon\n';
+      'Shop Name,Phone Number,Shop Address,Contact Person,Zone Name,Market Name\n' +
+      'Royal Wall Decor,9876543210,14 Connaught Place Market New Delhi,Rajesh Sharma,Central Delhi,Connaught Place\n' +
+      'Elegance Wallpapers,9811223344,Plot 45 Sector 18 Noida,Sunil Verma,Noida,Sector 18 Market\n' +
+      'Classic Home Interiors,9899001122,Shop 12 MG Road Gurgaon,Anil Mehta,Gurgaon,Sikanderpur Marble Market\n';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -230,6 +245,7 @@ export default function Vendors() {
           const shopAddress = String(row['Shop Address'] || row['Address'] || row.shop_address || row.shopAddress || row.address || '').trim();
           const contactPerson = String(row['Contact Person'] || row['Owner Name'] || row.contact_person || row.contactPerson || row.owner || '').trim();
           const zoneName = String(row['Zone Name'] || row['Zone'] || row.zone_name || row.zoneName || row.zone || '').trim();
+          const marketName = String(row['Market Name'] || row['Market'] || row.market_name || row.marketName || row.market || '').trim();
 
           const missingFields = [];
           if (!shopName) missingFields.push('Shop Name');
@@ -249,7 +265,8 @@ export default function Vendors() {
               phone,
               shopAddress,
               contactPerson,
-              zoneName
+              zoneName,
+              marketName
             });
           }
         });
@@ -269,7 +286,8 @@ export default function Vendors() {
     try {
       const res = await api.post('/sales-tracking/admin/vendors/bulk', {
         vendors: bulkParsedRows,
-        defaultZoneId: bulkDefaultZoneId || null
+        defaultZoneId: bulkDefaultZoneId || null,
+        defaultMarketId: bulkDefaultMarketId || null
       });
 
       setBulkResult(res.data?.data);
@@ -347,10 +365,13 @@ export default function Vendors() {
           <MapPin size={16} color="var(--primary)" style={{ flexShrink: 0 }} />
           <CustomSelect
             value={zoneFilter}
-            onChange={(val) => setZoneFilter(val)}
+            onChange={(val) => {
+              setZoneFilter(val);
+              setMarketFilter('ALL');
+            }}
             placeholder="All Territories"
             options={[
-              { value: 'ALL', label: 'All Territories' },
+              { value: 'ALL', label: 'All Territories / Zones' },
               ...zones.map((z) => ({ value: z.id, label: z.name }))
             ]}
             searchable={zones.length > 5}
@@ -358,13 +379,31 @@ export default function Vendors() {
           />
         </div>
 
-        {(searchTerm || zoneFilter !== 'ALL') && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '180px' }}>
+          <Building2 size={16} color="var(--primary)" style={{ flexShrink: 0 }} />
+          <CustomSelect
+            value={marketFilter}
+            onChange={(val) => setMarketFilter(val)}
+            placeholder="All Markets"
+            options={[
+              { value: 'ALL', label: 'All Markets / Bazaars' },
+              ...markets
+                .filter((m) => zoneFilter === 'ALL' || m.zone_id === zoneFilter)
+                .map((m) => ({ value: m.id, label: m.name }))
+            ]}
+            searchable={markets.length > 5}
+            searchPlaceholder="Search markets..."
+          />
+        </div>
+
+        {(searchTerm || zoneFilter !== 'ALL' || marketFilter !== 'ALL') && (
           <button
             className="btn"
             style={{ background: 'var(--border-color)', color: 'var(--text-main)' }}
             onClick={() => {
               setSearchTerm('');
               setZoneFilter('ALL');
+              setMarketFilter('ALL');
             }}
           >
             <RotateCcw size={16} />
@@ -407,6 +446,11 @@ export default function Vendors() {
                   </div>
                 </th>
                 <th>
+                  <div className="table-sort-header" onClick={() => handleSort('sales_markets')}>
+                    <span>Market / Bazaar</span> {renderSortIndicator('sales_markets')}
+                  </div>
+                </th>
+                <th>
                   <div className="table-sort-header" onClick={() => handleSort('is_active')}>
                     <span>Status</span> {renderSortIndicator('is_active')}
                   </div>
@@ -417,7 +461,7 @@ export default function Vendors() {
             <tbody>
               {filteredAndSortedVendors.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No retail shops found matching your criteria.
                   </td>
                 </tr>
@@ -446,6 +490,12 @@ export default function Vendors() {
                     <td>
                       <span className="book-badge-chip">
                         {vendor.sales_zones?.name || 'Unassigned'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="book-badge-chip" style={{ background: 'rgba(13, 148, 136, 0.12)', color: '#14b8a6', borderColor: 'rgba(13, 148, 136, 0.25)' }}>
+                        <Building2 size={12} />
+                        {vendor.sales_markets?.name || 'Unassigned'}
                       </span>
                     </td>
                     <td>
@@ -550,14 +600,14 @@ export default function Vendors() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Assigned Territory / Zone
+                    Assigned Territory / Zone (Tier 1)
                   </label>
                   <CustomSelect
                     value={formData.zoneId}
-                    onChange={(val) => setFormData({ ...formData, zoneId: val })}
+                    onChange={(val) => setFormData({ ...formData, zoneId: val, marketId: '' })}
                     placeholder="Unassigned"
                     options={[
                       { value: '', label: 'Unassigned' },
@@ -567,18 +617,36 @@ export default function Vendors() {
                   />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1.25rem' }}>
-                  <input
-                    type="checkbox"
-                    id="isActiveVendor"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    style={{ width: 'auto' }}
-                  />
-                  <label htmlFor="isActiveVendor" style={{ fontSize: '0.85rem', cursor: 'pointer' }}>
-                    Active Vendor
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                    Assigned Market / Bazaar (Tier 2)
                   </label>
+                  <CustomSelect
+                    value={formData.marketId}
+                    onChange={(val) => setFormData({ ...formData, marketId: val })}
+                    placeholder="Select Market"
+                    options={[
+                      { value: '', label: 'Unassigned Market' },
+                      ...markets
+                        .filter((m) => !formData.zoneId || m.zone_id === formData.zoneId)
+                        .map((m) => ({ value: m.id, label: m.name }))
+                    ]}
+                    searchable={markets.length > 5}
+                  />
                 </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <input
+                  type="checkbox"
+                  id="isActiveVendor"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  style={{ width: 'auto' }}
+                />
+                <label htmlFor="isActiveVendor" style={{ fontSize: '0.85rem', cursor: 'pointer' }}>
+                  Active Vendor (Available for sales visits)
+                </label>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
@@ -658,20 +726,43 @@ export default function Vendors() {
               ) : (
                 /* Upload & Preview View */
                 <>
-                  <div className="form-group">
-                    <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.82rem', fontWeight: 600 }}>
-                      Default Territory Zone <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(Used if CSV row doesn't specify a zone)</span>
-                    </label>
-                    <CustomSelect
-                      value={bulkDefaultZoneId}
-                      onChange={(val) => setBulkDefaultZoneId(val)}
-                      placeholder="-- No Default Zone (Unassigned) --"
-                      options={[
-                        { value: '', label: '-- No Default Zone (Unassigned) --' },
-                        ...zones.map((z) => ({ value: z.id, label: z.name }))
-                      ]}
-                      searchable={zones.length > 5}
-                    />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div className="form-group">
+                      <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.82rem', fontWeight: 600 }}>
+                        Default Zone (Tier 1)
+                      </label>
+                      <CustomSelect
+                        value={bulkDefaultZoneId}
+                        onChange={(val) => {
+                          setBulkDefaultZoneId(val);
+                          setBulkDefaultMarketId('');
+                        }}
+                        placeholder="-- No Default Zone --"
+                        options={[
+                          { value: '', label: '-- No Default Zone --' },
+                          ...zones.map((z) => ({ value: z.id, label: z.name }))
+                        ]}
+                        searchable={zones.length > 5}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.82rem', fontWeight: 600 }}>
+                        Default Market (Tier 2)
+                      </label>
+                      <CustomSelect
+                        value={bulkDefaultMarketId}
+                        onChange={(val) => setBulkDefaultMarketId(val)}
+                        placeholder="-- No Default Market --"
+                        options={[
+                          { value: '', label: '-- No Default Market --' },
+                          ...markets
+                            .filter((m) => !bulkDefaultZoneId || m.zone_id === bulkDefaultZoneId)
+                            .map((m) => ({ value: m.id, label: m.name }))
+                        ]}
+                        searchable={markets.length > 5}
+                      />
+                    </div>
                   </div>
 
                   {/* Drop area */}
