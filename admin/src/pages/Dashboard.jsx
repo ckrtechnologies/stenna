@@ -17,7 +17,8 @@ import {
   PieChart,
   Calendar,
   X,
-  RotateCcw
+  RotateCcw,
+  Eye
 } from 'lucide-react';
 import {
   useGetDashboardStatsQuery,
@@ -612,7 +613,71 @@ const Dashboard = () => {
             path="/books"
             subtext="physical catalog editions"
           />
+          <CompactStatCard
+            title="Wallpaper Views"
+            value={(catalogStats.totalViews || 0).toLocaleString()}
+            icon={<Eye />}
+            color="green"
+            path="/wallpapers"
+            badge={catalogStats.topWallpaper && catalogStats.topWallpaper !== 'None' ? `Top: ${catalogStats.topWallpaper}` : undefined}
+            subtext="cumulative impressions"
+          />
         </div>
+
+        {/* Top Viewed Designs Leaderboard */}
+        {catalogStats.topWallpapers && catalogStats.topWallpapers.length > 0 && (
+          <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+                🔥 Most Viewed Wallpaper Designs
+              </span>
+              <Link to="/wallpapers" style={{ fontSize: '0.72rem', color: 'var(--primary, #0b3d2e)', textDecoration: 'none', fontWeight: 600 }}>
+                View All Wallpapers →
+              </Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.5rem' }}>
+              {catalogStats.topWallpapers.map((item, idx) => (
+                <Link
+                  key={item.id}
+                  to="/wallpapers"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.35rem 0.5rem',
+                    background: 'var(--bg-stat-card, #f8fafc)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: idx === 0 ? '#d97706' : 'var(--text-dim)', width: '16px' }}>
+                    #{idx + 1}
+                  </span>
+                  <img
+                    src={item.thumbnail || 'https://placehold.co/36x36/1e293b/94a3b8?text=?'}
+                    alt={item.name}
+                    style={{ width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover', background: '#e2e8f0' }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      {item.design_code || 'Design'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem', fontWeight: 700, color: '#07261C', background: 'rgba(77, 197, 186, 0.14)', padding: '2px 6px', borderRadius: '999px' }}>
+                    <Eye size={11} />
+                    {item.views.toLocaleString()}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <style>{`

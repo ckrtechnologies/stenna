@@ -1,40 +1,73 @@
 import { supabase } from '../config/supabase.js';
 
 export const trackEvent = async (req, res) => {
-    const { wallpaperId, event_type } = req.body; // event_type: view, share
+    const { wallpaperId, slug, event_type = 'view' } = req.body;
     try {
-        const { error } = await supabase.from('analytics').insert({
-            wallpaper_id: wallpaperId,
-            event_type
-        });
-        if (error) throw error;
-        res.status(200).json({ message: `${event_type} tracked` });
+        let wpId = wallpaperId;
+        
+        // If slug is provided instead of ID, resolve it
+        if (!wpId && slug) {
+            const { data: wp } = await supabase.from('wallpapers').select('id, views').eq('slug', slug).maybeSingle();
+            if (wp) {
+                wpId = wp.id;
+            }
+        }
+
+        if (wpId) {
+            // 1. Insert event into analytics table
+            const { error: insertErr } = await supabase.from('analytics').insert({
+                wallpaper_id: wpId,
+                event_type
+            });
+            if (insertErr) console.error('Analytics insert error:', insertErr.message);
+
+            // 2. Increment views on wallpapers table when event_type is view
+            if (event_type === 'view') {
+                const { data: wp } = await supabase.from('wallpapers').select('views').eq('id', wpId).maybeSingle();
+                if (wp) {
+                    await supabase.from('wallpapers').update({
+                        views: (wp.views || 0) + 1
+                    }).eq('id', wpId);
+                }
+            }
+        }
+
+        res.status(200).json({ success: true, message: `${event_type} tracked` });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Track event error:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
 export const getPopular = async (req, res) => {
     try {
-        // Since we don't have a views column, we count from analytics table
         const { data, error } = await supabase
-            .from('analytics')
-            .select('wallpaper_id, wallpapers(name, slug)')
-            .eq('event_type', 'view');
+            .from('wallpapers')
+            .select(`
+                id,
+                name,
+                slug,
+                design_code,
+                views,
+                price,
+                images:wallpaper_images(image_url, position)
+            `)
+            .order('views', { ascending: false })
+            .limit(10);
 
         if (error) throw error;
 
-        // Group and count in memory for simplicity or use a more complex query if needed
-        // For now, let's keep it robust
-        const counts = data.reduce((acc, curr) => {
-            const id = curr.wallpaper_id;
-            if (!acc[id]) acc[id] = { ...curr.wallpapers, id, views: 0 };
-            acc[id].views++;
-            return acc;
-        }, {});
+        const formatted = (data || []).map(w => ({
+            id: w.id,
+            name: w.name,
+            slug: w.slug,
+            design_code: w.design_code,
+            views: w.views || 0,
+            price: w.price,
+            thumbnail: w.images?.sort((a, b) => a.position - b.position)?.[0]?.image_url || null
+        }));
 
-        const sorted = Object.values(counts).sort((a, b) => b.views - a.views).slice(0, 5);
-        res.status(200).json(sorted);
+        res.status(200).json(formatted);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -84,11 +117,23 @@ export const getDashboardStats = async (req, res) => {
             supabase.from('books').select('*', { count: 'exact', head: true })
         ]);
 
-        const { data: topWallpaper } = await supabase.from('wallpapers')
-            .select('name')
+        // Get Top 5 viewed wallpapers with image thumbnails
+        const { data: topWallpapers } = await supabase
+            .from('wallpapers')
+            .select(`
+                id,
+                name,
+                slug,
+                design_code,
+                views,
+                images:wallpaper_images(image_url, position)
+            `)
             .order('views', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+            .limit(5);
+
+        // Calculate total views across all wallpapers
+        const { data: allViewsData } = await supabase.from('wallpapers').select('views');
+        const totalViews = (allViewsData || []).reduce((acc, curr) => acc + (curr.views || 0), 0);
 
         res.status(200).json({
             wallpapers: wallpapers || 0,
@@ -96,7 +141,17 @@ export const getDashboardStats = async (req, res) => {
             leads: leads || 0,
             dealers: dealers || 0,
             books: books || 0,
-            topWallpaper: topWallpaper?.name || 'None'
+            totalViews: totalViews || 0,
+            topWallpaper: topWallpapers?.[0]?.name || 'None',
+            topWallpaperViews: topWallpapers?.[0]?.views || 0,
+            topWallpapers: (topWallpapers || []).map(w => ({
+                id: w.id,
+                name: w.name,
+                slug: w.slug,
+                design_code: w.design_code,
+                views: w.views || 0,
+                thumbnail: w.images?.sort((a, b) => a.position - b.position)?.[0]?.image_url || null
+            }))
         });
     } catch (error) {
         console.error('Stats Error:', error);

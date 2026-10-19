@@ -234,7 +234,8 @@ const Wallpapers = () => {
         book_ids: [],
         price_range: [0, 50000], // [min, max]
         price_range_active: false,
-        is_active: 'all'
+        is_active: 'all',
+        sort_by: 'default'
     });
 
     const [pendingBulkIds, setPendingBulkIds] = useState(new Set());
@@ -428,7 +429,8 @@ const Wallpapers = () => {
             book_ids: [],
             price_range: [0, 50000],
             price_range_active: false,
-            is_active: 'all' 
+            is_active: 'all',
+            sort_by: 'default'
         });
         setSearchTerm('');
         setCurrentPage(1);
@@ -462,6 +464,18 @@ const Wallpapers = () => {
         return matchesSearch && matchesGroup && matchesCategory && matchesBook && matchesPrice && matchesStatus;
     });
 
+    if (filters.sort_by === 'views_desc') {
+        filteredWallpapers.sort((a, b) => (b.views || 0) - (a.views || 0));
+    } else if (filters.sort_by === 'views_asc') {
+        filteredWallpapers.sort((a, b) => (a.views || 0) - (b.views || 0));
+    } else if (filters.sort_by === 'price_desc') {
+        filteredWallpapers.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+    } else if (filters.sort_by === 'price_asc') {
+        filteredWallpapers.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+    } else if (filters.sort_by === 'stock_desc') {
+        filteredWallpapers.sort((a, b) => (b.quantity || 0) - (a.quantity || 0));
+    }
+
     const paginatedWallpapers = filteredWallpapers.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
@@ -481,12 +495,12 @@ const Wallpapers = () => {
             : filteredWallpapers;
         if (!source.length) return;
         const headers = ['Name','Design Code','Slug','Description','Price','Roll Width','Roll Height',
-            'Stock','Material','Finish','Washability','Durability','Brand','Country','Is Active',
+            'Stock','Views','Material','Finish','Washability','Durability','Brand','Country','Is Active',
             'Category Names','Group Names'];
         const rows = source.map(w => [
             `"${w.name}"`, `"${w.design_code||''}"`, `"${w.slug||''}"`,
             `"${(w.description||'').replace(/"/g,'""')}"`, w.price||0,
-            w.roll_width||'', w.roll_height||'', w.quantity||0,
+            w.roll_width||'', w.roll_height||'', w.quantity||0, w.views||0,
             `"${w.material||''}"`, `"${w.finish||''}"`, `"${w.washability||''}"`,
             `"${w.durability||''}"`, `"${w.brand||''}"`, `"${w.country||''}"`,
             w.is_active?'TRUE':'FALSE',
@@ -507,7 +521,8 @@ const Wallpapers = () => {
         filters.category_ids.length + 
         filters.book_ids.length + 
         (filters.price_range_active ? 1 : 0) +
-        (filters.is_active !== 'all' ? 1 : 0)
+        (filters.is_active !== 'all' ? 1 : 0) +
+        (filters.sort_by !== 'default' ? 1 : 0)
     );
 
     return (
@@ -629,6 +644,18 @@ const Wallpapers = () => {
                         <option value="all">Any Status</option>
                         <option value="active">Active Only</option>
                         <option value="hidden">Hidden Only</option>
+                    </select>
+
+                    <select name="sort_by" value={filters.sort_by || 'default'} onChange={(e) => {
+                        setFilters(prev => ({ ...prev, sort_by: e.target.value }));
+                        setCurrentPage(1);
+                    }}>
+                        <option value="default">Default Sort</option>
+                        <option value="views_desc">Most Viewed 🔥</option>
+                        <option value="views_asc">Least Viewed</option>
+                        <option value="price_desc">Price: High to Low</option>
+                        <option value="price_asc">Price: Low to High</option>
+                        <option value="stock_desc">Highest Stock</option>
                     </select>
 
                     {activeFilterCount > 0 && (
@@ -755,15 +782,16 @@ const Wallpapers = () => {
                             <th>Category</th>
                             <th className="wp-align-right">Price</th>
                             <th className="wp-align-right">Stock</th>
+                            <th className="wp-align-right">Views</th>
                             <th className="wp-align-center">Status</th>
                             <th className="wp-align-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="9"><Loader message="Fetching wallpapers..." /></td></tr>
+                            <tr><td colSpan="10"><Loader message="Fetching wallpapers..." /></td></tr>
                         ) : filteredWallpapers.length === 0 ? (
-                            <tr><td colSpan="9" className="wp-empty">No wallpapers found.</td></tr>
+                            <tr><td colSpan="10" className="wp-empty">No wallpapers found.</td></tr>
                         ) : (
                             paginatedWallpapers.map((w, index) => {
                                 const sno = (currentPage - 1) * itemsPerPage + index + 1;
@@ -819,6 +847,13 @@ const Wallpapers = () => {
                                         <td className="wp-align-right">
                                             <span className={`wp-stock ${(w.quantity || 0) > 0 ? 'in' : 'out'}`}>
                                                 {w.quantity || 0}
+                                            </span>
+                                        </td>
+
+                                        <td className="wp-align-right">
+                                            <span className="wp-views-badge" title={`${w.views || 0} views`}>
+                                                <Eye size={12} />
+                                                {(w.views || 0).toLocaleString()}
                                             </span>
                                         </td>
 
@@ -1021,6 +1056,7 @@ const Wallpapers = () => {
                 .wp-stock { font-weight:600;font-size:.875rem; }
                 .wp-stock.in { color:var(--success,#10b981); }
                 .wp-stock.out { color:var(--danger,#ef4444); }
+                .wp-views-badge { display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .55rem;border-radius:999px;background:rgba(77,197,186,.12);color:#07261C;font-size:.78rem;font-weight:700;letter-spacing:.02em;border:1px solid rgba(77,197,186,.25); }
                 .wp-status { display:inline-block;padding:.2rem .7rem;border-radius:999px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em; }
                 .wp-status.active { background:rgba(16,185,129,.12);color:#10b981; }
                 .wp-status.hidden { background:rgba(100,116,139,.12);color:#64748b; }

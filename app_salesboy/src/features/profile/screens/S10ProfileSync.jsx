@@ -142,7 +142,7 @@ export default function S10ProfileSync({ navigation }) {
         </View>
         <View style={styles.diagRow}>
           <Text style={styles.diagLabel}>Backend API</Text>
-          <Text style={styles.diagValue}>Active (Port 5010)</Text>
+          <Text style={styles.diagValue}>api.stenna.in (Production)</Text>
         </View>
         <View style={[styles.diagRow, { borderBottomWidth: 0 }]}>
           <Text style={styles.diagLabel}>Agency Handover</Text>

@@ -187,6 +187,15 @@ export const getWallpaperBySlug = async (req, res) => {
             videos: data.videos.sort((a, b) => a.position - b.position)
         };
 
+        if (data?.id) {
+            // Asynchronously increment view count and log analytics event (non-blocking)
+            supabase.from('wallpapers')
+                .update({ views: (data.views || 0) + 1 })
+                .eq('id', data.id)
+                .then(() => supabase.from('analytics').insert({ wallpaper_id: data.id, event_type: 'view' }))
+                .catch(err => console.error('Auto-view increment error:', err?.message));
+        }
+
         res.status(200).json(formatted);
     } catch (error) {
         res.status(404).json({ message: 'Wallpaper not found' });

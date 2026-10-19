@@ -60,6 +60,18 @@ export const fetchWallpaperBySlug = async (slug) => {
     return response.json();
 };
 
+export const trackWallpaperEvent = async (wallpaperId, event_type = 'view') => {
+    try {
+        await fetch(`${API_BASE_URL}/analytics`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallpaperId, event_type })
+        });
+    } catch (e) {
+        // Non-blocking background analytics
+    }
+};
+
 export const generateVisualization = async (formData) => {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;

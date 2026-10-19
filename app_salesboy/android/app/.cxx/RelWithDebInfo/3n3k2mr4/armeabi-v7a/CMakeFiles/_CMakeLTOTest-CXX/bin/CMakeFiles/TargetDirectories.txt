@@ -1,0 +1,4 @@
+/Users/chandanmallik/projects/stenna/app_salesboy/android/app/.cxx/RelWithDebInfo/3n3k2mr4/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/foo.dir
+/Users/chandanmallik/projects/stenna/app_salesboy/android/app/.cxx/RelWithDebInfo/3n3k2mr4/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/boo.dir
+/Users/chandanmallik/projects/stenna/app_salesboy/android/app/.cxx/RelWithDebInfo/3n3k2mr4/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/edit_cache.dir
+/Users/chandanmallik/projects/stenna/app_salesboy/android/app/.cxx/RelWithDebInfo/3n3k2mr4/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/rebuild_cache.dir

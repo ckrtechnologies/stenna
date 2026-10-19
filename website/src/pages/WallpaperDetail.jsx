@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { fetchWallpaperBySlug, fetchWallpapers, fetchGroups, fetchCategories } from '../services/api';
+import { fetchWallpaperBySlug, trackWallpaperEvent, fetchWallpapers, fetchGroups, fetchCategories } from '../services/api';
 import { supabase } from '../services/supabaseClient';
 import RelatedProductCarousel from '../components/RelatedProductCarousel';
 import VisualizerModal from '../components/VisualizerModal';
@@ -303,6 +303,19 @@ const WallpaperDetail = () => {
                 // Background (or foreground if truly new) fetch for full metadata
                 const data = await fetchWallpaperBySlug(slug);
                 setWallpaper(data);
+
+                // Deduplicated session view tracking
+                if (data?.id) {
+                    try {
+                        const sessionKey = `viewed_wp_${data.id}`;
+                        if (!sessionStorage.getItem(sessionKey)) {
+                            sessionStorage.setItem(sessionKey, '1');
+                            trackWallpaperEvent(data.id, 'view');
+                        }
+                    } catch (e) {
+                        // Ignore session storage errors
+                    }
+                }
 
                 if (data.images && data.images.length > 0) {
                     setActiveImage(0);
