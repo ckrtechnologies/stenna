@@ -105,12 +105,21 @@ const Leads = () => {
         }
     };
 
+    const normalizeStatus = (status) => {
+        if (!status) return 'pending';
+        const s = String(status).toLowerCase().trim();
+        if (s === 'new') return 'pending';
+        if (s === 'contacted') return 'processing';
+        return s;
+    };
+
     const handleStatusChange = async (id, newStatus) => {
         try {
             await api.patch(`/leads/${id}/status`, { status: newStatus });
-            setLeads(leads.map(lead => lead.id === id ? { ...lead, status: newStatus } : lead));
+            setLeads(prev => prev.map(lead => lead.id === id ? { ...lead, status: newStatus } : lead));
         } catch (error) {
-            alert('Failed to update status');
+            console.error('Failed to update status', error);
+            alert(error.response?.data?.message || 'Failed to update status');
         }
     };
 
@@ -130,7 +139,9 @@ const Leads = () => {
                 l.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 l.phone?.includes(searchTerm);
             const matchesType = filters.type === 'all' || l.type === filters.type;
-            const matchesStatus = filters.status === 'all' || l.status === filters.status;
+            const matchesStatus = filters.status === 'all' || 
+                normalizeStatus(l.status) === filters.status ||
+                l.status === filters.status;
 
             let matchesDate = true;
             if (activeStart || activeEnd) {
@@ -152,27 +163,30 @@ const Leads = () => {
     };
 
     const exportToCSV = () => {
-        const headers = ["S.No", "Date", "Name", "Email", "Phone", "Product", "Type", "Status", "Message"];
-        const rows = filteredLeads.map((l, index) => [
-            index + 1,
-            new Date(l.created_at).toLocaleDateString(),
-            l.name,
-            l.email,
-            l.phone,
-            l.wallpaper?.name || "General Inquiry",
-            l.type,
-            l.status,
-            l.message?.replace(/,/g, " ") || ""
-        ]);
+        const headers = ["S.No", "Date", "Time", "Customer Name", "Email", "Phone Number", "Product", "Type", "Status", "Message"];
+        const rows = filteredLeads.map((l, index) => {
+            const d = new Date(l.created_at);
+            return [
+                index + 1,
+                d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                l.name || '',
+                l.email || '',
+                l.phone || '',
+                l.wallpaper?.name || "General Inquiry",
+                l.type || 'enquiry',
+                normalizeStatus(l.status),
+                (l.message || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')
+            ];
+        });
 
         const csvContent = "data:text/csv;charset=utf-8,"
-            + headers.join(",") + "\n"
-            + rows.map(r => r.join(",")).join("\n");
+            + [headers.map(h => `"${h}"`).join(","), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Leads_Export_${new Date().toLocaleDateString()}.csv`);
+        link.setAttribute("download", `Leads_Export_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
     };
@@ -342,8 +356,9 @@ const Leads = () => {
                         style={{ height: '30px', fontSize: '0.75rem', padding: '0 0.5rem' }}
                     >
                         <option value="all">All Statuses</option>
-                        <option value="new">New</option>
-                        <option value="contacted">Contacted</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Contacted</option>
+                        <option value="resolved">Resolved</option>
                         <option value="closed">Closed</option>
                     </select>
                 </div>
@@ -408,170 +423,194 @@ const Leads = () => {
                     <thead>
                         <tr>
                             <th style={{ width: '45px', textAlign: 'center' }}>S.NO</th>
-                            <th style={{ width: '150px' }}>DATE</th>
-                            <th style={{ minWidth: '220px' }}>CONTACT</th>
+                            <th style={{ width: '160px' }}>DATE</th>
+                            <th style={{ minWidth: '180px' }}>CUSTOMER</th>
+                            <th style={{ width: '135px', minWidth: '130px' }}>PHONE NUMBER</th>
                             <th style={{ minWidth: '130px' }}>PRODUCT</th>
                             <th style={{ width: '90px' }}>TYPE</th>
-                            <th style={{ minWidth: '240px' }}>MESSAGE / REQUIREMENTS</th>
-                            <th style={{ width: '110px' }}>STATUS</th>
+                            <th style={{ minWidth: '220px' }}>MESSAGE / REMARKS</th>
+                            <th style={{ width: '130px', minWidth: '125px' }}>STATUS</th>
                             <th style={{ width: '95px', textAlign: 'center' }}>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>
+                                <td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>
                                     <Loader message="Loading inbound leads..." />
                                 </td>
                             </tr>
                         ) : filteredLeads.length === 0 ? (
                             <tr>
-                                <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                                <td colSpan="9" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                                     No leads found matching your active filters.
                                 </td>
                             </tr>
                         ) : (
-                            filteredLeads.map((lead, index) => (
-                                <tr key={lead.id}>
-                                    <td style={{ textAlign: 'center' }}>
-                                        <span className="sno" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.75rem' }}>
-                                            #{index + 1}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="table-cell-inline" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                                            <Calendar size={12} color="var(--text-muted)" />
-                                            <span>
-                                                {new Date(lead.created_at).toLocaleString("en-IN", {
-                                                    day: "2-digit",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                    hour12: true
-                                                })}
+                            filteredLeads.map((lead, index) => {
+                                const currentStatus = normalizeStatus(lead.status);
+                                return (
+                                    <tr key={lead.id}>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <span className="sno" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.75rem' }}>
+                                                #{index + 1}
                                             </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="table-cell-inline" style={{ maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            <strong style={{ color: 'var(--text-main)', fontSize: '0.8rem' }}>{lead.name}</strong>
-                                            <span className="table-meta-muted">&lt;{lead.email}&gt;</span>
-                                            {lead.phone && <span className="table-meta-muted">• {lead.phone}</span>}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="table-cell-inline" style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {lead.wallpaper?.name ? (
-                                                <span style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.78rem' }}>
-                                                    {lead.wallpaper.name}
+                                        </td>
+                                        <td>
+                                            <div className="table-cell-inline" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                                <Calendar size={12} color="var(--text-muted)" />
+                                                <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.75rem' }}>
+                                                    {new Date(lead.created_at).toLocaleDateString("en-IN", {
+                                                        day: "numeric",
+                                                        month: "short",
+                                                        year: "numeric"
+                                                    })}
                                                 </span>
-                                            ) : (
-                                                <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.75rem' }}>
-                                                    General Inquiry
+                                                <span className="table-separator">·</span>
+                                                <span className="table-meta-muted" style={{ fontSize: '0.72rem' }}>
+                                                    {new Date(lead.created_at).toLocaleTimeString("en-IN", {
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                        hour12: true
+                                                    })}
                                                 </span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span
-                                            style={{
-                                                fontSize: '0.68rem',
-                                                fontWeight: 700,
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.5px',
-                                                padding: '2px 6px',
-                                                borderRadius: '4px',
-                                                backgroundColor: lead.type === 'sample' ? 'rgba(59, 130, 246, 0.1)' : lead.type === 'appointment' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(139, 92, 246, 0.1)',
-                                                color: lead.type === 'sample' ? '#3B82F6' : lead.type === 'appointment' ? '#10B981' : '#8B5CF6',
-                                                border: `1px solid ${lead.type === 'sample' ? 'rgba(59, 130, 246, 0.25)' : lead.type === 'appointment' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(139, 92, 246, 0.25)'}`
-                                            }}
-                                        >
-                                            {lead.type || 'enquiry'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span
-                                            style={{
-                                                maxWidth: '280px',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                                display: 'inline-block',
-                                                color: 'var(--text-dim)',
-                                                fontSize: '0.78rem',
-                                                verticalAlign: 'middle'
-                                            }}
-                                            title={lead.message || 'No remarks'}
-                                        >
-                                            {lead.message || '—'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <select
-                                            className={`status-select ${lead.status}`}
-                                            value={lead.status || 'new'}
-                                            onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                                            style={{
-                                                height: '26px',
-                                                padding: '2px 6px',
-                                                fontSize: '0.72rem',
-                                                borderRadius: '4px',
-                                                fontWeight: 600,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            <option value="new">New</option>
-                                            <option value="contacted">Contacted</option>
-                                            <option value="closed">Closed</option>
-                                        </select>
-                                    </td>
-                                    <td style={{ textAlign: 'center' }}>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                            <a
-                                                href={`mailto:${lead.email}`}
-                                                className="icon-btn mail"
-                                                title={`Email ${lead.name}`}
-                                                style={{ width: '24px', height: '24px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}
-                                            >
-                                                <Mail size={13} />
-                                            </a>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="table-cell-inline" style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <strong style={{ color: 'var(--text-main)', fontSize: '0.8rem' }}>{lead.name}</strong>
+                                                {lead.email && <span className="table-meta-muted">&lt;{lead.email}&gt;</span>}
+                                            </div>
+                                        </td>
+                                        <td>
                                             {lead.phone ? (
-                                                <>
-                                                    <a
-                                                        href={`https://wa.me/91${lead.phone.replace(/[^0-9]/g, '')}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="icon-btn whatsapp"
-                                                        title="WhatsApp"
-                                                        style={{ width: '24px', height: '24px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}
-                                                    >
-                                                        <MessageCircle size={13} />
-                                                    </a>
-                                                    <a
-                                                        href={`tel:${lead.phone}`}
-                                                        className="icon-btn call"
-                                                        title="Call"
-                                                        style={{ width: '24px', height: '24px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}
-                                                    >
-                                                        <Phone size={13} />
-                                                    </a>
-                                                </>
-                                            ) : null}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
+                                                <a
+                                                    href={`tel:${lead.phone}`}
+                                                    className="table-cell-inline"
+                                                    style={{
+                                                        color: 'var(--text-main)',
+                                                        textDecoration: 'none',
+                                                        fontVariantNumeric: 'tabular-nums',
+                                                        fontSize: '0.78rem',
+                                                        fontWeight: 600
+                                                    }}
+                                                    title={`Call ${lead.phone}`}
+                                                >
+                                                    <Phone size={11} color="var(--primary)" />
+                                                    <span>{lead.phone}</span>
+                                                </a>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-muted)' }}>—</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div className="table-cell-inline" style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {lead.wallpaper?.name ? (
+                                                    <span style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.78rem' }}>
+                                                        {lead.wallpaper.name}
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.75rem' }}>
+                                                        General Inquiry
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span
+                                                style={{
+                                                    fontSize: '0.68rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.5px',
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px',
+                                                    backgroundColor: lead.type === 'sample' ? 'rgba(59, 130, 246, 0.1)' : lead.type === 'appointment' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(139, 92, 246, 0.1)',
+                                                    color: lead.type === 'sample' ? '#3B82F6' : lead.type === 'appointment' ? '#10B981' : '#8B5CF6',
+                                                    border: `1px solid ${lead.type === 'sample' ? 'rgba(59, 130, 246, 0.25)' : lead.type === 'appointment' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(139, 92, 246, 0.25)'}`
+                                                }}
+                                            >
+                                                {lead.type || 'enquiry'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span
+                                                style={{
+                                                    maxWidth: '260px',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    display: 'inline-block',
+                                                    color: 'var(--text-dim)',
+                                                    fontSize: '0.78rem',
+                                                    verticalAlign: 'middle'
+                                                }}
+                                                title={lead.message || 'No remarks'}
+                                            >
+                                                {lead.message || '—'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <select
+                                                className={`status-select ${currentStatus}`}
+                                                value={currentStatus}
+                                                onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                                                title="Change lead status"
+                                            >
+                                                <option value="pending">Pending</option>
+                                                <option value="processing">Contacted</option>
+                                                <option value="resolved">Resolved</option>
+                                                <option value="closed">Closed</option>
+                                            </select>
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                <a
+                                                    href={`mailto:${lead.email}`}
+                                                    className="icon-btn mail"
+                                                    title={`Email ${lead.name}`}
+                                                    style={{ width: '24px', height: '24px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}
+                                                >
+                                                    <Mail size={13} />
+                                                </a>
+                                                {lead.phone ? (
+                                                    <>
+                                                        <a
+                                                            href={`https://wa.me/91${lead.phone.replace(/[^0-9]/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="icon-btn whatsapp"
+                                                            title="WhatsApp"
+                                                            style={{ width: '24px', height: '24px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}
+                                                        >
+                                                            <MessageCircle size={13} />
+                                                        </a>
+                                                        <a
+                                                            href={`tel:${lead.phone}`}
+                                                            className="icon-btn call"
+                                                            title="Call"
+                                                            style={{ width: '24px', height: '24px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}
+                                                        >
+                                                            <Phone size={13} />
+                                                        </a>
+                                                    </>
+                                                ) : null}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
             </div>
 
             <style>{`
-                .status-select { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; outline: none; }
-                .status-select.new { color: var(--primary); border-color: rgba(29, 78, 216, 0.4); }
-                .status-select.contacted { color: #f59e0b; border-color: rgba(245, 158, 11, 0.4); }
-                .status-select.closed { color: #10b981; border-color: rgba(16, 185, 129, 0.4); }
+                .status-select { cursor: pointer; outline: none; }
+                .status-select.pending { color: #d97706 !important; background-color: rgba(245, 158, 11, 0.1) !important; border-color: rgba(245, 158, 11, 0.35) !important; }
+                .status-select.processing { color: #2563eb !important; background-color: rgba(37, 99, 235, 0.1) !important; border-color: rgba(37, 99, 235, 0.35) !important; }
+                .status-select.resolved { color: #059669 !important; background-color: rgba(16, 185, 129, 0.1) !important; border-color: rgba(16, 185, 129, 0.35) !important; }
+                .status-select.closed { color: #64748b !important; background-color: rgba(100, 116, 139, 0.1) !important; border-color: rgba(100, 116, 139, 0.35) !important; }
                 .icon-btn { border: 1px solid var(--border-color); background: var(--bg-card); transition: all 0.15s ease; }
                 .icon-btn.whatsapp { color: #25D366; border-color: rgba(37, 211, 102, 0.3); }
                 .icon-btn.whatsapp:hover { background: rgba(37, 211, 102, 0.12); }

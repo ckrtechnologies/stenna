@@ -880,6 +880,47 @@ select:focus {
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
 }
 
+/* Compact Table Dropdowns & Status Selects (prevents text cropping in tabular rows) */
+.table-container select,
+select.status-select {
+    height: 26px !important;
+    min-height: 26px !important;
+    padding: 2px 22px 2px 8px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    line-height: 20px !important;
+    background-position: right 6px center !important;
+    background-size: 11px 11px !important;
+    border-radius: 4px !important;
+    box-sizing: border-box !important;
+    width: auto !important;
+    min-width: 105px !important;
+}
+
+select.status-select.pending {
+    color: #d97706 !important;
+    background-color: rgba(245, 158, 11, 0.1) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+select.status-select.processing {
+    color: #2563eb !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
+    border-color: rgba(37, 99, 235, 0.35) !important;
+}
+
+select.status-select.resolved {
+    color: #059669 !important;
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+select.status-select.closed {
+    color: #64748b !important;
+    background-color: rgba(100, 116, 139, 0.1) !important;
+    border-color: rgba(100, 116, 139, 0.35) !important;
+}
+
 /* ==============================================================================
    CKR Rule: Tabular Data — Strictly One Sleek Line Per Row (36px–40px)
    ============================================================================== */

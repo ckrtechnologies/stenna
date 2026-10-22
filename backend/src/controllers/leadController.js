@@ -95,12 +95,27 @@ export const createLead = async (req, res) => {
 
 export const updateLeadStatus = async (req, res) => {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
     try {
+        if (updates.status) {
+            const s = String(updates.status).toLowerCase().trim();
+            if (s === 'new') {
+                updates.status = 'pending';
+            } else if (s === 'contacted') {
+                updates.status = 'processing';
+            } else if (['pending', 'processing', 'resolved', 'closed'].includes(s)) {
+                updates.status = s;
+            } else {
+                return res.status(400).json({
+                    message: `Invalid status "${updates.status}". Allowed values: pending, processing, resolved, closed.`
+                });
+            }
+        }
         const { data, error } = await supabase.from('leads').update(updates).eq('id', id).select();
         if (error) throw error;
         res.status(200).json({ message: 'Status updated successfully', data });
     } catch (error) {
+        console.error('Error in updateLeadStatus:', error);
         res.status(500).json({ message: error.message });
     }
 };
