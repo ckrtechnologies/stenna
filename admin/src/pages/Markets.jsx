@@ -241,21 +241,22 @@ export default function Markets() {
       {loading ? (
         <Loader />
       ) : (
-        <div className="table-container">
-          <table>
+        <div className="table-container" style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', tableLayout: 'fixed' }}>
             <thead>
               <tr>
-                <th>
+                <th style={{ width: '50px', textAlign: 'center' }}>S.NO</th>
+                <th style={{ width: '200px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('name')}>
                     <span>Market / Bazaar Name</span> {renderSortIndicator('name')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '150px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('sales_zones')}>
                     <span>Parent Zone</span> {renderSortIndicator('sales_zones')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '120px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('city')}>
                     <span>City / Hub</span> {renderSortIndicator('city')}
                   </div>
@@ -265,46 +266,63 @@ export default function Markets() {
                     <span>Description / Details</span> {renderSortIndicator('description')}
                   </div>
                 </th>
-                <th>
-                  <div className="table-sort-header" onClick={() => handleSort('is_active')}>
+                <th style={{ width: '105px', textAlign: 'center' }}>
+                  <div className="table-sort-header" style={{ justifyContent: 'center' }} onClick={() => handleSort('is_active')}>
                     <span>Status</span> {renderSortIndicator('is_active')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '125px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('created_at')}>
                     <span>Created Date</span> {renderSortIndicator('created_at')}
                   </div>
                 </th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '85px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredAndSortedMarkets.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No markets found matching your criteria.
                   </td>
                 </tr>
               ) : (
-                filteredAndSortedMarkets.map((market) => (
+                filteredAndSortedMarkets.map((market, index) => (
                   <tr key={market.id}>
+                    <td style={{ textAlign: 'center' }}>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        #{index + 1}
+                      </span>
+                    </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Building2 size={16} color="var(--primary)" />
-                        <strong>{market.name}</strong>
+                      <div className="table-cell-inline" style={{ maxWidth: '100%' }} title={market.name}>
+                        <Building2 size={15} color="var(--primary)" style={{ flexShrink: 0 }} />
+                        <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {market.name}
+                        </strong>
                       </div>
                     </td>
                     <td>
-                      <span className="book-badge-chip">
-                        <MapPin size={12} />
-                        {market.sales_zones?.name || 'Unassigned Zone'}
+                      <span className="book-badge-chip" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={market.sales_zones?.name || 'Unassigned Zone'}>
+                        <MapPin size={12} style={{ flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {market.sales_zones?.name || 'Unassigned Zone'}
+                        </span>
                       </span>
                     </td>
-                    <td>{market.city || '—'}</td>
-                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '280px' }}>
-                      {market.description || '—'}
+                    <td>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-main)' }}>{market.city || '—'}</span>
                     </td>
                     <td>
+                      <div
+                        className="table-cell-ellipsis"
+                        style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}
+                        title={market.description || 'No description provided'}
+                      >
+                        {market.description || '—'}
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
                       {market.is_active ? (
                         <span className="status-badge active" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                           <CheckCircle2 size={12} /> Active
@@ -315,11 +333,13 @@ export default function Markets() {
                         </span>
                       )}
                     </td>
-                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {market.created_at ? new Date(market.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                    <td>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {market.created_at ? new Date(market.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end' }}>
                         <button
                           className="icon-btn"
                           title="Edit Market"

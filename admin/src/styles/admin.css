@@ -964,6 +964,14 @@ select.status-select.closed {
     white-space: nowrap;
 }
 
+.table-cell-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    max-width: 100%;
+}
+
 .table-meta-muted {
     font-size: 0.75rem;
     color: var(--text-muted);

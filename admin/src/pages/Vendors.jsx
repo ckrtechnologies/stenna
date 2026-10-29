@@ -507,21 +507,22 @@ export default function Vendors() {
       {loading ? (
         <Loader />
       ) : (
-        <div className="table-container">
-          <table>
+        <div className="table-container" style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', tableLayout: 'fixed' }}>
             <thead>
               <tr>
-                <th>
+                <th style={{ width: '45px', textAlign: 'center' }}>S.NO</th>
+                <th style={{ width: '180px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('shop_name')}>
                     <span>Shop Name</span> {renderSortIndicator('shop_name')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '130px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('contact_person')}>
                     <span>Contact Person</span> {renderSortIndicator('contact_person')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '120px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('phone')}>
                     <span>Phone</span> {renderSortIndicator('phone')}
                   </div>
@@ -531,67 +532,88 @@ export default function Vendors() {
                     <span>Address</span> {renderSortIndicator('shop_address')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '130px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('sales_zones')}>
                     <span>Territory / Zone</span> {renderSortIndicator('sales_zones')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '140px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('sales_markets')}>
                     <span>Market / Bazaar</span> {renderSortIndicator('sales_markets')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '115px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('visits')}>
                     <span>Visit Reach</span> {renderSortIndicator('visits')}
                   </div>
                 </th>
-                <th>
-                  <div className="table-sort-header" onClick={() => handleSort('is_active')}>
+                <th style={{ width: '95px', textAlign: 'center' }}>
+                  <div className="table-sort-header" style={{ justifyContent: 'center' }} onClick={() => handleSort('is_active')}>
                     <span>Status</span> {renderSortIndicator('is_active')}
                   </div>
                 </th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '80px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredAndSortedVendors.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No retail shops found matching your criteria.
                   </td>
                 </tr>
               ) : (
-                filteredAndSortedVendors.map((vendor) => (
+                filteredAndSortedVendors.map((vendor, index) => (
                   <tr key={vendor.id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Store size={16} color="var(--primary)" />
-                        <strong>{vendor.shop_name}</strong>
-                      </div>
-                    </td>
-                    <td>{vendor.contact_person}</td>
-                    <td>
-                      <a
-                        href={`tel:${vendor.phone}`}
-                        style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
-                      >
-                        <Phone size={13} color="var(--text-muted)" />
-                        {vendor.phone}
-                      </a>
-                    </td>
-                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '220px' }}>
-                      {vendor.shop_address}
-                    </td>
-                    <td>
-                      <span className="book-badge-chip">
-                        {vendor.sales_zones?.name || 'Unassigned'}
+                    <td style={{ textAlign: 'center' }}>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        #{index + 1}
                       </span>
                     </td>
                     <td>
-                      <span className="book-badge-chip" style={{ background: 'rgba(13, 148, 136, 0.12)', color: '#14b8a6', borderColor: 'rgba(13, 148, 136, 0.25)' }}>
-                        <Building2 size={12} />
-                        {vendor.sales_markets?.name || 'Unassigned'}
+                      <div className="table-cell-inline" style={{ maxWidth: '100%' }} title={vendor.shop_name}>
+                        <Store size={15} color="var(--primary)" style={{ flexShrink: 0 }} />
+                        <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {vendor.shop_name}
+                        </strong>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="table-cell-ellipsis" title={vendor.contact_person}>
+                        {vendor.contact_person || '—'}
+                      </div>
+                    </td>
+                    <td>
+                      <a
+                        href={`tel:${vendor.phone}`}
+                        style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        <Phone size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                        <span>{vendor.phone}</span>
+                      </a>
+                    </td>
+                    <td>
+                      <div
+                        className="table-cell-ellipsis"
+                        style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}
+                        title={vendor.shop_address || '—'}
+                      >
+                        {vendor.shop_address || '—'}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="book-badge-chip" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={vendor.sales_zones?.name || 'Unassigned'}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {vendor.sales_zones?.name || 'Unassigned'}
+                        </span>
+                      </span>
+                    </td>
+                    <td>
+                      <span className="book-badge-chip" style={{ background: 'rgba(13, 148, 136, 0.12)', color: '#14b8a6', borderColor: 'rgba(13, 148, 136, 0.25)', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={vendor.sales_markets?.name || 'Unassigned'}>
+                        <Building2 size={12} style={{ flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {vendor.sales_markets?.name || 'Unassigned'}
+                        </span>
                       </span>
                     </td>
                     <td>

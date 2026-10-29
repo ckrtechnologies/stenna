@@ -168,11 +168,12 @@ export default function Zones() {
       {loading ? (
         <Loader />
       ) : (
-        <div className="table-container">
-          <table>
+        <div className="table-container" style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', tableLayout: 'fixed' }}>
             <thead>
               <tr>
-                <th>
+                <th style={{ width: '55px', textAlign: 'center' }}>S.NO</th>
+                <th style={{ width: '220px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('name')}>
                     <span>Zone / Territory Name</span> {renderSortIndicator('name')}
                   </div>
@@ -182,65 +183,80 @@ export default function Zones() {
                     <span>Description / Coverage</span> {renderSortIndicator('description')}
                   </div>
                 </th>
-                <th>
-                  <div className="table-sort-header" onClick={() => handleSort('is_active')}>
+                <th style={{ width: '110px', textAlign: 'center' }}>
+                  <div className="table-sort-header" style={{ justifyContent: 'center' }} onClick={() => handleSort('is_active')}>
                     <span>Status</span> {renderSortIndicator('is_active')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '130px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('created_at')}>
                     <span>Created Date</span> {renderSortIndicator('created_at')}
                   </div>
                 </th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '85px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredAndSortedZones.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No zones defined yet. Click "Add New Zone" to create one.
                   </td>
                 </tr>
               ) : (
-                filteredAndSortedZones.map((zone) => (
+                filteredAndSortedZones.map((zone, index) => (
                   <tr key={zone.id}>
+                    <td style={{ textAlign: 'center' }}>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        #{index + 1}
+                      </span>
+                    </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <MapPin size={16} color="var(--primary)" />
-                        <strong>{zone.name}</strong>
+                      <div className="table-cell-inline" style={{ maxWidth: '100%' }} title={zone.name}>
+                        <MapPin size={15} color="var(--primary)" style={{ flexShrink: 0 }} />
+                        <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {zone.name}
+                        </strong>
                       </div>
                     </td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      {zone.description || '—'}
-                    </td>
                     <td>
+                      <div
+                        className="table-cell-ellipsis"
+                        style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}
+                        title={zone.description || 'No description / coverage areas defined'}
+                      >
+                        {zone.description || '—'}
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
                       <span className={`status-tag ${zone.is_active ? 'active' : 'inactive'}`}>
                         {zone.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {new Date(zone.created_at).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                    <td>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {zone.created_at ? new Date(zone.created_at).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        }) : '—'}
+                      </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                      <div style={{ display: 'inline-flex', gap: '0.35rem', justifyContent: 'flex-end' }}>
                         <button
                           className="icon-btn"
                           title="Edit Zone"
                           onClick={() => handleOpenEdit(zone)}
                         >
-                          <Edit size={16} />
+                          <Edit size={15} />
                         </button>
                         <button
                           className="icon-btn red"
                           title="Delete Zone"
                           onClick={() => handleDelete(zone.id)}
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </td>

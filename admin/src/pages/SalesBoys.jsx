@@ -214,16 +214,17 @@ export default function SalesBoys() {
       {loading ? (
         <Loader />
       ) : (
-        <div className="table-container">
-          <table>
+        <div className="table-container" style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', tableLayout: 'fixed' }}>
             <thead>
               <tr>
-                <th>
+                <th style={{ width: '50px', textAlign: 'center' }}>S.NO</th>
+                <th style={{ width: '200px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('name')}>
                     <span>Representative Name</span> {renderSortIndicator('name')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '130px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('phone')}>
                     <span>Phone Number</span> {renderSortIndicator('phone')}
                   </div>
@@ -233,61 +234,79 @@ export default function SalesBoys() {
                     <span>Assigned Operating Zones</span> {renderSortIndicator('sales_boy_zones')}
                   </div>
                 </th>
-                <th>
-                  <div className="table-sort-header" onClick={() => handleSort('is_active')}>
+                <th style={{ width: '110px', textAlign: 'center' }}>
+                  <div className="table-sort-header" style={{ justifyContent: 'center' }} onClick={() => handleSort('is_active')}>
                     <span>Status</span> {renderSortIndicator('is_active')}
                   </div>
                 </th>
-                <th>
+                <th style={{ width: '130px' }}>
                   <div className="table-sort-header" onClick={() => handleSort('created_at')}>
                     <span>Joined Date</span> {renderSortIndicator('created_at')}
                   </div>
                 </th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '85px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredAndSortedReps.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No sales reps registered yet. Click "Add New Sales Rep" to create an account.
                   </td>
                 </tr>
               ) : (
-                filteredAndSortedReps.map((rep) => {
+                filteredAndSortedReps.map((rep, index) => {
                   const assignedZones = (rep.sales_boy_zones || []).map((sbz) => sbz.sales_zones).filter(Boolean);
                   return (
                     <tr key={rep.id}>
+                      <td style={{ textAlign: 'center' }}>
+                        <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          #{index + 1}
+                        </span>
+                      </td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <Users size={16} color="var(--primary)" />
-                          <strong>{rep.name}</strong>
+                        <div className="table-cell-inline" style={{ maxWidth: '100%' }} title={rep.name}>
+                          <Users size={15} color="var(--primary)" style={{ flexShrink: 0 }} />
+                          <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {rep.name}
+                          </strong>
                         </div>
                       </td>
                       <td>
                         <a
                           href={`tel:${rep.phone}`}
-                          style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                          style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontVariantNumeric: 'tabular-nums' }}
                         >
-                          <Phone size={13} color="var(--text-muted)" />
-                          {rep.phone}
+                          <Phone size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                          <span>{rep.phone}</span>
                         </a>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                           {assignedZones.length === 0 ? (
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No zones assigned</span>
                           ) : (
-                            assignedZones.map((z) => (
-                              <span key={z.id} className="book-badge-chip">
-                                <MapPin size={10} />
-                                {z.name}
-                              </span>
-                            ))
+                            <>
+                              {assignedZones.slice(0, 2).map((z) => (
+                                <span key={z.id} className="book-badge-chip" style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={z.name}>
+                                  <MapPin size={10} style={{ flexShrink: 0 }} />
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{z.name}</span>
+                                </span>
+                              ))}
+                              {assignedZones.length > 2 && (
+                                <span
+                                  className="book-badge-chip"
+                                  style={{ fontWeight: 700, background: 'rgba(59, 130, 246, 0.12)', color: 'var(--primary)', borderColor: 'rgba(59, 130, 246, 0.25)', cursor: 'default' }}
+                                  title={assignedZones.map((z) => z.name).join(', ')}
+                                >
+                                  +{assignedZones.length - 2} more
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
-                      <td>
+                      <td style={{ textAlign: 'center' }}>
                         <button
                           type="button"
                           onClick={() => handleToggleStatus(rep)}
@@ -311,15 +330,17 @@ export default function SalesBoys() {
                           {rep.is_active ? 'Active' : 'Inactive'}
                         </button>
                       </td>
-                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {new Date(rep.created_at).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
+                      <td>
+                        <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          {rep.created_at ? new Date(rep.created_at).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          }) : '—'}
+                        </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end' }}>
                           <button
                             className="icon-btn"
                             title="Edit Sales Rep"
