@@ -199,7 +199,7 @@ export default function AppDrawer() {
             <View style={[styles.iconBox, { backgroundColor: 'rgba(212, 175, 55, 0.12)' }]}>
               <IconClipboardList size={20} color={theme.colors.gold} />
             </View>
-            <Text style={styles.navItemText}>Ledger</Text>
+            <Text style={styles.navItemText}>My Visits</Text>
             <IconChevronRight size={16} color="#475569" />
           </TouchableOpacity>
 

@@ -6,24 +6,24 @@ export const typography = {
     bold: 'System'
   },
   fontSize: {
-    xs: 11,
-    sm: 13,
-    base: 15,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    xxl: 24,
-    display: 30
+    xs: 12,
+    sm: 13.5,
+    base: 15.5,
+    md: 17,
+    lg: 19,
+    xl: 22,
+    xxl: 26,
+    display: 32
   },
   lineHeight: {
-    xs: 15,
-    sm: 18,
+    xs: 16,
+    sm: 19,
     base: 22,
     md: 24,
-    lg: 26,
-    xl: 28,
-    xxl: 32,
-    display: 38
+    lg: 27,
+    xl: 30,
+    xxl: 34,
+    display: 40
   },
   fontWeight: {
     regular: '400',

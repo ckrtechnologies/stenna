@@ -40,8 +40,10 @@ export const colors = {
   accentSurface: 'rgba(11, 61, 46, 0.10)',
 
   // Background & Surfaces
-  background: '#F8FAFC',
+  background: '#EDF2F7',
   card: '#FFFFFF',
+  cardElevated: '#FFFFFF',
+  surfaceSubtle: '#F8FAFC',
   inputBg: '#FFFFFF',
   headerBar: '#07261C',
   bottomBar: '#07261C',
@@ -54,8 +56,8 @@ export const colors = {
   navyBorder: '#144D3B',
 
   // Borders & Dividers
-  border: '#E2E8F0',
-  borderLight: '#F1F5F9',
+  border: '#DDE3EA',
+  borderLight: '#EDF2F7',
   borderDark: '#144D3B',
 
   // Typography

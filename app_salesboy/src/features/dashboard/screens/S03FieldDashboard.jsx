@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import Screen from '@shared/layout/Screen';
 import AppBar from '@shared/layout/AppBar';
 import Card from '@shared/ui/Card';
@@ -14,14 +14,39 @@ import {
   IconStar
 } from '@shared/icons';
 import { useGetAppDashboardQuery } from '../api';
+import { baseApi } from '@store/baseApi';
 import { ROUTES } from '@navigation/routes';
 import { theme } from '@theme';
 
 export default function S03FieldDashboard({ navigation }) {
+  const dispatch = useDispatch();
   const user = useSelector((state) => state.auth?.user);
   const { data, isLoading, refetch, isFetching } = useGetAppDashboardQuery(undefined, {
     refetchOnMountOrArgChange: true
   });
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      dispatch(
+        baseApi.util.invalidateTags([
+          'Dashboard',
+          'Shops',
+          'ShopDetail',
+          'Visits',
+          'Zones',
+          'Markets',
+          'Books'
+        ])
+      );
+      await refetch();
+    } catch {
+      // ignore
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const analytics = data?.data?.todayAnalytics || {
     totalVisits: 0,
@@ -57,8 +82,8 @@ export default function S03FieldDashboard({ navigation }) {
       header={<AppBar showLogo={true} showMenu={true} />}
       refreshControl={
         <RefreshControl
-          refreshing={isLoading || isFetching}
-          onRefresh={refetch}
+          refreshing={refreshing || isFetching}
+          onRefresh={handleRefresh}
           colors={[theme.colors.primary]}
         />
       }
@@ -71,14 +96,21 @@ export default function S03FieldDashboard({ navigation }) {
         </View>
         <View style={styles.territoryBadgeWrap}>
           {assignedZones.length > 0 ? (
-            assignedZones.map((z) => (
-              <View key={z.id} style={styles.territoryBadge}>
-                <Text style={styles.territoryText}>📍 {z.name.toUpperCase()}</Text>
-              </View>
-            ))
+            <>
+              {assignedZones.slice(0, 3).map((z) => (
+                <View key={z.id} style={styles.territoryBadge}>
+                  <Text style={styles.territoryText}>📍 {z.name}</Text>
+                </View>
+              ))}
+              {assignedZones.length > 3 && (
+                <View style={styles.territoryMoreBadge}>
+                  <Text style={styles.territoryMoreText}>+{assignedZones.length - 3} more</Text>
+                </View>
+              )}
+            </>
           ) : (
             <View style={styles.territoryBadge}>
-              <Text style={styles.territoryText}>📍 ALL ZONES</Text>
+              <Text style={styles.territoryText}>📍 All Zones</Text>
             </View>
           )}
         </View>
@@ -168,7 +200,9 @@ export default function S03FieldDashboard({ navigation }) {
               </Text>
               <Text style={styles.tierChipValue} numberOfLines={1}>
                 {assignedZones.length > 0
-                  ? assignedZones.map((z) => z.name).join(', ')
+                  ? assignedZones.length > 3
+                    ? `${assignedZones.slice(0, 3).map((z) => z.name).join(', ')} (+${assignedZones.length - 3} more)`
+                    : assignedZones.map((z) => z.name).join(', ')
                   : 'All Zones'}
               </Text>
             </View>
@@ -194,7 +228,7 @@ export default function S03FieldDashboard({ navigation }) {
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.sectionHeading}>Recent Visits Today</Text>
         <TouchableOpacity onPress={() => navigation.navigate(ROUTES.VISITS_LEDGER)}>
-          <Text style={styles.viewAllLink}>View Ledger →</Text>
+          <Text style={styles.viewAllLink}>View Visits →</Text>
         </TouchableOpacity>
       </View>
 
@@ -245,14 +279,14 @@ const styles = StyleSheet.create({
     marginBottom: 4
   },
   repGreeting: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
+    fontSize: 13.5,
+    color: '#475569',
     fontWeight: '600'
   },
   repName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
-    color: theme.colors.navyPrimary,
+    color: '#07261C',
     letterSpacing: -0.3
   },
   territoryBadgeWrap: {
@@ -260,21 +294,39 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
     justifyContent: 'flex-end',
-    maxWidth: '55%'
+    alignItems: 'center',
+    maxWidth: '58%'
   },
   territoryBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 4.5,
+    paddingHorizontal: 9,
     borderRadius: 8,
-    backgroundColor: 'rgba(29, 78, 216, 0.08)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(29, 78, 216, 0.18)'
+    borderColor: '#CBD5E1',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1.5
   },
   territoryText: {
-    fontSize: 10,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A'
+  },
+  territoryMoreBadge: {
+    paddingVertical: 4.5,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0'
+  },
+  territoryMoreText: {
+    fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 1,
-    color: theme.colors.primary
+    color: '#065F46'
   },
   kpiCard: {
     padding: 18,
@@ -290,14 +342,14 @@ const styles = StyleSheet.create({
     marginBottom: 16
   },
   kpiTitle: {
-    fontSize: 11,
+    fontSize: 12.5,
     fontWeight: '800',
     letterSpacing: 1.5,
     color: theme.colors.gold
   },
   kpiDate: {
-    fontSize: 12,
-    color: '#94A3B8',
+    fontSize: 13,
+    color: '#CBD5E1',
     fontWeight: '600'
   },
   statGrid: {
@@ -310,13 +362,13 @@ const styles = StyleSheet.create({
     flex: 1
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
     color: '#FFFFFF'
   },
   statLabel: {
-    fontSize: 11,
-    color: '#94A3B8',
+    fontSize: 12,
+    color: '#CBD5E1',
     marginTop: 4,
     fontWeight: '600'
   },
@@ -381,44 +433,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   territorySectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: theme.colors.textMain
+    fontSize: 16.5,
+    fontWeight: '800',
+    color: '#0F172A'
   },
   territorySectionSub: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '500',
     marginTop: 2
   },
   tierChipsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
-    borderRadius: 10,
-    paddingVertical: 10,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight
+    borderColor: '#E2E8F0'
   },
   tierChip: {
     flex: 1
   },
   tierChipLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
-    color: theme.colors.primary,
+    color: '#065F46',
     letterSpacing: 0.8,
-    marginBottom: 2
+    marginBottom: 3
   },
   tierChipValue: {
-    fontSize: 12,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: theme.colors.textMain
+    color: '#0F172A'
   },
   tierChipDivider: {
     width: 1,
-    height: 24,
-    backgroundColor: theme.colors.border,
+    height: 26,
+    backgroundColor: '#E2E8F0',
     marginHorizontal: 8
   },
   navLinkCard: {

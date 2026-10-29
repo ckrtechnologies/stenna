@@ -23,13 +23,19 @@ import {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const CATEGORIES = [
+export const DEFAULT_LEDGER_CATEGORIES = [
   { id: 'status', label: 'Store Status' },
   { id: 'conversion', label: 'Sales & Pitch' },
   { id: 'zone', label: 'Sales Zone' },
   { id: 'market', label: 'Market Hub' },
   { id: 'shop', label: 'Retail Store' },
   { id: 'date', label: 'Date Period' }
+];
+
+export const SHOPS_FILTER_CATEGORIES = [
+  { id: 'zone', label: 'Sales Zone' },
+  { id: 'market', label: 'Market Hub' },
+  { id: 'status', label: 'Store Status' }
 ];
 
 export default function TwoColumnFilterModal({
@@ -41,10 +47,14 @@ export default function TwoColumnFilterModal({
   zones = [],
   markets = [],
   shops = [],
-  visits = []
+  visits = [],
+  categories = DEFAULT_LEDGER_CATEGORIES,
+  title = 'Filter Field Ledger',
+  subtitle,
+  mode = 'ledger' // 'ledger' | 'shops'
 }) {
   const insets = useSafeAreaInsets();
-  const [activeCategory, setActiveCategory] = useState('status');
+  const [activeCategory, setActiveCategory] = useState(categories[0]?.id || 'status');
   const [draftFilters, setDraftFilters] = useState({
     status: 'ALL',
     conversion: 'ALL',
@@ -56,8 +66,9 @@ export default function TwoColumnFilterModal({
   });
 
   const [shopSearchText, setShopSearchText] = useState('');
+  const [marketSearchText, setMarketSearchText] = useState('');
 
-  // Sync draft filters when modal opens
+  // Sync draft filters when modal opens or initialFilters change
   useEffect(() => {
     if (visible) {
       setDraftFilters({
@@ -69,10 +80,11 @@ export default function TwoColumnFilterModal({
         dateRange: 'ALL',
         ...initialFilters
       });
-      setActiveCategory('status');
+      setActiveCategory(categories[0]?.id || 'status');
       setShopSearchText('');
+      setMarketSearchText('');
     }
-  }, [visible, initialFilters]);
+  }, [visible, initialFilters, categories]);
 
   // Compute active filters count
   const activeCount = useMemo(() => {
@@ -88,12 +100,12 @@ export default function TwoColumnFilterModal({
 
   // Category badge flags
   const categorySelected = {
-    status: draftFilters.status !== 'ALL',
-    conversion: draftFilters.conversion !== 'ALL',
-    zone: !!draftFilters.zoneId,
-    market: !!draftFilters.marketId,
-    shop: !!draftFilters.shopId,
-    date: draftFilters.dateRange !== 'ALL'
+    status: draftFilters.status && draftFilters.status !== 'ALL',
+    conversion: draftFilters.conversion && draftFilters.conversion !== 'ALL',
+    zone: Boolean(draftFilters.zoneId),
+    market: Boolean(draftFilters.marketId),
+    shop: Boolean(draftFilters.shopId),
+    date: draftFilters.dateRange && draftFilters.dateRange !== 'ALL'
   };
 
   const handleClearAll = () => {
@@ -106,7 +118,6 @@ export default function TwoColumnFilterModal({
       dateRange: 'ALL'
     };
     setDraftFilters(cleared);
-    if (onReset) onReset();
   };
 
   const handleApply = () => {
@@ -114,11 +125,22 @@ export default function TwoColumnFilterModal({
     onClose();
   };
 
-  // Filtered markets depending on selected zone
+  // Filtered markets depending on selected zone & search
   const visibleMarkets = useMemo(() => {
-    if (!draftFilters.zoneId) return markets;
-    return markets.filter((m) => m.zone_id === draftFilters.zoneId);
-  }, [markets, draftFilters.zoneId]);
+    let list = markets;
+    if (draftFilters.zoneId) {
+      list = list.filter((m) => m.zone_id === draftFilters.zoneId);
+    }
+    if (marketSearchText.trim()) {
+      const q = marketSearchText.toLowerCase();
+      list = list.filter(
+        (m) =>
+          (m.name || '').toLowerCase().includes(q) ||
+          (m.city || '').toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [markets, draftFilters.zoneId, marketSearchText]);
 
   // Filtered shops depending on selected zone & market & search
   const visibleShops = useMemo(() => {
@@ -137,57 +159,132 @@ export default function TwoColumnFilterModal({
     });
   }, [shops, draftFilters.zoneId, draftFilters.marketId, shopSearchText]);
 
+  // Precomputed visit date counts for ledger
+  const dateCounts = useMemo(() => {
+    if (mode !== 'ledger') return {};
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(startOfToday.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    return {
+      today: visits.filter((v) => new Date(v.visited_at) >= startOfToday).length,
+      yesterday: visits.filter((v) => {
+        const d = new Date(v.visited_at);
+        return d >= startOfYesterday && d < startOfToday;
+      }).length,
+      week: visits.filter((v) => new Date(v.visited_at) >= sevenDaysAgo).length,
+      month: visits.filter((v) => new Date(v.visited_at) >= startOfMonth).length
+    };
+  }, [visits, mode]);
+
   // Helper renderers for the right column options
   const renderRightOptions = () => {
     switch (activeCategory) {
-      case 'status':
-        return [
-          { key: 'ALL', label: 'All Statuses' },
-          { key: 'OPEN', label: 'Store Open / Available' },
-          { key: 'CLOSED', label: 'Store Closed / Away' }
-        ].map((opt) => {
-          const isSelected = draftFilters.status === opt.key;
-          return (
-            <TouchableOpacity
-              key={opt.key}
-              style={[styles.optionRow, isSelected && styles.optionRowSelected]}
-              onPress={() => setDraftFilters((prev) => ({ ...prev, status: opt.key }))}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                {opt.label}
-              </Text>
-              <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                {isSelected && <View style={styles.radioDot} />}
-              </View>
-            </TouchableOpacity>
-          );
-        });
+      case 'status': {
+        const statusOptions =
+          mode === 'shops'
+            ? [
+                { key: 'ALL', label: 'All Stores', count: shops.length },
+                {
+                  key: 'ACTIVE',
+                  label: 'Active Stores',
+                  count: shops.filter((s) => s.is_active !== false).length
+                },
+                {
+                  key: 'INACTIVE',
+                  label: 'Inactive Stores',
+                  count: shops.filter((s) => s.is_active === false).length
+                }
+              ]
+            : [
+                { key: 'ALL', label: 'All Statuses', count: visits.length },
+                {
+                  key: 'OPEN',
+                  label: 'Store Open / Available',
+                  count: visits.filter((v) => v.is_available).length
+                },
+                {
+                  key: 'CLOSED',
+                  label: 'Store Closed / Away',
+                  count: visits.filter((v) => !v.is_available).length
+                }
+              ];
 
-      case 'conversion':
-        return [
-          { key: 'ALL', label: 'All Conversion Outcomes' },
-          { key: 'BOUGHT', label: 'Order Converted / Placed' },
-          { key: 'SHOWN', label: 'Pitched / Catalog Shown' },
-          { key: 'NO_CONVERSION', label: 'Visited (No Orders)' }
-        ].map((opt) => {
-          const isSelected = draftFilters.conversion === opt.key;
-          return (
-            <TouchableOpacity
-              key={opt.key}
-              style={[styles.optionRow, isSelected && styles.optionRowSelected]}
-              onPress={() => setDraftFilters((prev) => ({ ...prev, conversion: opt.key }))}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                {opt.label}
-              </Text>
-              <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                {isSelected && <View style={styles.radioDot} />}
-              </View>
-            </TouchableOpacity>
-          );
-        });
+        return (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {statusOptions.map((opt) => {
+              const isSelected = draftFilters.status === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[styles.optionRow, isSelected && styles.optionRowSelected]}
+                  onPress={() => setDraftFilters((prev) => ({ ...prev, status: opt.key }))}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                      {opt.label}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: theme.colors.textDim, marginTop: 2 }}>
+                      {opt.count} {mode === 'shops' ? 'stores' : 'visits'}
+                    </Text>
+                  </View>
+                  <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                    {isSelected && <View style={styles.radioDot} />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        );
+      }
+
+      case 'conversion': {
+        const boughtCount = visits.filter((v) =>
+          (v.sales_visit_books || []).some((b) => b.action_type === 'bought')
+        ).length;
+        const shownCount = visits.filter((v) =>
+          (v.sales_visit_books || []).some((b) => b.action_type === 'shown')
+        ).length;
+        const noConvCount = visits.filter(
+          (v) => !(v.sales_visit_books || []).some((b) => b.action_type === 'bought')
+        ).length;
+
+        return (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {[
+              { key: 'ALL', label: 'All Conversion Outcomes', count: visits.length },
+              { key: 'BOUGHT', label: 'Order Converted / Placed', count: boughtCount },
+              { key: 'SHOWN', label: 'Pitched / Catalog Shown', count: shownCount },
+              { key: 'NO_CONVERSION', label: 'Visited (No Orders)', count: noConvCount }
+            ].map((opt) => {
+              const isSelected = draftFilters.conversion === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[styles.optionRow, isSelected && styles.optionRowSelected]}
+                  onPress={() => setDraftFilters((prev) => ({ ...prev, conversion: opt.key }))}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                      {opt.label}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: theme.colors.textDim, marginTop: 2 }}>
+                      {opt.count} {opt.count === 1 ? 'visit' : 'visits'}
+                    </Text>
+                  </View>
+                  <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                    {isSelected && <View style={styles.radioDot} />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        );
+      }
 
       case 'zone':
         return (
@@ -197,74 +294,64 @@ export default function TwoColumnFilterModal({
               onPress={() => setDraftFilters((prev) => ({ ...prev, zoneId: null, marketId: null }))}
               activeOpacity={0.7}
             >
-              <Text style={[styles.optionText, !draftFilters.zoneId && styles.optionTextSelected]}>
-                All Sales Zones
-              </Text>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={[styles.optionText, !draftFilters.zoneId && styles.optionTextSelected]}>
+                  All Sales Zones
+                </Text>
+                <Text style={{ fontSize: 11, color: theme.colors.textDim, marginTop: 2 }}>
+                  {mode === 'ledger'
+                    ? `${visits.length} recorded visits • ${zones.length} assigned zones`
+                    : `${shops.length} assigned stores • ${zones.length} zones`}
+                </Text>
+              </View>
               <View style={[styles.radioCircle, !draftFilters.zoneId && styles.radioCircleSelected]}>
                 {!draftFilters.zoneId && <View style={styles.radioDot} />}
               </View>
             </TouchableOpacity>
-            {zones.map((z) => {
-              const isSelected = draftFilters.zoneId === z.id;
-              return (
-                <TouchableOpacity
-                  key={z.id}
-                  style={[styles.optionRow, isSelected && styles.optionRowSelected]}
-                  onPress={() => setDraftFilters((prev) => ({ ...prev, zoneId: z.id, marketId: null }))}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                    {z.name}
-                  </Text>
-                  <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                    {isSelected && <View style={styles.radioDot} />}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        );
 
-      case 'market':
-        return (
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <TouchableOpacity
-              style={[styles.optionRow, !draftFilters.marketId && styles.optionRowSelected]}
-              onPress={() => setDraftFilters((prev) => ({ ...prev, marketId: null }))}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.optionText, !draftFilters.marketId && styles.optionTextSelected]}>
-                All Markets
-              </Text>
-              <View style={[styles.radioCircle, !draftFilters.marketId && styles.radioCircleSelected]}>
-                {!draftFilters.marketId && <View style={styles.radioDot} />}
-              </View>
-            </TouchableOpacity>
-            {visibleMarkets.length === 0 ? (
+            {zones.length === 0 ? (
               <View style={{ padding: 16 }}>
                 <Text style={{ fontSize: 12, color: theme.colors.textMuted }}>
-                  No markets found for the selected zone.
+                  No assigned zones found.
                 </Text>
               </View>
             ) : (
-              visibleMarkets.map((m) => {
-                const isSelected = draftFilters.marketId === m.id;
+              zones.map((z) => {
+                const isSelected = draftFilters.zoneId === z.id;
+                const zoneVisitsCount = visits.filter(
+                  (v) => v.sales_vendors?.zone_id === z.id
+                ).length;
+                const zoneShopsCount = shops.filter((s) => s.zone_id === z.id).length;
+                const zoneMarketsCount = markets.filter((m) => m.zone_id === z.id).length;
+
                 return (
                   <TouchableOpacity
-                    key={m.id}
+                    key={z.id}
                     style={[styles.optionRow, isSelected && styles.optionRowSelected]}
-                    onPress={() => setDraftFilters((prev) => ({ ...prev, marketId: m.id }))}
+                    onPress={() =>
+                      setDraftFilters((prev) => {
+                        const keepShop = prev.shopId
+                          ? shops.some((s) => s.id === prev.shopId && s.zone_id === z.id)
+                          : false;
+                        return {
+                          ...prev,
+                          zoneId: z.id,
+                          marketId: null,
+                          shopId: keepShop ? prev.shopId : null
+                        };
+                      })
+                    }
                     activeOpacity={0.7}
                   >
                     <View style={{ flex: 1, marginRight: 8 }}>
                       <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                        📍 {m.name}
+                        {z.name}
                       </Text>
-                      {m.city ? (
-                        <Text style={{ fontSize: 11, color: theme.colors.textDim, marginTop: 2 }}>
-                          {m.city}
-                        </Text>
-                      ) : null}
+                      <Text style={{ fontSize: 11, color: theme.colors.textDim, marginTop: 2 }}>
+                        {mode === 'ledger'
+                          ? `${zoneVisitsCount} ${zoneVisitsCount === 1 ? 'visit recorded' : 'visits recorded'} • ${zoneShopsCount} stores`
+                          : `${zoneShopsCount} ${zoneShopsCount === 1 ? 'store' : 'stores'} • ${zoneMarketsCount} markets`}
+                      </Text>
                     </View>
                     <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
                       {isSelected && <View style={styles.radioDot} />}
@@ -276,13 +363,109 @@ export default function TwoColumnFilterModal({
           </ScrollView>
         );
 
+      case 'market': {
+        const showMarketSearch = markets.length > 6;
+        return (
+          <View style={{ flex: 1 }}>
+            {showMarketSearch && (
+              <View style={styles.searchBarBox}>
+                <IconSearch size={15} color={theme.colors.textMuted} />
+                <TextInput
+                  placeholder="Search market hub..."
+                  placeholderTextColor={theme.colors.textDim}
+                  value={marketSearchText}
+                  onChangeText={setMarketSearchText}
+                  style={styles.searchBarInput}
+                />
+              </View>
+            )}
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <TouchableOpacity
+                style={[styles.optionRow, !draftFilters.marketId && styles.optionRowSelected]}
+                onPress={() => setDraftFilters((prev) => ({ ...prev, marketId: null }))}
+                activeOpacity={0.7}
+              >
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={[styles.optionText, !draftFilters.marketId && styles.optionTextSelected]}>
+                    All Markets
+                  </Text>
+                  <Text style={{ fontSize: 11, color: theme.colors.textDim, marginTop: 2 }}>
+                    {draftFilters.zoneId
+                      ? `All markets in ${zones.find((z) => z.id === draftFilters.zoneId)?.name || 'selected zone'}`
+                      : `${mode === 'ledger' ? `${visits.length} visits` : `${markets.length} assigned markets`}`}
+                  </Text>
+                </View>
+                <View style={[styles.radioCircle, !draftFilters.marketId && styles.radioCircleSelected]}>
+                  {!draftFilters.marketId && <View style={styles.radioDot} />}
+                </View>
+              </TouchableOpacity>
+
+              {visibleMarkets.length === 0 ? (
+                <View style={{ padding: 16 }}>
+                  <Text style={{ fontSize: 12, color: theme.colors.textMuted }}>
+                    {draftFilters.zoneId
+                      ? 'No markets found for the selected zone.'
+                      : 'No markets matching search.'}
+                  </Text>
+                </View>
+              ) : (
+                visibleMarkets.map((m) => {
+                  const isSelected = draftFilters.marketId === m.id;
+                  const marketVisitsCount = visits.filter(
+                    (v) => v.sales_vendors?.market_id === m.id
+                  ).length;
+                  const marketShopsCount = shops.filter((s) => s.market_id === m.id).length;
+
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[styles.optionRow, isSelected && styles.optionRowSelected]}
+                      onPress={() =>
+                        setDraftFilters((prev) => {
+                          const keepShop = prev.shopId
+                            ? shops.some((s) => s.id === prev.shopId && s.market_id === m.id)
+                            : false;
+                          return {
+                            ...prev,
+                            marketId: m.id,
+                            zoneId: m.zone_id || prev.zoneId,
+                            shopId: keepShop ? prev.shopId : null
+                          };
+                        })
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                          📍 {m.name}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: theme.colors.textDim, marginTop: 2 }}>
+                          {mode === 'ledger'
+                            ? `${marketVisitsCount} ${marketVisitsCount === 1 ? 'visit' : 'visits'}${m.city ? ` • ${m.city}` : ''}`
+                            : marketShopsCount > 0
+                            ? `${marketShopsCount} ${marketShopsCount === 1 ? 'store' : 'stores'}`
+                            : m.city || 'Territory Hub'}
+                        </Text>
+                      </View>
+                      <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                        {isSelected && <View style={styles.radioDot} />}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        );
+      }
+
       case 'shop':
         return (
           <View style={{ flex: 1 }}>
             <View style={styles.searchBarBox}>
-              <IconSearch size={16} color={theme.colors.textMuted} />
+              <IconSearch size={15} color={theme.colors.textMuted} />
               <TextInput
-                placeholder="Search store name..."
+                placeholder="Search store name, contact, phone..."
                 placeholderTextColor={theme.colors.textDim}
                 value={shopSearchText}
                 onChangeText={setShopSearchText}
@@ -295,65 +478,113 @@ export default function TwoColumnFilterModal({
                 onPress={() => setDraftFilters((prev) => ({ ...prev, shopId: null }))}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.optionText, !draftFilters.shopId && styles.optionTextSelected]}>
-                  All Retail Stores
-                </Text>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={[styles.optionText, !draftFilters.shopId && styles.optionTextSelected]}>
+                    All Retail Stores
+                  </Text>
+                  <Text style={{ fontSize: 11, color: theme.colors.textDim, marginTop: 2 }}>
+                    {mode === 'ledger'
+                      ? `${visits.length} recorded visits • ${shops.length} stores`
+                      : `${shops.length} assigned stores`}
+                  </Text>
+                </View>
                 <View style={[styles.radioCircle, !draftFilters.shopId && styles.radioCircleSelected]}>
                   {!draftFilters.shopId && <View style={styles.radioDot} />}
                 </View>
               </TouchableOpacity>
-              {visibleShops.map((s) => {
-                const isSelected = draftFilters.shopId === s.id;
-                return (
-                  <TouchableOpacity
-                    key={s.id}
-                    style={[styles.optionRow, isSelected && styles.optionRowSelected]}
-                    onPress={() => setDraftFilters((prev) => ({ ...prev, shopId: s.id }))}
-                    activeOpacity={0.7}
-                  >
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text style={[styles.optionText, isSelected && styles.optionTextSelected]} numberOfLines={1}>
-                        {s.shop_name}
-                      </Text>
-                      <Text style={{ fontSize: 10, color: theme.colors.textDim, marginTop: 2 }}>
-                        {s.contact_person} • {s.sales_markets?.name || 'Retail'}
-                      </Text>
-                    </View>
-                    <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                      {isSelected && <View style={styles.radioDot} />}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+
+              {visibleShops.length === 0 ? (
+                <View style={{ padding: 16 }}>
+                  <Text style={{ fontSize: 12, color: theme.colors.textMuted }}>
+                    No retail stores match your filter criteria.
+                  </Text>
+                </View>
+              ) : (
+                visibleShops.map((s) => {
+                  const isSelected = draftFilters.shopId === s.id;
+                  const shopVisitsCount = visits.filter(
+                    (v) => v.vendor_id === s.id || v.sales_vendors?.id === s.id
+                  ).length;
+                  const marketName =
+                    s.sales_markets?.name || markets.find((m) => m.id === s.market_id)?.name;
+                  const zoneName =
+                    s.sales_zones?.name || zones.find((z) => z.id === s.zone_id)?.name;
+
+                  return (
+                    <TouchableOpacity
+                      key={s.id}
+                      style={[styles.optionRow, isSelected && styles.optionRowSelected]}
+                      onPress={() =>
+                        setDraftFilters((prev) => ({
+                          ...prev,
+                          shopId: s.id,
+                          zoneId: s.zone_id || prev.zoneId,
+                          marketId: s.market_id || prev.marketId
+                        }))
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text
+                          style={[styles.optionText, isSelected && styles.optionTextSelected]}
+                          numberOfLines={1}
+                        >
+                          {s.shop_name}
+                        </Text>
+                        <Text
+                          style={{ fontSize: 10, color: theme.colors.textDim, marginTop: 2 }}
+                          numberOfLines={1}
+                        >
+                          {mode === 'ledger'
+                            ? `${shopVisitsCount} ${shopVisitsCount === 1 ? 'visit' : 'visits'} • ${s.contact_person || 'Owner'}`
+                            : `${s.contact_person || 'Owner'}${marketName ? ` • ${marketName}` : ''}${zoneName ? ` (${zoneName})` : ''}`}
+                        </Text>
+                      </View>
+                      <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                        {isSelected && <View style={styles.radioDot} />}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </ScrollView>
           </View>
         );
 
       case 'date':
-        return [
-          { key: 'ALL', label: 'All Recorded Dates' },
-          { key: 'TODAY', label: "Today's Visits Only" },
-          { key: 'YESTERDAY', label: 'Yesterday' },
-          { key: 'WEEK', label: 'Past 7 Days' },
-          { key: 'MONTH', label: 'This Month' }
-        ].map((opt) => {
-          const isSelected = draftFilters.dateRange === opt.key;
-          return (
-            <TouchableOpacity
-              key={opt.key}
-              style={[styles.optionRow, isSelected && styles.optionRowSelected]}
-              onPress={() => setDraftFilters((prev) => ({ ...prev, dateRange: opt.key }))}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                {opt.label}
-              </Text>
-              <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                {isSelected && <View style={styles.radioDot} />}
-              </View>
-            </TouchableOpacity>
-          );
-        });
+        return (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {[
+              { key: 'ALL', label: 'All Recorded Dates', count: visits.length },
+              { key: 'TODAY', label: "Today's Visits Only", count: dateCounts.today || 0 },
+              { key: 'YESTERDAY', label: 'Yesterday', count: dateCounts.yesterday || 0 },
+              { key: 'WEEK', label: 'Past 7 Days', count: dateCounts.week || 0 },
+              { key: 'MONTH', label: 'This Month', count: dateCounts.month || 0 }
+            ].map((opt) => {
+              const isSelected = draftFilters.dateRange === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[styles.optionRow, isSelected && styles.optionRowSelected]}
+                  onPress={() => setDraftFilters((prev) => ({ ...prev, dateRange: opt.key }))}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                      {opt.label}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: theme.colors.textDim, marginTop: 2 }}>
+                      {opt.count} {opt.count === 1 ? 'visit' : 'visits'}
+                    </Text>
+                  </View>
+                  <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                    {isSelected && <View style={styles.radioDot} />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        );
 
       default:
         return null;
@@ -370,7 +601,15 @@ export default function TwoColumnFilterModal({
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.overlay}>
-          <View style={[styles.container, { paddingTop: insets.top + 8, paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <View
+            style={[
+              styles.container,
+              {
+                paddingTop: insets.top + 8,
+                paddingBottom: Math.max(insets.bottom, 12)
+              }
+            ]}
+          >
             {/* Modal Top Header */}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
@@ -378,9 +617,11 @@ export default function TwoColumnFilterModal({
                   <IconFilter size={18} color="#FFFFFF" />
                 </View>
                 <View>
-                  <Text style={styles.title}>Filter Field Ledger</Text>
+                  <Text style={styles.title}>{title}</Text>
                   <Text style={styles.subtitle}>
-                    {activeCount > 0 ? `${activeCount} filter criteria applied` : 'Select filters to refine ledger'}
+                    {activeCount > 0
+                      ? `${activeCount} filter criteria applied`
+                      : subtitle || 'Select filters to refine view'}
                   </Text>
                 </View>
               </View>
@@ -394,7 +635,7 @@ export default function TwoColumnFilterModal({
               {/* Left Column: Categories Sidebar */}
               <View style={styles.leftCol}>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  {CATEGORIES.map((cat) => {
+                  {categories.map((cat) => {
                     const isActive = activeCategory === cat.id;
                     const hasSelection = categorySelected[cat.id];
                     return (
@@ -405,12 +646,13 @@ export default function TwoColumnFilterModal({
                         activeOpacity={0.8}
                       >
                         {isActive && <View style={styles.activeBar} />}
-                        <Text style={[styles.catLabel, isActive && styles.catLabelActive]}>
+                        <Text
+                          style={[styles.catLabel, isActive && styles.catLabelActive]}
+                          numberOfLines={1}
+                        >
                           {cat.label}
                         </Text>
-                        {hasSelection && (
-                          <View style={styles.catDot} />
-                        )}
+                        {hasSelection && <View style={styles.catDot} />}
                       </TouchableOpacity>
                     );
                   })}
@@ -418,9 +660,7 @@ export default function TwoColumnFilterModal({
               </View>
 
               {/* Right Column: Options Pane */}
-              <View style={styles.rightCol}>
-                {renderRightOptions()}
-              </View>
+              <View style={styles.rightCol}>{renderRightOptions()}</View>
             </View>
 
             {/* Bottom Actions Footer */}
@@ -539,7 +779,9 @@ const styles = StyleSheet.create({
   catLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#475569'
+    color: '#475569',
+    flex: 1,
+    marginRight: 4
   },
   catLabelActive: {
     color: theme.colors.navyPrimary,

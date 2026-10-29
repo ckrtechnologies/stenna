@@ -13,7 +13,10 @@ import {
     BookOpen,
     ToggleLeft,
     ChevronDown,
-    X
+    X,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown
 } from 'lucide-react';
 import api from '../utils/api';
 import WallpaperModal from '../components/WallpaperModal';
@@ -237,6 +240,29 @@ const Wallpapers = () => {
         is_active: 'all',
         sort_by: 'default'
     });
+
+    // Column Sorting state
+    const [sortField, setSortField] = useState('sno'); // 'sno', 'name', 'price', 'quantity', 'views', 'is_active'
+    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
+
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+        setCurrentPage(1);
+    };
+
+    const renderSortIndicator = (field) => {
+        if (sortField !== field) {
+            return <ArrowUpDown size={12} className="wp-sort-icon" />;
+        }
+        return sortOrder === 'asc'
+            ? <ArrowUp size={12} className="wp-sort-icon active" />
+            : <ArrowDown size={12} className="wp-sort-icon active" />;
+    };
 
     const [pendingBulkIds, setPendingBulkIds] = useState(new Set());
 
@@ -464,17 +490,31 @@ const Wallpapers = () => {
         return matchesSearch && matchesGroup && matchesCategory && matchesBook && matchesPrice && matchesStatus;
     });
 
-    if (filters.sort_by === 'views_desc') {
-        filteredWallpapers.sort((a, b) => (b.views || 0) - (a.views || 0));
-    } else if (filters.sort_by === 'views_asc') {
-        filteredWallpapers.sort((a, b) => (a.views || 0) - (b.views || 0));
-    } else if (filters.sort_by === 'price_desc') {
-        filteredWallpapers.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
-    } else if (filters.sort_by === 'price_asc') {
-        filteredWallpapers.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
-    } else if (filters.sort_by === 'stock_desc') {
-        filteredWallpapers.sort((a, b) => (b.quantity || 0) - (a.quantity || 0));
-    }
+    // Sorting: column header sort + dropdown sort fallback
+    filteredWallpapers.sort((a, b) => {
+        let diff = 0;
+        if (sortField === 'name') {
+            diff = (a.name || '').localeCompare(b.name || '');
+        } else if (sortField === 'price') {
+            diff = (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+        } else if (sortField === 'quantity') {
+            diff = (a.quantity || 0) - (b.quantity || 0);
+        } else if (sortField === 'views') {
+            diff = (a.views || 0) - (b.views || 0);
+        } else if (sortField === 'is_active') {
+            diff = (a.is_active === b.is_active ? 0 : a.is_active ? -1 : 1);
+        } else if (sortField === 'sno') {
+            return sortOrder === 'desc' ? -1 : 0;
+        } else {
+            if (filters.sort_by === 'views_desc') return (b.views || 0) - (a.views || 0);
+            if (filters.sort_by === 'views_asc') return (a.views || 0) - (b.views || 0);
+            if (filters.sort_by === 'price_desc') return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
+            if (filters.sort_by === 'price_asc') return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+            if (filters.sort_by === 'stock_desc') return (b.quantity || 0) - (a.quantity || 0);
+            return 0;
+        }
+        return sortOrder === 'asc' ? diff : -diff;
+    });
 
     const paginatedWallpapers = filteredWallpapers.slice(
         (currentPage - 1) * itemsPerPage,
@@ -769,22 +809,52 @@ const Wallpapers = () => {
                                     title={allPageSelected ? 'Deselect all' : 'Select all on page'}
                                 >
                                     {allPageSelected
-                                        ? <CheckSquare size={17} />
+                                        ? <CheckSquare size={15} />
                                         : somePageSelected
-                                            ? <CheckSquare size={17} style={{ opacity: 0.5 }} />
-                                            : <Square size={17} />
+                                            ? <CheckSquare size={15} style={{ opacity: 0.5 }} />
+                                            : <Square size={15} />
                                     }
                                 </button>
                             </th>
-                            <th className="wp-th-sno">S.No</th>
-                            <th>Image</th>
-                            <th>Name / Code</th>
-                            <th>Category</th>
-                            <th className="wp-align-right">Price</th>
-                            <th className="wp-align-right">Stock</th>
-                            <th className="wp-align-right">Views</th>
-                            <th className="wp-align-center">Status</th>
-                            <th className="wp-align-center">Actions</th>
+                            <th className="wp-th-sno wp-sortable-th" onClick={() => handleSort('sno')}>
+                                <div className="wp-th-inner center">
+                                    <span>S.No</span>
+                                    {renderSortIndicator('sno')}
+                                </div>
+                            </th>
+                            <th className="wp-th-img">Image</th>
+                            <th className="wp-sortable-th" onClick={() => handleSort('name')}>
+                                <div className="wp-th-inner">
+                                    <span>Name / Code</span>
+                                    {renderSortIndicator('name')}
+                                </div>
+                            </th>
+                            <th className="wp-th-cat">Category</th>
+                            <th className="wp-align-right wp-sortable-th" onClick={() => handleSort('price')}>
+                                <div className="wp-th-inner right">
+                                    <span>Price</span>
+                                    {renderSortIndicator('price')}
+                                </div>
+                            </th>
+                            <th className="wp-align-right wp-sortable-th" onClick={() => handleSort('quantity')}>
+                                <div className="wp-th-inner right">
+                                    <span>Stock</span>
+                                    {renderSortIndicator('quantity')}
+                                </div>
+                            </th>
+                            <th className="wp-align-right wp-sortable-th" onClick={() => handleSort('views')}>
+                                <div className="wp-th-inner right">
+                                    <span>Views</span>
+                                    {renderSortIndicator('views')}
+                                </div>
+                            </th>
+                            <th className="wp-align-center wp-sortable-th" onClick={() => handleSort('is_active')}>
+                                <div className="wp-th-inner center">
+                                    <span>Status</span>
+                                    {renderSortIndicator('is_active')}
+                                </div>
+                            </th>
+                            <th className="wp-align-center wp-th-actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -808,40 +878,47 @@ const Wallpapers = () => {
                                                 className={`wp-row-check ${isSelected ? 'checked' : ''}`}
                                                 onClick={() => toggleRow(w.id)}
                                             >
-                                                {isSelected ? <CheckSquare size={17} /> : <Square size={17} />}
+                                                {isSelected ? <CheckSquare size={15} /> : <Square size={15} />}
                                             </button>
                                         </td>
 
                                         <td className="wp-td-sno">{sno}</td>
 
-                                        <td>
+                                        <td className="wp-td-img">
                                             <img
-                                                src={w.images?.[0]?.image_url || 'https://placehold.co/48x48/1e293b/94a3b8?text=?'}
+                                                src={w.images?.[0]?.image_url || 'https://placehold.co/36x36/1e293b/94a3b8?text=?'}
                                                 alt={w.name}
                                                 className="wp-thumb"
+                                                loading="lazy"
                                             />
                                         </td>
 
                                         <td>
                                             <div className="wp-name-cell">
                                                 <strong>{w.name}</strong>
-                                                <span>{w.design_code || w.slug}</span>
+                                                <span className="wp-code">{w.design_code || w.slug}</span>
                                             </div>
                                         </td>
 
                                         <td>
-                                            <div className="wp-cat-stack">
-                                                {w.categories?.length > 0
-                                                    ? w.categories.map(c => (
-                                                        <span key={c.id} className="wp-pill">{c.name}</span>
-                                                    ))
-                                                    : <span className="wp-pill muted">Uncategorized</span>
-                                                }
+                                            <div className="wp-cat-compact" title={w.categories?.map(c => c.name).join(', ')}>
+                                                {w.categories?.length > 0 ? (
+                                                    <>
+                                                        {w.categories.slice(0, 2).map(c => (
+                                                            <span key={c.id} className="wp-pill">{c.name}</span>
+                                                        ))}
+                                                        {w.categories.length > 2 && (
+                                                            <span className="wp-pill wp-pill-more">+{w.categories.length - 2}</span>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="wp-pill muted">—</span>
+                                                )}
                                             </div>
                                         </td>
 
                                         <td className="wp-align-right wp-price">
-                                            ₹{w.price || '0'}
+                                            ₹{Number(w.price || 0).toLocaleString('en-IN')}
                                         </td>
 
                                         <td className="wp-align-right">
@@ -852,8 +929,8 @@ const Wallpapers = () => {
 
                                         <td className="wp-align-right">
                                             <span className="wp-views-badge" title={`${w.views || 0} views`}>
-                                                <Eye size={12} />
-                                                {(w.views || 0).toLocaleString()}
+                                                <Eye size={11} />
+                                                {(w.views || 0).toLocaleString('en-IN')}
                                             </span>
                                         </td>
 
@@ -866,13 +943,13 @@ const Wallpapers = () => {
                                         <td className="wp-align-center" onClick={e => e.stopPropagation()}>
                                             <div className="wp-actions">
                                                 <button className="wp-icon-btn" title="View" onClick={() => handleView(w)}>
-                                                    <Eye size={15} />
+                                                    <Eye size={14} />
                                                 </button>
                                                 <button className="wp-icon-btn" title="Edit" onClick={() => handleEdit(w)}>
-                                                    <Edit size={15} />
+                                                    <Edit size={14} />
                                                 </button>
                                                 <button className="wp-icon-btn danger" title="Delete" onClick={() => handleDelete(w.id)}>
-                                                    <Trash2 size={15} />
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </div>
                                         </td>
@@ -1026,45 +1103,133 @@ const Wallpapers = () => {
                 .wp-dd-code { margin-left:auto;font-size:.7rem;color:var(--text-muted);background:var(--bg-input);padding:.1rem .4rem;border-radius:.3rem; }
                 .wp-dd-empty { padding:1rem;text-align:center;color:var(--text-dim);font-size:.875rem; }
 
-                /* Table */
-                .wp-table-wrap { background:var(--bg-card);border:1px solid var(--border-color);border-radius:1rem;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.06); }
-                .wp-table { width:100%;border-collapse:separate;border-spacing:0; }
-                .wp-table th { background:var(--bg-header-bar);padding:.875rem 1.25rem;text-align:left;color:var(--text-dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border-color); }
-                .wp-table td { padding:.875rem 1.25rem;border-bottom:1px solid var(--border-color);color:var(--text-main);font-size:.875rem;vertical-align:middle;cursor:pointer; }
-                .wp-table tr:last-child td { border-bottom:none; }
-                .wp-table tr:hover td { background:var(--bg-hover); }
-                .wp-row-selected td { background:rgba(59,130,246,.06) !important;border-bottom-color:rgba(59,130,246,.15) !important; }
+                /* Table — Solid sticky header, compact layout, interactive sort */
+                .wp-table-wrap {
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-color);
+                    border-radius: 0.75rem;
+                    overflow-x: auto;
+                    overflow-y: auto;
+                    max-height: calc(100vh - 215px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+                    position: relative;
+                }
+                .wp-table {
+                    width: 100%;
+                    border-collapse: separate;
+                    border-spacing: 0;
+                    text-align: left;
+                }
+                .wp-table thead {
+                    position: sticky;
+                    top: 0;
+                    z-index: 20;
+                }
+                .wp-table th {
+                    position: sticky;
+                    top: 0;
+                    z-index: 20;
+                    background: #f8fafc;
+                    color: #475569;
+                    padding: 0.55rem 0.65rem;
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.04em;
+                    border-bottom: 2px solid var(--border-color);
+                    box-shadow: 0 1px 0 var(--border-color);
+                    white-space: nowrap;
+                    user-select: none;
+                }
+                [data-theme='dark'] .wp-table th {
+                    background: #1e293b;
+                    color: #94a3b8;
+                    box-shadow: 0 1px 0 rgba(51, 65, 85, 0.8);
+                }
+                .wp-sortable-th {
+                    cursor: pointer;
+                    transition: background 0.15s, color 0.15s;
+                }
+                .wp-sortable-th:hover {
+                    background: var(--bg-hover) !important;
+                    color: var(--primary) !important;
+                }
+                .wp-th-inner {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                }
+                .wp-th-inner.right {
+                    justify-content: flex-end;
+                    width: 100%;
+                }
+                .wp-th-inner.center {
+                    justify-content: center;
+                    width: 100%;
+                }
+                .wp-sort-icon {
+                    opacity: 0.35;
+                    transition: all 0.15s;
+                }
+                .wp-sort-icon.active {
+                    opacity: 1;
+                    color: var(--primary);
+                }
+                .wp-table td {
+                    padding: 0.45rem 0.65rem;
+                    border-bottom: 1px solid var(--border-color);
+                    color: var(--text-main);
+                    font-size: 0.8125rem;
+                    vertical-align: middle;
+                    cursor: pointer;
+                    height: 48px;
+                }
+                .wp-table tr:hover td {
+                    background: var(--bg-hover);
+                }
+                .wp-row-selected td {
+                    background: rgba(59, 130, 246, 0.06) !important;
+                    border-bottom-color: rgba(59, 130, 246, 0.15) !important;
+                }
 
-                /* Checkbox columns */
-                .wp-th-check, .wp-td-check { width:44px;padding:.875rem .75rem !important;cursor:default; }
-                .wp-th-sno, .wp-td-sno { width:60px;color:var(--text-dim); }
-                .wp-check-btn, .wp-row-check { background:none;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dim);transition:color .15s;padding:.1rem; }
-                .wp-check-btn.checked, .wp-row-check.checked { color:var(--primary); }
-                .wp-check-btn:hover, .wp-row-check:hover { color:var(--primary); }
+                /* Compact Column Widths & Alignments */
+                .wp-th-check, .wp-td-check { width: 38px; min-width: 38px; max-width: 38px; padding: 0.45rem 0.4rem !important; text-align: center; }
+                .wp-th-sno, .wp-td-sno { width: 52px; min-width: 52px; max-width: 52px; text-align: center; color: var(--text-dim); font-size: 0.78rem; font-weight: 500; }
+                .wp-th-img, .wp-td-img { width: 48px; min-width: 48px; max-width: 48px; text-align: center; padding: 0.35rem 0.45rem !important; }
+                .wp-th-cat { min-width: 150px; max-width: 220px; }
+                .wp-th-actions { width: 85px; min-width: 85px; }
+
+                .wp-check-btn, .wp-row-check { background: none; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dim); transition: color 0.15s; padding: 0.1rem; }
+                .wp-check-btn.checked, .wp-row-check.checked { color: var(--primary); }
+                .wp-check-btn:hover, .wp-row-check:hover { color: var(--primary); }
 
                 /* Cell specifics */
-                .wp-align-right { text-align:right !important; }
-                .wp-align-center { text-align:center !important; }
-                .wp-thumb { width:44px;height:44px;border-radius:.5rem;object-fit:cover;background:var(--bg-input);display:block; }
-                .wp-name-cell { display:flex;flex-direction:column; }
-                .wp-name-cell strong { font-size:.9rem;font-weight:600;color:var(--text-main); }
-                .wp-name-cell span { font-size:.75rem;color:var(--text-muted);margin-top:.1rem; }
-                .wp-cat-stack { display:flex;flex-wrap:wrap;gap:.25rem;max-width:180px; }
-                .wp-pill { font-size:.65rem;padding:.15rem .45rem;background:var(--bg-input);border:1px solid var(--border-color);border-radius:.35rem;color:var(--text-muted);white-space:nowrap; }
-                .wp-pill.muted { color:var(--text-dim);border-style:dashed; }
-                .wp-price { font-weight:600;font-size:.875rem; }
-                .wp-stock { font-weight:600;font-size:.875rem; }
-                .wp-stock.in { color:var(--success,#10b981); }
-                .wp-stock.out { color:var(--danger,#ef4444); }
-                .wp-views-badge { display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .55rem;border-radius:999px;background:rgba(77,197,186,.12);color:#07261C;font-size:.78rem;font-weight:700;letter-spacing:.02em;border:1px solid rgba(77,197,186,.25); }
-                .wp-status { display:inline-block;padding:.2rem .7rem;border-radius:999px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em; }
-                .wp-status.active { background:rgba(16,185,129,.12);color:#10b981; }
-                .wp-status.hidden { background:rgba(100,116,139,.12);color:#64748b; }
-                .wp-actions { display:flex;gap:.375rem;justify-content:center; }
-                .wp-icon-btn { width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--bg-input);border:1px solid var(--border-color);border-radius:.5rem;color:var(--text-muted);cursor:pointer;transition:all .2s; }
-                .wp-icon-btn:hover { background:var(--bg-hover);border-color:var(--primary);color:var(--primary); }
-                .wp-icon-btn.danger:hover { border-color:#ef4444;color:#ef4444;background:rgba(239,68,68,.08); }
-                .wp-empty { text-align:center;padding:4rem;color:var(--text-dim);font-style:italic; }
+                .wp-align-right { text-align: right !important; }
+                .wp-align-center { text-align: center !important; }
+                .wp-thumb { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; background: var(--bg-input); display: block; border: 1px solid var(--border-color); }
+                .wp-name-cell { display: flex; flex-direction: column; gap: 1px; }
+                .wp-name-cell strong { font-size: 0.82rem; font-weight: 600; color: var(--text-main); line-height: 1.25; }
+                .wp-name-cell .wp-code { font-size: 0.7rem; color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+                
+                .wp-cat-compact { display: inline-flex; align-items: center; gap: 0.25rem; flex-wrap: nowrap; max-width: 200px; }
+                .wp-pill { font-size: 0.68rem; padding: 0.12rem 0.45rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-muted); white-space: nowrap; font-weight: 500; }
+                .wp-pill.muted { color: var(--text-dim); border-style: dashed; }
+                .wp-pill-more { background: rgba(59, 130, 246, 0.12); color: var(--primary); border-color: rgba(59, 130, 246, 0.25); font-weight: 700; cursor: default; }
+
+                .wp-price { font-weight: 600; font-size: 0.82rem; font-family: ui-monospace, SFMono-Regular, monospace; }
+                .wp-stock { font-weight: 600; font-size: 0.82rem; }
+                .wp-stock.in { color: var(--success, #10b981); }
+                .wp-stock.out { color: var(--danger, #ef4444); }
+                .wp-views-badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.12rem 0.45rem; border-radius: 999px; background: rgba(77,197,186,0.12); color: #07261C; font-size: 0.74rem; font-weight: 700; border: 1px solid rgba(77,197,186,0.25); }
+                [data-theme='dark'] .wp-views-badge { color: #5eead4; background: rgba(77,197,186,0.18); }
+                .wp-status { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+                .wp-status.active { background: rgba(16,185,129,0.12); color: #10b981; }
+                .wp-status.hidden { background: rgba(100,116,139,0.12); color: #64748b; }
+                .wp-actions { display: flex; gap: 0.25rem; justify-content: center; }
+                .wp-icon-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+                .wp-icon-btn:hover { background: var(--bg-hover); border-color: var(--primary); color: var(--primary); }
+                .wp-icon-btn.danger:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.08); }
+                .wp-empty { text-align: center; padding: 3rem; color: var(--text-dim); font-style: italic; }
 
                 /* Pagination */
                 .wp-pagination { display:flex;justify-content:space-between;align-items:center;padding:1.25rem 0;margin-top:1.25rem;border-top:1px solid var(--border-color); }

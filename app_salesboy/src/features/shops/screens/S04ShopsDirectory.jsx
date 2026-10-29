@@ -1,54 +1,125 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+  ScrollView,
+  TouchableOpacity
+} from 'react-native';
+import { useDispatch } from 'react-redux';
 import Screen from '@shared/layout/Screen';
 import AppBar from '@shared/layout/AppBar';
 import Input from '@shared/ui/Input';
 import ShopCard from '../components/ShopCard';
-import { useGetShopsQuery } from '../api';
+import TwoColumnFilterModal, { SHOPS_FILTER_CATEGORIES } from '@shared/ui/TwoColumnFilterModal';
+import { useGetShopsQuery, useGetZonesQuery, useGetMarketsQuery } from '../api';
+import { baseApi } from '@store/baseApi';
 import { ROUTES } from '@navigation/routes';
 import { theme } from '@theme';
-import { IconSearch, IconBuildingStore } from '@shared/icons';
+import { IconSearch, IconBuildingStore, IconFilter, IconX } from '@shared/icons';
 
 export default function S04ShopsDirectory({ navigation }) {
-  const { data, isLoading, refetch, isFetching } = useGetShopsQuery({}, {
+  const dispatch = useDispatch();
+  const { data, isLoading, refetch: refetchShops, isFetching: isFetchingShops } = useGetShopsQuery({}, {
     refetchOnMountOrArgChange: true
   });
-  const [search, setSearch] = useState('');
-  const [selectedZoneId, setSelectedZoneId] = useState('ALL');
-  const [selectedMarketId, setSelectedMarketId] = useState('ALL');
+  const { data: zonesData, isFetching: isFetchingZones, refetch: refetchZones } = useGetZonesQuery({}, { refetchOnMountOrArgChange: true });
+  const { data: marketsData, isFetching: isFetchingMarkets, refetch: refetchMarkets } = useGetMarketsQuery({}, { refetchOnMountOrArgChange: true });
 
+  const assignedZones = zonesData?.data || [];
+  const assignedMarkets = marketsData?.data || [];
   const shops = data?.data || [];
 
-  const availableZones = useMemo(() => {
-    const map = new Map();
-    shops.forEach((s) => {
-      if (s.sales_zones?.id && s.sales_zones?.name) {
-        map.set(s.sales_zones.id, s.sales_zones.name);
-      }
-    });
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [shops]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filters, setFilters] = useState({
+    zoneId: null,
+    marketId: null,
+    status: 'ALL'
+  });
 
-  const availableMarkets = useMemo(() => {
-    const map = new Map();
-    shops.forEach((s) => {
-      if (selectedZoneId !== 'ALL' && s.zone_id !== selectedZoneId) return;
-      if (s.sales_markets?.id && s.sales_markets?.name) {
-        map.set(s.sales_markets.id, s.sales_markets.name);
-      }
-    });
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [shops, selectedZoneId]);
-
-  const handleSelectZone = (zoneId) => {
-    setSelectedZoneId(zoneId);
-    setSelectedMarketId('ALL');
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      dispatch(
+        baseApi.util.invalidateTags([
+          'Dashboard',
+          'Shops',
+          'ShopDetail',
+          'Visits',
+          'Zones',
+          'Markets',
+          'Books'
+        ])
+      );
+      await Promise.all([
+        refetchShops ? refetchShops() : Promise.resolve(),
+        refetchZones ? refetchZones() : Promise.resolve(),
+        refetchMarkets ? refetchMarkets() : Promise.resolve()
+      ]);
+    } catch {
+      // ignore
+    } finally {
+      setRefreshing(false);
+    }
   };
+
+  // Extract comprehensive zones (backend assigned zones + any in shops)
+  const zones = useMemo(() => {
+    const map = new Map();
+    assignedZones.forEach((z) => {
+      if (z.id) map.set(z.id, z);
+    });
+    shops.forEach((s) => {
+      if (s.sales_zones?.id && !map.has(s.sales_zones.id)) {
+        map.set(s.sales_zones.id, s.sales_zones);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [assignedZones, shops]);
+
+  // Extract comprehensive markets (backend assigned markets + any in shops with zone_id)
+  const markets = useMemo(() => {
+    const map = new Map();
+    assignedMarkets.forEach((m) => {
+      if (m.id) map.set(m.id, m);
+    });
+    shops.forEach((s) => {
+      if (s.sales_markets?.id && !map.has(s.sales_markets.id)) {
+        map.set(s.sales_markets.id, {
+          ...s.sales_markets,
+          zone_id: s.zone_id || s.sales_markets.zone_id
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [assignedMarkets, shops]);
+
+  // Active filter count
+  const activeCount = useMemo(() => {
+    let count = 0;
+    if (filters.zoneId) count++;
+    if (filters.marketId) count++;
+    if (filters.status && filters.status !== 'ALL') count++;
+    return count;
+  }, [filters]);
 
   const filteredShops = useMemo(() => {
     return shops.filter((s) => {
-      if (selectedZoneId !== 'ALL' && s.zone_id !== selectedZoneId) return false;
-      if (selectedMarketId !== 'ALL' && s.market_id !== selectedMarketId) return false;
+      // 1. Zone filter
+      if (filters.zoneId && s.zone_id !== filters.zoneId) return false;
+
+      // 2. Market filter
+      if (filters.marketId && s.market_id !== filters.marketId) return false;
+
+      // 3. Status filter
+      if (filters.status === 'ACTIVE' && s.is_active === false) return false;
+      if (filters.status === 'INACTIVE' && s.is_active !== false) return false;
+
+      // 4. Keyword search
       if (!search.trim()) return true;
       const q = search.toLowerCase();
       const name = (s.shop_name || '').toLowerCase();
@@ -57,9 +128,19 @@ export default function S04ShopsDirectory({ navigation }) {
       const addr = (s.shop_address || '').toLowerCase();
       const market = (s.sales_markets?.name || '').toLowerCase();
       const zone = (s.sales_zones?.name || '').toLowerCase();
-      return name.includes(q) || person.includes(q) || phone.includes(q) || addr.includes(q) || market.includes(q) || zone.includes(q);
+      return (
+        name.includes(q) ||
+        person.includes(q) ||
+        phone.includes(q) ||
+        addr.includes(q) ||
+        market.includes(q) ||
+        zone.includes(q)
+      );
     });
-  }, [shops, search, selectedZoneId, selectedMarketId]);
+  }, [shops, search, filters]);
+
+  const activeZoneName = zones.find((z) => z.id === filters.zoneId)?.name;
+  const activeMarketName = markets.find((m) => m.id === filters.marketId)?.name;
 
   const handleSelectShop = (shop) => {
     navigation.navigate(ROUTES.SHOP_DETAIL, { vendorId: shop.id });
@@ -69,136 +150,120 @@ export default function S04ShopsDirectory({ navigation }) {
     navigation.navigate(ROUTES.RECORD_VISIT, { vendorId: shop.id, prefilledShop: shop });
   };
 
+  const handleResetFilters = () => {
+    setFilters({
+      zoneId: null,
+      marketId: null,
+      status: 'ALL'
+    });
+  };
+
   return (
     <Screen
       variant="scroll"
       header={
         <AppBar
           title="Retail Stores"
-          subtitle={`${shops.length} assigned stores in your beat`}
+          subtitle={`${filteredShops.length} of ${shops.length} assigned stores in beat`}
           showMenu={true}
         />
       }
       refreshControl={
         <RefreshControl
-          refreshing={isLoading || isFetching}
-          onRefresh={refetch}
+          refreshing={refreshing || isFetchingShops || isFetchingZones || isFetchingMarkets}
+          onRefresh={handleRefresh}
           colors={[theme.colors.primary]}
         />
       }
     >
-      <Input
-        prefix={<IconSearch size={18} color={theme.colors.textMuted} />}
-        placeholder="Search shop name, owner, phone..."
-        value={search}
-        onChangeText={setSearch}
-        style={styles.searchBar}
-      />
+      {/* Search Bar + Dedicated Filter Trigger Button Row */}
+      <View style={styles.searchFilterRow}>
+        <View style={styles.searchInputWrap}>
+          <Input
+            prefix={<IconSearch size={18} color={theme.colors.textMuted} />}
+            placeholder="Search shop name, owner, phone..."
+            value={search}
+            onChangeText={setSearch}
+            style={styles.searchBar}
+          />
+        </View>
 
-      {/* Zone Selector Chips (shown when assigned to multiple zones) */}
-      {availableZones.length > 1 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.zoneChipsScroll}
+        <TouchableOpacity
+          style={[styles.filterTriggerBtn, activeCount > 0 && styles.filterTriggerBtnActive]}
+          onPress={() => setFilterModalVisible(true)}
+          activeOpacity={0.85}
         >
-          <TouchableOpacity
-            style={[
-              styles.zoneChip,
-              selectedZoneId === 'ALL' && styles.zoneChipActive
-            ]}
-            onPress={() => handleSelectZone('ALL')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.zoneChipText,
-                selectedZoneId === 'ALL' && styles.zoneChipTextActive
-              ]}
-            >
-              📍 All Zones ({shops.length})
-            </Text>
+          <IconFilter size={16} color="#FFFFFF" />
+          <Text style={styles.filterTriggerText}>
+            {activeCount > 0 ? `Filters (${activeCount})` : 'Filters'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Record Count & Meta Bar */}
+      <View style={styles.recordCountBox}>
+        <Text style={styles.recordCountText}>
+          Showing <Text style={{ fontWeight: '800', color: theme.colors.navyPrimary }}>{filteredShops.length}</Text> of {shops.length} stores
+        </Text>
+        {activeCount > 0 && (
+          <TouchableOpacity onPress={handleResetFilters}>
+            <Text style={styles.clearAllLink}>Clear Filters</Text>
           </TouchableOpacity>
-          {availableZones.map((z) => {
-            const count = shops.filter((s) => s.zone_id === z.id).length;
-            const isSelected = selectedZoneId === z.id;
-            return (
+        )}
+      </View>
+
+      {/* Active Filter Badges Row */}
+      {activeCount > 0 && (
+        <View style={styles.activePillsWrap}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.activePillsScroll}
+            contentContainerStyle={styles.activePillsContainer}
+          >
+            {activeZoneName && (
               <TouchableOpacity
-                key={z.id}
-                style={[
-                  styles.zoneChip,
-                  isSelected && styles.zoneChipActive
-                ]}
-                onPress={() => handleSelectZone(isSelected ? 'ALL' : z.id)}
-                activeOpacity={0.8}
+                style={styles.filterPill}
+                onPress={() => setFilters((p) => ({ ...p, zoneId: null }))}
+                activeOpacity={0.7}
               >
-                <Text
-                  style={[
-                    styles.zoneChipText,
-                    isSelected && styles.zoneChipTextActive
-                  ]}
-                >
-                  📍 {z.name} ({count})
-                </Text>
+                <Text style={styles.filterPillText}>Zone: {activeZoneName}</Text>
+                <IconX size={12} color="#475569" />
               </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+            )}
+
+            {activeMarketName && (
+              <TouchableOpacity
+                style={styles.filterPill}
+                onPress={() => setFilters((p) => ({ ...p, marketId: null }))}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.filterPillText}>Market: {activeMarketName}</Text>
+                <IconX size={12} color="#475569" />
+              </TouchableOpacity>
+            )}
+
+            {filters.status !== 'ALL' && (
+              <TouchableOpacity
+                style={styles.filterPill}
+                onPress={() => setFilters((p) => ({ ...p, status: 'ALL' }))}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.filterPillText}>
+                  Status: {filters.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                </Text>
+                <IconX size={12} color="#475569" />
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={styles.clearAllPill} onPress={handleResetFilters}>
+              <Text style={styles.clearAllText}>Clear All</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
       )}
 
-      {availableMarkets.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.marketChipsScroll}
-        >
-          <TouchableOpacity
-            style={[
-              styles.marketChip,
-              selectedMarketId === 'ALL' && styles.marketChipActive
-            ]}
-            onPress={() => setSelectedMarketId('ALL')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.marketChipText,
-                selectedMarketId === 'ALL' && styles.marketChipTextActive
-              ]}
-            >
-              All Markets ({selectedZoneId === 'ALL' ? shops.length : shops.filter((s) => s.zone_id === selectedZoneId).length})
-            </Text>
-          </TouchableOpacity>
-          {availableMarkets.map((m) => {
-            const count = shops.filter((s) => {
-              if (selectedZoneId !== 'ALL' && s.zone_id !== selectedZoneId) return false;
-              return s.market_id === m.id;
-            }).length;
-            const isSelected = selectedMarketId === m.id;
-            return (
-              <TouchableOpacity
-                key={m.id}
-                style={[
-                  styles.marketChip,
-                  isSelected && styles.marketChipActive
-                ]}
-                onPress={() => setSelectedMarketId(isSelected ? 'ALL' : m.id)}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.marketChipText,
-                    isSelected && styles.marketChipTextActive
-                  ]}
-                >
-                  {m.name} ({count})
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      )}
-
+      {/* Stores List */}
       {isLoading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -210,7 +275,11 @@ export default function S04ShopsDirectory({ navigation }) {
             <IconBuildingStore size={36} color={theme.colors.accent} />
           </View>
           <Text style={styles.emptyTitle}>No matching retail stores</Text>
-          <Text style={styles.emptySub}>Try adjusting your search keywords.</Text>
+          <Text style={styles.emptySub}>
+            {activeCount > 0
+              ? 'Try relaxing your filter criteria or adjusting keywords.'
+              : 'Try adjusting your search keywords.'}
+          </Text>
         </View>
       ) : (
         filteredShops.map((shop) => (
@@ -222,66 +291,127 @@ export default function S04ShopsDirectory({ navigation }) {
           />
         ))
       )}
+
+      {/* Dedicated Two-Column Filter Panel */}
+      <TwoColumnFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        filters={filters}
+        onApply={(newFilters) => setFilters(newFilters)}
+        onReset={handleResetFilters}
+        categories={SHOPS_FILTER_CATEGORIES}
+        title="Filter Retail Stores"
+        subtitle={`${filteredShops.length} stores matching beat`}
+        mode="shops"
+        zones={zones}
+        markets={markets}
+        shops={shops}
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  searchBar: {
-    marginBottom: theme.spacing.xs
-  },
-  zoneChipsScroll: {
-    paddingBottom: 6,
+  searchFilterRow: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6
   },
-  zoneChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: 'rgba(29, 78, 216, 0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(29, 78, 216, 0.18)',
-    marginRight: 8
+  searchInputWrap: {
+    flex: 1
   },
-  zoneChipActive: {
+  searchBar: {
+    marginBottom: 0
+  },
+  filterTriggerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: theme.colors.navyPrimary,
-    borderColor: theme.colors.navyPrimary
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    gap: 7,
+    shadowColor: theme.colors.navyPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
+    elevation: 2.5
   },
-  zoneChipText: {
-    fontSize: 12,
+  filterTriggerBtnActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.accent,
+    borderWidth: 1.5
+  },
+  filterTriggerText: {
+    color: '#FFFFFF',
+    fontSize: 13.5,
+    fontWeight: '700'
+  },
+  recordCountBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    marginBottom: 8
+  },
+  recordCountText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#475569'
+  },
+  clearAllLink: {
+    fontSize: 13,
     fontWeight: '700',
     color: theme.colors.primary
   },
-  zoneChipTextActive: {
-    color: '#FFFFFF'
+  activePillsWrap: {
+    marginBottom: 10
   },
-  marketChipsScroll: {
-    paddingBottom: theme.spacing.sm,
+  activePillsScroll: {
+    flexGrow: 0
+  },
+  activePillsContainer: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 2
   },
-  marketChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+  filterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    gap: 6,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginRight: 8
+    borderColor: '#CBD5E1',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1.5
   },
-  marketChipActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary
+  filterPillText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#1E293B'
   },
-  marketChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.textMuted
+  clearAllPill: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)'
   },
-  marketChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700'
+  clearAllText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#DC2626'
   },
   centerBox: {
     padding: theme.spacing.xl,

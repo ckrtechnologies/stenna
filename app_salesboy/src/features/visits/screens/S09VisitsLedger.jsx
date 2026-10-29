@@ -1,24 +1,33 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
+import { useDispatch } from 'react-redux';
 import Screen from '@shared/layout/Screen';
 import AppBar from '@shared/layout/AppBar';
 import Card from '@shared/ui/Card';
 import StatusChip from '@shared/ui/Badge/StatusChip';
 import TwoColumnFilterModal from '@shared/ui/TwoColumnFilterModal';
 import { useGetVisitsQuery } from '../api';
-import { useGetShopsQuery } from '@features/shops/api';
+import { useGetShopsQuery, useGetZonesQuery, useGetMarketsQuery } from '@features/shops/api';
+import { baseApi } from '@store/baseApi';
 import { ROUTES } from '@navigation/routes';
 import { theme } from '@theme';
 import { IconClipboardList, IconMapPin, IconStar, IconFilter, IconX, IconChevronRight } from '@shared/icons';
 
 export default function S09VisitsLedger({ navigation }) {
-  const { data, isLoading, refetch, isFetching } = useGetVisitsQuery({}, {
+  const dispatch = useDispatch();
+  const { data, isLoading, refetch: refetchVisits, isFetching: isFetchingVisits } = useGetVisitsQuery({}, {
     refetchOnMountOrArgChange: true
   });
-  const { data: shopsData } = useGetShopsQuery({});
+  const { data: shopsData, isFetching: isFetchingShops, refetch: refetchShops } = useGetShopsQuery({}, { refetchOnMountOrArgChange: true });
+  const { data: zonesData, isFetching: isFetchingZones, refetch: refetchZones } = useGetZonesQuery({}, { refetchOnMountOrArgChange: true });
+  const { data: marketsData, isFetching: isFetchingMarkets, refetch: refetchMarkets } = useGetMarketsQuery({}, { refetchOnMountOrArgChange: true });
+
+  const assignedZones = zonesData?.data || [];
+  const assignedMarkets = marketsData?.data || [];
   const shops = shopsData?.data || [];
   const visits = data?.data || [];
 
+  const [refreshing, setRefreshing] = useState(false);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filters, setFilters] = useState({
     status: 'ALL',
@@ -29,26 +38,100 @@ export default function S09VisitsLedger({ navigation }) {
     dateRange: 'ALL'
   });
 
-  // Extract unique zones & markets
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      dispatch(
+        baseApi.util.invalidateTags([
+          'Dashboard',
+          'Shops',
+          'ShopDetail',
+          'Visits',
+          'Zones',
+          'Markets',
+          'Books'
+        ])
+      );
+      await Promise.all([
+        refetchVisits ? refetchVisits() : Promise.resolve(),
+        refetchShops ? refetchShops() : Promise.resolve(),
+        refetchZones ? refetchZones() : Promise.resolve(),
+        refetchMarkets ? refetchMarkets() : Promise.resolve()
+      ]);
+    } catch {
+      // ignore
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Extract comprehensive zones (assigned zones + shops + visits)
   const zones = useMemo(() => {
     const map = new Map();
+    assignedZones.forEach((z) => {
+      if (z.id) map.set(z.id, z);
+    });
     shops.forEach((s) => {
       if (s.sales_zones?.id && !map.has(s.sales_zones.id)) {
         map.set(s.sales_zones.id, s.sales_zones);
       }
     });
-    return Array.from(map.values());
-  }, [shops]);
-
-  const markets = useMemo(() => {
-    const map = new Map();
-    shops.forEach((s) => {
-      if (s.sales_markets?.id && !map.has(s.sales_markets.id)) {
-        map.set(s.sales_markets.id, s.sales_markets);
+    visits.forEach((v) => {
+      if (v.sales_vendors?.sales_zones?.id && !map.has(v.sales_vendors.sales_zones.id)) {
+        map.set(v.sales_vendors.sales_zones.id, v.sales_vendors.sales_zones);
       }
     });
-    return Array.from(map.values());
-  }, [shops]);
+    return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [assignedZones, shops, visits]);
+
+  // Extract comprehensive markets (assigned markets + shops + visits with zone_id)
+  const markets = useMemo(() => {
+    const map = new Map();
+    assignedMarkets.forEach((m) => {
+      if (m.id) map.set(m.id, m);
+    });
+    shops.forEach((s) => {
+      if (s.sales_markets?.id && !map.has(s.sales_markets.id)) {
+        map.set(s.sales_markets.id, {
+          ...s.sales_markets,
+          zone_id: s.zone_id || s.sales_markets.zone_id
+        });
+      }
+    });
+    visits.forEach((v) => {
+      if (v.sales_vendors?.sales_markets?.id && !map.has(v.sales_vendors.sales_markets.id)) {
+        map.set(v.sales_vendors.sales_markets.id, {
+          ...v.sales_vendors.sales_markets,
+          zone_id: v.sales_vendors.zone_id || v.sales_vendors.sales_markets.zone_id
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [assignedMarkets, shops, visits]);
+
+  // Extract comprehensive retail stores (assigned beat stores + past visits)
+  const allShops = useMemo(() => {
+    const map = new Map();
+    shops.forEach((s) => {
+      if (s.id) map.set(s.id, s);
+    });
+    visits.forEach((v) => {
+      if (v.sales_vendors?.id && !map.has(v.sales_vendors.id)) {
+        map.set(v.sales_vendors.id, {
+          id: v.sales_vendors.id,
+          shop_name: v.sales_vendors.shop_name,
+          contact_person: v.sales_vendors.contact_person,
+          phone: v.sales_vendors.phone,
+          shop_address: v.sales_vendors.shop_address,
+          zone_id: v.sales_vendors.zone_id,
+          market_id: v.sales_vendors.market_id,
+          sales_zones: v.sales_vendors.sales_zones,
+          sales_markets: v.sales_vendors.sales_markets
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => (a.shop_name || '').localeCompare(b.shop_name || ''));
+  }, [shops, visits]);
 
   // Active filter count
   const activeCount = useMemo(() => {
@@ -113,22 +196,22 @@ export default function S09VisitsLedger({ navigation }) {
   // Labels for active filter chips
   const activeZoneName = zones.find((z) => z.id === filters.zoneId)?.name;
   const activeMarketName = markets.find((m) => m.id === filters.marketId)?.name;
-  const activeShopName = shops.find((s) => s.id === filters.shopId)?.shop_name;
+  const activeShopName = allShops.find((s) => s.id === filters.shopId)?.shop_name;
 
   return (
     <Screen
       variant="scroll"
       header={
         <AppBar
-          title="Field Visits Ledger"
+          title="My Visits"
           subtitle={`${filteredVisits.length} of ${visits.length} recorded visits`}
           showMenu={true}
         />
       }
       refreshControl={
         <RefreshControl
-          refreshing={isLoading || isFetching}
-          onRefresh={refetch}
+          refreshing={refreshing || isFetchingVisits || isFetchingShops || isFetchingZones || isFetchingMarkets}
+          onRefresh={handleRefresh}
           colors={[theme.colors.primary]}
         />
       }
@@ -163,57 +246,69 @@ export default function S09VisitsLedger({ navigation }) {
             contentContainerStyle={styles.activePillsContainer}
           >
             {filters.status !== 'ALL' && (
-              <View style={styles.filterPill}>
+              <TouchableOpacity
+                style={styles.filterPill}
+                onPress={() => setFilters((p) => ({ ...p, status: 'ALL' }))}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.filterPillText}>Status: {filters.status}</Text>
-                <TouchableOpacity onPress={() => setFilters((p) => ({ ...p, status: 'ALL' }))}>
-                  <IconX size={12} color="#475569" />
-                </TouchableOpacity>
-              </View>
+                <IconX size={12} color="#475569" />
+              </TouchableOpacity>
             )}
 
             {filters.conversion !== 'ALL' && (
-              <View style={styles.filterPill}>
+              <TouchableOpacity
+                style={styles.filterPill}
+                onPress={() => setFilters((p) => ({ ...p, conversion: 'ALL' }))}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.filterPillText}>Sales: {filters.conversion}</Text>
-                <TouchableOpacity onPress={() => setFilters((p) => ({ ...p, conversion: 'ALL' }))}>
-                  <IconX size={12} color="#475569" />
-                </TouchableOpacity>
-              </View>
+                <IconX size={12} color="#475569" />
+              </TouchableOpacity>
             )}
 
             {activeZoneName && (
-              <View style={styles.filterPill}>
+              <TouchableOpacity
+                style={styles.filterPill}
+                onPress={() => setFilters((p) => ({ ...p, zoneId: null }))}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.filterPillText}>Zone: {activeZoneName}</Text>
-                <TouchableOpacity onPress={() => setFilters((p) => ({ ...p, zoneId: null }))}>
-                  <IconX size={12} color="#475569" />
-                </TouchableOpacity>
-              </View>
+                <IconX size={12} color="#475569" />
+              </TouchableOpacity>
             )}
 
             {activeMarketName && (
-              <View style={styles.filterPill}>
+              <TouchableOpacity
+                style={styles.filterPill}
+                onPress={() => setFilters((p) => ({ ...p, marketId: null }))}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.filterPillText}>Market: {activeMarketName}</Text>
-                <TouchableOpacity onPress={() => setFilters((p) => ({ ...p, marketId: null }))}>
-                  <IconX size={12} color="#475569" />
-                </TouchableOpacity>
-              </View>
+                <IconX size={12} color="#475569" />
+              </TouchableOpacity>
             )}
 
             {activeShopName && (
-              <View style={styles.filterPill}>
+              <TouchableOpacity
+                style={styles.filterPill}
+                onPress={() => setFilters((p) => ({ ...p, shopId: null }))}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.filterPillText}>Store: {activeShopName}</Text>
-                <TouchableOpacity onPress={() => setFilters((p) => ({ ...p, shopId: null }))}>
-                  <IconX size={12} color="#475569" />
-                </TouchableOpacity>
-              </View>
+                <IconX size={12} color="#475569" />
+              </TouchableOpacity>
             )}
 
             {filters.dateRange !== 'ALL' && (
-              <View style={styles.filterPill}>
+              <TouchableOpacity
+                style={styles.filterPill}
+                onPress={() => setFilters((p) => ({ ...p, dateRange: 'ALL' }))}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.filterPillText}>Date: {filters.dateRange}</Text>
-                <TouchableOpacity onPress={() => setFilters((p) => ({ ...p, dateRange: 'ALL' }))}>
-                  <IconX size={12} color="#475569" />
-                </TouchableOpacity>
-              </View>
+                <IconX size={12} color="#475569" />
+              </TouchableOpacity>
             )}
 
             <TouchableOpacity
@@ -228,6 +323,7 @@ export default function S09VisitsLedger({ navigation }) {
                   dateRange: 'ALL'
                 })
               }
+              activeOpacity={0.7}
             >
               <Text style={styles.clearAllText}>Clear All</Text>
             </TouchableOpacity>
@@ -247,8 +343,32 @@ export default function S09VisitsLedger({ navigation }) {
           </View>
           <Text style={styles.emptyTitle}>No matching visits found</Text>
           <Text style={styles.emptySub}>
-            {activeCount > 0 ? 'Try clearing or relaxing some of your filter criteria.' : 'Your submitted field visits will appear here.'}
+            {activeZoneName
+              ? `No field visits have been recorded in ${activeZoneName} yet.`
+              : activeCount > 0
+              ? 'No visits match your currently active filter criteria.'
+              : 'Your submitted field visits will appear here.'}
           </Text>
+          {activeCount > 0 && (
+            <TouchableOpacity
+              style={styles.resetEmptyBtn}
+              onPress={() =>
+                setFilters({
+                  status: 'ALL',
+                  conversion: 'ALL',
+                  zoneId: null,
+                  marketId: null,
+                  shopId: null,
+                  dateRange: 'ALL'
+                })
+              }
+              activeOpacity={0.8}
+            >
+              <Text style={styles.resetEmptyBtnText}>
+                Reset Filter (Show all {visits.length} visits)
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         filteredVisits.map((v) => {
@@ -361,7 +481,7 @@ export default function S09VisitsLedger({ navigation }) {
         }
         zones={zones}
         markets={markets}
-        shops={shops}
+        shops={allShops}
         visits={visits}
       />
     </Screen>
@@ -392,152 +512,170 @@ const styles = StyleSheet.create({
     marginBottom: 12
   },
   emptyTitle: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textMain
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A'
   },
   emptySub: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textMuted,
-    marginTop: 4
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 4,
+    textAlign: 'center',
+    lineHeight: 20
   },
   visitCardTouch: {
-    marginBottom: theme.spacing.sm
+    marginBottom: 12
   },
   visitCard: {
-    padding: theme.spacing.md
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DDE3EA',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3.5
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6
+    marginBottom: 8
   },
   shopTitleRow: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
     marginRight: 8
   },
   shopName: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textMain
+    fontSize: 17.5,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 7,
     marginBottom: 8
   },
   metaText: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textMuted,
+    fontSize: 13.5,
+    color: '#475569',
+    fontWeight: '500',
     flex: 1
   },
   commentBox: {
-    backgroundColor: theme.colors.inputBg,
-    padding: 8,
-    borderRadius: theme.spacing.borderRadius.sm,
+    backgroundColor: '#F8FAFC',
+    padding: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
-    marginBottom: 8
+    borderColor: '#E2E8F0',
+    marginBottom: 10
   },
   commentText: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textMain,
-    fontStyle: 'italic'
+    fontSize: 13.5,
+    color: '#334155',
+    fontStyle: 'italic',
+    lineHeight: 18
   },
   booksWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 5,
-    marginBottom: 8
+    gap: 6,
+    marginBottom: 10
   },
   boughtChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: theme.colors.successSurface,
+    backgroundColor: '#ECFDF5',
     borderWidth: 1,
-    borderColor: 'rgba(5, 150, 105, 0.3)',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: theme.spacing.borderRadius.sm
+    borderColor: '#A7F3D0',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 6
   },
   boughtText: {
-    fontSize: theme.typography.fontSize.xs,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.success
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#065F46'
   },
   shownChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: theme.colors.card,
+    gap: 4,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: theme.spacing.borderRadius.sm
+    borderColor: '#CBD5E1',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 6
   },
   shownDot: {
-    color: theme.colors.accent,
-    fontSize: 12,
-    lineHeight: 12
+    color: '#475569',
+    fontSize: 14,
+    lineHeight: 14
   },
   shownText: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textMain,
-    fontWeight: theme.typography.fontWeight.medium
+    fontSize: 12.5,
+    color: '#1E293B',
+    fontWeight: '600'
   },
   bottomRow: {
     borderTopWidth: 1,
-    borderTopColor: theme.colors.borderLight,
-    paddingTop: 8,
-    marginTop: 2
+    borderTopColor: '#E2E8F0',
+    paddingTop: 10,
+    marginTop: 4
   },
   timeText: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textDim
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '600'
   },
   filterControlBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
-    marginBottom: 4
+    paddingVertical: 6,
+    marginBottom: 6
   },
   recordCountBox: {
     flex: 1
   },
   recordCountText: {
-    fontSize: 12,
-    color: theme.colors.textMuted
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#475569'
   },
   filterTriggerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: theme.colors.primary,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    shadowColor: theme.colors.primary,
+    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: theme.colors.navyPrimary,
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    shadowColor: theme.colors.navyPrimary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
+    elevation: 2.5
   },
   filterTriggerBtnActive: {
-    backgroundColor: theme.colors.primaryDark
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.accent,
+    borderWidth: 1.5
   },
   filterTriggerText: {
     color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 12,
-    letterSpacing: 0.3
+    fontSize: 13.5
   },
   activePillsWrap: {
     flexGrow: 0,
@@ -608,5 +746,25 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: theme.colors.primary
+  },
+  resetEmptyBtn: {
+    marginTop: 16,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: theme.spacing.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  resetEmptyBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: theme.typography.fontSize.xs,
+    letterSpacing: 0.2
   }
 });

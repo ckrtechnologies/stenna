@@ -73,9 +73,7 @@ export async function listZones(req, res) {
     let zones = await service.listZones();
     if (req.user?.role === 'sales_boy') {
       const assignedIds = await service.getSalesBoyZoneIds(req.user.id);
-      if (assignedIds && assignedIds.length > 0) {
-        zones = zones.filter((z) => assignedIds.includes(z.id));
-      }
+      zones = zones.filter((z) => (assignedIds || []).includes(z.id));
     }
     res.status(200).json({ data: zones });
   } catch (error) {
@@ -124,13 +122,26 @@ export async function updateMarket(req, res) {
 export async function listMarkets(req, res) {
   try {
     const { zoneId, isActive } = req.query;
-    let zoneIds = undefined;
+    let filterZoneIds = undefined;
+    let filterZoneId = zoneId;
+
     if (req.user?.role === 'sales_boy') {
-      zoneIds = await service.getSalesBoyZoneIds(req.user.id);
+      const assignedIds = await service.getSalesBoyZoneIds(req.user.id);
+      if (!assignedIds || assignedIds.length === 0) {
+        return res.status(200).json({ data: [] });
+      }
+      if (filterZoneId) {
+        if (!assignedIds.includes(filterZoneId)) {
+          return res.status(200).json({ data: [] });
+        }
+      } else {
+        filterZoneIds = assignedIds;
+      }
     }
+
     const markets = await service.listMarkets({
-      zoneId,
-      zoneIds: (zoneIds && zoneIds.length > 0) ? zoneIds : undefined,
+      zoneId: filterZoneId,
+      zoneIds: filterZoneIds,
       isActive: isActive !== undefined ? isActive === 'true' : undefined
     });
     res.status(200).json({ data: markets });
@@ -194,12 +205,29 @@ export async function updateVendor(req, res) {
 export async function listVendors(req, res) {
   try {
     const { zoneId, marketId, search } = req.query;
-    let zoneIds = undefined;
+    let filterZoneIds = undefined;
+    let filterZoneId = zoneId;
+
     if (req.user?.role === 'sales_boy') {
-      zoneIds = await service.getSalesBoyZoneIds(req.user.id);
+      const assignedIds = await service.getSalesBoyZoneIds(req.user.id);
+      if (!assignedIds || assignedIds.length === 0) {
+        return res.status(200).json({ data: [] });
+      }
+      if (filterZoneId) {
+        if (!assignedIds.includes(filterZoneId)) {
+          return res.status(200).json({ data: [] });
+        }
+      } else {
+        filterZoneIds = assignedIds;
+      }
     }
-    const filterZoneIds = (zoneIds && zoneIds.length > 0) ? zoneIds : undefined;
-    const vendors = await service.listVendors({ zoneId, marketId, search, zoneIds: filterZoneIds });
+
+    const vendors = await service.listVendors({
+      zoneId: filterZoneId,
+      marketId,
+      search,
+      zoneIds: filterZoneIds
+    });
     res.status(200).json({ data: vendors });
   } catch (error) {
     handleError(req, res, error, 500);

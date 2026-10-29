@@ -12,19 +12,19 @@ export default function Card({ children, variant = 'default', style }) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12
   },
   default: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#DDE3EA',
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3.5
   },
   dark: {
     backgroundColor: theme.colors.navyCard,

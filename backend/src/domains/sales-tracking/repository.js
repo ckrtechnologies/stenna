@@ -387,7 +387,7 @@ export async function listVendors({ zoneId, marketId, search, zoneIds } = {}) {
     .select(`
       *,
       sales_zones ( id, name ),
-      sales_markets ( id, name )
+      sales_markets ( id, name, zone_id )
     `)
     .order('shop_name', { ascending: true });
 
@@ -415,7 +415,7 @@ export async function getVendorById(id) {
     .select(`
       *,
       sales_zones ( id, name ),
-      sales_markets ( id, name )
+      sales_markets ( id, name, zone_id )
     `)
     .eq('id', id)
     .maybeSingle();
@@ -479,7 +479,7 @@ export async function listVisits({ vendorId, salesBoyId, zoneId, isAvailable, st
     .select(`
       *,
       sales_boys ( id, name, phone ),
-      sales_vendors ( id, shop_name, contact_person, phone, shop_address, zone_id, market_id, sales_zones(id, name), sales_markets(id, name) ),
+      sales_vendors ( id, shop_name, contact_person, phone, shop_address, zone_id, market_id, sales_zones(id, name), sales_markets(id, name, zone_id) ),
       sales_visit_books (
         id,
         action_type,
