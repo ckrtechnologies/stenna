@@ -16,6 +16,7 @@ const DealerBooks = () => {
     const [dealer, setDealer] = useState(null);
     const [assignedBooks, setAssignedBooks] = useState([]);
     const [availableBooks, setAvailableBooks] = useState([]);
+    // Antigravity test change — approve (Cmd+Shift+Enter) or reject (Alt+Shift+Enter)
     const [loading, setLoading] = useState(true);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
